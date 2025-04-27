@@ -1,0 +1,5 @@
+{
+    "webdriver_path": "./chromedriver",
+    "default_language": "uk",
+    "max_retries": 5
+  }

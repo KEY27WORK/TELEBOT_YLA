@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Python: Bot Main",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/bot/main.py",
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}"  // 👈 ЭТО ГЛАВНОЕ
+      }
+    ]
+  }
+  

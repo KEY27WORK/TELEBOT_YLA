@@ -1,17 +1,153 @@
-# Stylish Text Telegram Bot
+# 🚀 TELEBOTYLAUKRAINE
 
-This Telegram bot takes a user's text messages and turns them into stylish images. Utilizing Python, the `python-telegram-bot` library, and PIL for image manipulation, it offers a quick and interactive way to generate content.
+Телеграм-бот для роботи з таблицями розмірів, генерації хештегів, парсингу товарів, розрахунку цін та інтеграції з OpenAI API.
 
-## Requirements
-- Python 3.x
-- `python-telegram-bot` library
-- PIL (Pillow)
+---
 
-## How to Get a Telegram Bot Token
+## 📌 Основні можливості
 
-1. Search for the "BotFather" on Telegram.
-2. Start a chat and send `/newbot` to create a new bot.
-3. Give your bot a name and username.
-4. Once the bot is created, BotFather will give you a token. This token is used to authenticate and interact with the Telegram API.
+🔹 **Парсинг товарів** — отримання даних із сайтів (ціна, зображення, вага, опис тощо).  
+🔹 **Обробка таблиць розмірів** — перетворення та генерація зручних таблиць у см.  
+🔹 **Переклад текстів** — автоматичний переклад з англійської на українську.  
+🔹 **Генерація хештегів** — створення хештегів на основі ключових слів.  
+🔹 **Музичні рекомендації** — добірка треків на основі опису (через OpenAI API).  
+🔹 **Інтеграція з Selenium WebDriver** — автоматичне завантаження контенту з сайтів.  
+🔹 **Розрахунок ціни товару** — з урахуванням доставки, комісії та курсу валют.
 
-Remember to use the Secrets pane to set the bot and try it out yourself.
+---
+
+## 📂 Структура проєкту
+
+```bash
+TELEBOTYLAUKRAINE/
+│── bot/                      # 🤖 Робота Telegram-бота
+│   ├── main.py              # Запуск бота
+│   ├── keyboards.py         # Інлайн/звичайні кнопки
+│   ├── menu_handler.py      # Обробка меню
+│   └── handlers/            # Обробники команд
+│       ├── product_collection_handler.py
+│       ├── price_calculation_handler.py
+│       ├── bot_command_handler.py
+│       └── size_chart_handler.py
+│    └── content/                 # 🧠 Контентна логіка
+│         ├── hashtag_generator.py          # Генерація хештегів
+│         └── translator.py        # Переклад тексту
+│    └── music/                   # 🎵 Робота з музикою
+│         ├── music_sender.py
+│         ├── music_file_manager.py
+│         └── music_recommendation.py
+│
+│── core/                    # 🔧 Ядро системи
+│   ├── currency/            # Курси валют
+│   │   └── currency_manager.py
+│   │   └── current_rate.txt         # Кеш курсів валют
+│   ├── calculator/          # Розрахунок ціни
+│   │   ├── calculator.py
+│   │   └── meest_delivery_service.py
+│   ├── parsing/             # Парсери
+│   │   ├── base_parser.py
+│   │   ├── link_handler.py
+│   │   ├── parser.py
+│   │   ├── product/
+│   │   │   └── universal_product_parser.py
+│   │   └── collection/
+│   │       └── universal_collection_parser.py
+│   ├── webdriver/
+│   │   └── webdriver_service.py
+│   └── config/                  # ⚙️ Конфігурація
+│       ├── config.json
+│       ├── config_service.py
+│       └── weights.json
+│
+│── size_chart/              # 📏 Таблиці розмірів
+│   ├── size_chart_handler.py
+│   ├── image_downloader.py
+│   ├── ocr_service.py
+│   └── table_generator.py
+│
+│── services/                # 🧩 Додаткові сервіси
+│   └── open_ai_service.py
+│
+│── utils/                   # 🧰 Утиліти
+│   ├── logger.py
+│   ├── prompt_service.py
+│   └── prompts.py
+│
+│── errors/                   #  ошибки
+│   ├── error_handler.py
+│   ├── telegram_errors.py
+│   └── webdriver_errors.py
+│ 
+│── tests/                   # 🧪 Тести
+│   ├── test_currency_manager.py
+│   ├── test_config_service.py
+│   ├── test_music_sender.py
+│   └── ...
+│
+│── .env                     # 🔐 Секрети
+│── pyproject.toml           # 📦 Poetry
+│── README.md                # 📘 Цей файл
+│── bot.log                  # Логи
+```
+
+---
+
+## 🚀 Запуск бота
+
+1️⃣ Встановіть залежності:
+```bash
+poetry install
+```
+
+2️⃣ Створіть `.env` та вкажіть ключі API:
+```dotenv
+OPENAI_API_KEY=your-key
+TELEGRAM_BOT_TOKEN=your-token
+```
+
+3️⃣ Запуск:
+```bash
+poetry run python bot/main.py
+```
+
+---
+
+## 📌 Приклади використання
+
+```python
+# Переклад тексту
+from bot.content.translator import TranslatorService
+TranslatorService().translate("Hello!", target_lang="uk")
+
+# Генерація хештегів
+from bot.content.hashtags import HashtagGenerator
+HashtagGenerator().generate("спорт, мотивація")
+
+# Надсилання музики
+from bot.music.music_sender import MusicSender
+await MusicSender().send_music_with_title(...)
+```
+
+---
+
+## 🛠 Технології
+- Python 3.10+
+- Telegram Bot API (python-telegram-bot)
+- OpenAI GPT-4
+- yt-dlp (музика)
+- Selenium / BeautifulSoup
+- Google Translate API
+- Pandas, NumPy
+
+---
+
+## 👤 Розробник
+
+**Кирилл / @key27**
+📬 Telegram: [t.me/key27](https://t.me/key27)
+
+---
+
+## 📜 Ліцензія
+MIT License
+
