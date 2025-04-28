@@ -1,8 +1,15 @@
 {
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
-    "python.testing.unittestEnabled": false,
-    "python.testing.nosetestsEnabled": false,
+  // 🔥 Налаштування тестування
+  "python.testing.pytestEnabled": true, // ✅ Включаємо підтримку pytest
+  "python.testing.pytestArgs": ["tests"], // 📂 Вказуємо папку, де шукати тести
+  "python.testing.unittestEnabled": false, // ❌ Вимикаємо стандартний unittest
+  "python.testing.nosetestsEnabled": false, // ❌ Вимикаємо застарілий nosetests
 
-    "python.analysis.extraPaths": ["./core"]
-  }
+  // 🔥 Налаштування аналізу коду
+  "python.analysis.extraPaths": ["./core"], // 📂 Додаємо додаткові шляхи для автодоповнення імпортів (наприклад, core/)
+
+  // 🔥 Налаштування середовища Python
+  "python.defaultInterpreterPath": "venv/bin/python", // 🐍 Вказуємо шлях до інтерпретатора Python у віртуальному середовищі
+  "python.terminal.activateEnvironment": true, // 🖥️ Автоматично активуємо venv у терміналі VSCode
+  "python.envFile": "${workspaceFolder}/.env" // 🔐 Вказуємо шлях до файлу .env для підвантаження змінних середовища (наприклад, токени)
+}

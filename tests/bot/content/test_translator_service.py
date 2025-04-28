@@ -1,16 +1,21 @@
-"""
-🧪 test_translator_service.py — unit-тести для TranslatorService
+"""🧪 test_translator_service.py — Unit-тести для TranslatorService.
 
-Перевіряє:
-- Генерацію слогану (mock)
-- Переклад опису з парсингом (mock)
-- Оцінку ваги (mock + fallback)
+🔍 Перевіряє:
+- 🎯 Генерацію слогану через GPT (mock OpenAI)
+- 🌍 Переклад тексту з HTML та спецсимволами (mock перекладача)
+- ⚖️ Оцінку ваги товару (mock GPT або fallback через config)
+
+📌 Інструменти:
+- pytest — для запуску тестів
+- unittest.mock — для ізоляції залежностей (OpenAIService, ConfigService)
 """
 
+# ✅ Бібліотеки для тестування
 import pytest
 from unittest.mock import patch, MagicMock
-from bot.content.translator import TranslatorService
 
+# 🧠 Сервіс для тестування
+from bot.content.translator import TranslatorService
 
 @patch("bot.content.translator.PromptService.get_slogan_prompt", return_value="prompt")
 @patch("bot.content.translator.OpenAIService")

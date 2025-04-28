@@ -1,17 +1,24 @@
-"""
-🧪 test_hashtag_generator.py — unit-тести для HashtagGenerator
+"""🧪 test_hashtag_generator.py — unit-тести для HashtagGenerator
 
-Перевіряє:
-- Витяг артикула з назви
-- Генерацію хештегів за статтю
-- AI-визначення типу одягу (mock)
-- AI-хештеги (mock)
+🔹 Перевіряє:
+- Витяг артикула з назви товару
+- Генерацію хештегів за статтю (жіноча/чоловіча колекція)
+- AI-визначення типу одягу (mock OpenAI)
+- AI-генерацію хештегів на основі опису (mock OpenAI)
+
+📦 Покриває:
+- extract_article()
+- get_gender_hashtags()
+- extract_clothing_type() (через chat.openai)
+- generate_ai_hashtags() (через chat.openai)
 """
 
+# 📦 Стандартні бібліотеки
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from bot.content.hashtag_generator import HashtagGenerator
 
+# 🧠 Тестований клас
+from bot.content.hashtag_generator import HashtagGenerator
 
 def test_extract_article():
     generator = HashtagGenerator()

@@ -59,8 +59,9 @@ class HashtagGenerator:
         hashtags.extend(self.get_gender_hashtags(article))
 
         # 🤖 Паралельно визначаємо тип одягу та AI-хештеги
-        clothing_task = asyncio.to_thread(self.extract_clothing_type, title)
-        ai_task = asyncio.to_thread(self.generate_ai_hashtags, title, description)
+        clothing_task = self.extract_clothing_type(title)  # 👈 уже async
+        ai_task = self.generate_ai_hashtags(title, description)
+
         clothing_type, ai_hashtags = await asyncio.gather(clothing_task, ai_task)
 
         if clothing_type:
@@ -86,36 +87,42 @@ class HashtagGenerator:
         logging.info("👨‍🦱 Чоловічі хештеги")
         return ["#чоловічийодягукраїна", "#одягдлячоловіків"]
 
-    def extract_clothing_type(self, title: str) -> str:
-        """ 👕 Визначає тип одягу через GPT-4.
-        """
+    async def extract_clothing_type(self, title: str) -> str:
+        """ 👕 Визначає тип одягу через GPT-4 (асинхронно через окремий потік). """
         prompt = PromptService.get_clothing_type_prompt(title)
         logging.info(f"🤖 AI визначення типу одягу для: {title}")
 
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            return response.choices[0].message.content.strip().lower()
-        except Exception as e:
-            logging.error(f"❌ Помилка AI для типу одягу: {e}")
-            return ""
+        def sync_call():
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0
+                )
+                return response.choices[0].message.content.strip().lower()
+            except Exception as e:
+                logging.error(f"❌ Помилка AI для типу одягу: {e}")
+                return ""
 
-    def generate_ai_hashtags(self, title: str, description: str) -> list[str]:
-        """ 🧠 Використовує GPT-4 для генерації додаткових хештегів.
-        """
+        return await asyncio.to_thread(sync_call)
+
+
+    async def generate_ai_hashtags(self, title: str, description: str) -> list[str]:
+        """ 🧠 Використовує GPT-4 для генерації хештегів (асинхронно через окремий потік). """
         prompt = PromptService.get_hashtags_prompt(title, description)
         logging.info("🎯 AI запит на хештеги")
-
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.5
-            )
-            return response.choices[0].message.content.strip().split()
-        except Exception as e:
-            logging.error(f"❌ Помилка AI-хештегів: {e}")
-            return ["#ошибка", "#хэштеги", "#недоступно"]
+    
+        def sync_call():
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.5
+                )
+                return response.choices[0].message.content.strip().split()
+            except Exception as e:
+                logging.error(f"❌ Помилка AI-хештегів: {e}")
+                return ["#ошибка", "#хэштеги", "#недоступно"]
+    
+        return await asyncio.to_thread(sync_call)
+    

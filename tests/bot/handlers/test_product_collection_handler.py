@@ -1,14 +1,24 @@
-"""
-🧪 test_product_collection_handler.py — unit-тести для CollectionHandler
+"""🧪 test_product_collection_handler.py — unit-тести для CollectionHandler
 
-Перевіряє:
-- Вивід регіону
-- Парсинг колекції
-- Виклик обробки товару ProductHandler'ом
+🔍 Перевіряє:
+- ✅ Вивід інформації про регіон (send_region_info)
+- ✅ Парсинг колекцій та обробку посилань (handle_collection)
+- ✅ Виклик handle_url у ProductHandler для кожного товару (process_each_product)
+
+📦 Ізоляція:
+- CollectionParser — моканий
+- ProductHandler — моканий
+
+🎯 Ціль:
+Переконатися, що CollectionHandler виконує основну логіку парсингу колекцій правильно,
+і делегує обробку кожного товару до ProductHandler.
 """
 
+# 🧪 Тестування
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+# 🤖 Обробник, який тестується
 from bot.handlers.product_collection_handler import CollectionHandler
 
 
@@ -72,3 +82,4 @@ async def test_process_each_product_calls_product_handler(mock_update, mock_cont
 
     assert mock_product_handler.handle_url.await_count == 2
     mock_product_handler.handle_url.assert_any_await(mock_update, mock_context, "https://one.com", update_currency=False)
+

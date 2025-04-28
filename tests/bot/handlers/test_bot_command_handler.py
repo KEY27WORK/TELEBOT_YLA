@@ -1,17 +1,22 @@
-"""
-🧪 test_bot_command_handler.py — unit-тести для BotCommandHandler
+"""🧪 test_bot_command_handler.py — Unit-тести для BotCommandHandler.
 
-Перевіряє:
-- Показ курсу валют (mock)
-- Ручну установку курсу (valid + invalid)
-- Вивід довідки
-- Відправку повідомлення (reply/callback)
+🔍 Перевіряє:
+- 💱 Вивід поточного курсу валют (з моком CurrencyManager)
+- ✍️ Ручне встановлення курсу (валідне і невалідне значення)
+- ℹ️ Вивід довідки / команди help
+- 📤 Відправку повідомлень через reply/callback
+
+✅ Структура:
+- pytest + AsyncMock
+- Моки для context, update, currency_manager
 """
 
+# 📦 Стандартні бібліотеки
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from bot.handlers.bot_command_handler import BotCommandHandler
 
+# 🤖 Тестований клас
+from bot.handlers.bot_command_handler import BotCommandHandler
 
 @pytest.fixture
 def mock_currency_manager():

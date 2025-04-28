@@ -40,6 +40,8 @@ from .price_calculation_handler import PriceCalculationHandler
 from size_chart.size_chart_handler import SizeChartHandler
 from .size_chart_handler_bot import SizeChartHandlerBot
 
+# 🛒 Наявність товару по регіонах
+from core.parsing.availability_checker import check_availability_across_regions
 
 # ⚙️ Інше
 from bot.keyboards import Keyboard
@@ -104,6 +106,10 @@ class ProductHandler:
     async def _process_product(self, update, context, parser, url, product_info):
         title, price, description, image_url, weight, colors_text, images, currency = product_info
 
+        # 🛒 НОВОЕ: Витягуємо доступність по регіонах
+        product_path = self._extract_product_path(url)
+        availability_text = await check_availability_across_regions(product_path)
+
         # ⚙️ Запускаємо обчислення і генерацію паралельно
         calc_task = self.price_handler.calculate_and_format(url)
         content_tasks = await asyncio.gather(
@@ -115,18 +121,19 @@ class ProductHandler:
         )
 
         slogan, music_text, hashtags, sections, (region, price_message, images) = content_tasks
-        await self._send_all_blocks(update, context, title, colors_text, slogan, hashtags, sections, price_message, music_text, images, url, parser.page_source)
+        await self._send_all_blocks(update, context, title, colors_text, slogan, hashtags, sections, price_message, music_text, images, url, parser.page_source, availability_text)
 
     # --- 📤 Відправка всіх блоків повідомлень ---
 
     async def _send_all_blocks(
         self, update, context, title, colors_text, slogan, hashtags,
-        sections, price_message, music_text, images, url, page_source
+        sections, price_message, music_text, images, url, page_source, availability_text
     ):
+
         title_upper = title.upper()
 
         await update.message.reply_text(
-            self._build_description(title_upper, colors_text, slogan, hashtags, sections),
+            self._build_description(title_upper, colors_text, slogan, hashtags, sections, availability_text),
             parse_mode="HTML"
         )
         await update.message.reply_text(title_upper, parse_mode="HTML")
@@ -150,16 +157,16 @@ class ProductHandler:
         }.get(region, region)
 
     @staticmethod
-    def _build_description(title: str, colors_text: str, slogan: str, hashtags: str, sections: dict) -> str:
+    def _build_description(title: str, colors_text: str, slogan: str, hashtags: str, sections: dict, availability_text: str) -> str:
         """
         📝 Побудова опису товару (характеристики + доступні регіони + кольори і розміри + хештеги).
 
         :param title: Назва товару
-        :param description: Оригінальний опис
         :param colors_text: Кольори/розміри у вигляді тексту
         :param slogan: Слоган, згенерований AI
         :param hashtags: Хештеги
         :param sections: Перекладені блоки
+        :param availability_text: Текст доступності по регіонах
         :return: HTML-текст повідомлення
         """
         
@@ -168,22 +175,20 @@ class ProductHandler:
         desc_text = sections.get("ОПИС", "Немає даних")     # 📜 Опис
         model = sections.get("МОДЕЛЬ", "Немає даних")       # 🧍 Модель
         
-        # Если товар распродан, дописываем ❌ в title
-        sold_out = True
+        # 🛒 Реальна перевірка на розпродаж
+        sold_out = all("❌" in line for line in availability_text.splitlines())
+    
         if sold_out:
             title = f"❌ РОЗПРОДАНО ❌\n\n{title.upper()}"
         else:
             title = title.upper()
-        
+    
         return (
             f"<b>{title}:</b>\n\n"
             f"<b>МАТЕРІАЛ:</b> {material}\n"
             f"<b>ПОСАДКА:</b> {fit}\n"
             f"<b>ОПИС:</b> {desc_text}\n\n"
-            f"🇺🇸 - ✅\n"
-            f"🇪🇺 - ✅\n"
-            f"🇬🇧 - ✅\n"
-            f"🇺🇦 - ❌\n\n"
+            f"{availability_text}\n"
             f"<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n"
             f"{colors_text}\n\n"
             f"<b>МОДЕЛЬ:</b> {model}\n\n"
@@ -200,6 +205,15 @@ class ProductHandler:
         for i in range(0, len(images), 10):
             group = [InputMediaPhoto(img) for img in images[i:i + 10]]
             await update.message.reply_media_group(group)
+
+    @staticmethod
+    def _extract_product_path(url: str) -> str:
+        """ 🔗 Вирізає шлях продукту з повного URL """
+        if "youngla.com" in url:
+            parts = url.split("youngla.com")
+            if len(parts) > 1:
+                return parts[1].split("?")[0]
+        return url
 
 
 class CollectionHandler:

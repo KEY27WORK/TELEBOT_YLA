@@ -1,43 +1,45 @@
-""" 🧾 universal_collection_parser.py — Універсальний парсер колекцій YoungLA (US, EU, UK).
+""" 🧾 universal_collection_parser.py — Універсальний парсер колекцій YoungLA (US, EU, UK)
 
-🔹 Функціонал:
-- Визначає регіон сайту за URL
-- Завантажує HTML-сторінку з WebDriverService
-- Першочергово парсить JSON-LD
-- Має fallback на DOM-парсинг
-- Видає список товарів (href)
+🔹 Клас `UniversalCollectionParser`:
+- Визначає регіон сайту (валюту) за URL
+- Завантажує HTML-сторінку через WebDriverService
+- Парсить JSON-LD (пріоритетно) або DOM (fallback)
+- Видає список посилань на товари
 
 ✅ SOLID:
-- SRP: відповідає тільки за парсинг колекцій
-- OCP: розширюється без змін структури (можна додати інші формати)
+- SRP: відповідає лише за парсинг колекцій
+- OCP: легко розширюється (наприклад, для нових форматів)
 """
 
+# 📦 Стандартні
 import json
 import logging
 import asyncio
+
+# 🌐 Парсинг HTML
 from bs4 import BeautifulSoup
+
+# 🧱 Сервіси
 from core.webdriver.webdriver_service import WebDriverService
 
 
 class UniversalCollectionParser:
-    """ 🧾 Парсер сторінок колекцій YoungLA з підтримкою регіонів US 🇺🇸, EU 🇪🇺, UK 🇬🇧.
+    """🧾 Парсер колекцій товарів з сайтів YoungLA (US 🇺🇸, EU 🇪🇺, UK 🇬🇧).
 
-    Основні функції:
-    - Визначає валюту
-    - Завантажує HTML-сторінку
-    - Першочергово пробує парсити JSON-LD
-    - Має fallback на DOM
+    Використовується для витягування усіх посилань на товари в колекції.
     """
 
     def __init__(self, url: str):
+        """
+        :param url: Посилання на сторінку колекції
+        """
         self.url = url
         self.soup = None
         self.page_source = None
         self.currency = self._detect_currency()
 
     def _detect_currency(self) -> str:
-        """ 🌍 Визначає валюту/регіон за URL.
-        """
+        """🌍 Визначає валюту (регіон) за URL."""
         if "eu." in self.url:
             return "EUR"
         elif "uk." in self.url:
@@ -45,10 +47,10 @@ class UniversalCollectionParser:
         return "USD"
 
     async def fetch_page(self) -> bool:
-        """
-        🌐 Завантажує HTML сторінку колекції через WebDriver.
-        """
-        self.page_source = await asyncio.to_thread(WebDriverService().fetch_page_source, self.url)
+        """🌐 Завантажує HTML-сторінку колекції через WebDriver."""
+        self.page_source = await asyncio.to_thread(
+            WebDriverService().fetch_page_source, self.url
+        )
 
         if self.page_source and len(self.page_source) > 1000:
             self.soup = BeautifulSoup(self.page_source, "html.parser")
@@ -59,11 +61,13 @@ class UniversalCollectionParser:
         return False
 
     async def extract_product_links(self) -> list[str]:
-        """ 🔗 Витягує всі посилання на товари:
-        - Через JSON-LD
-        - Через DOM (fallback)
+        """🔗 Витягує всі посилання на товари з колекції.
 
-        :return: Список URL-адрес
+        Пробує:
+        - 📄 JSON-LD (основне джерело)
+        - 🌐 DOM-парсинг (резервне джерело)
+
+        :return: Список повних URL-адрес товарів
         """
         if not await self.fetch_page():
             logging.warning("❌ Сторінка не завантажена — повертаємо порожній список.")
@@ -71,7 +75,7 @@ class UniversalCollectionParser:
 
         product_links = []
 
-        # 🔍 Парсимо JSON-LD
+        # --- 📄 JSON-LD парсинг ---
         for script in self.soup.find_all("script", type="application/ld+json"):
             try:
                 data = json.loads(script.string.strip())
@@ -86,10 +90,10 @@ class UniversalCollectionParser:
                     return product_links
 
             except Exception as e:
-                logging.warning(f"⚠️ JSON-LD парсинг: {e}")
+                logging.warning(f"⚠️ Помилка парсингу JSON-LD: {e}")
 
-        # 🔁 Якщо не знайдено — парсимо DOM
-        logging.info("🔁 JSON-LD порожній, пробуємо парсити DOM...")
+        # --- 🌐 DOM fallback ---
+        logging.info("🔁 JSON-LD не спрацював. Пробуємо парсити DOM...")
 
         try:
             product_elements = self.soup.select("a[href*='/products/']")
@@ -103,7 +107,7 @@ class UniversalCollectionParser:
             if product_links:
                 logging.info(f"📦 Знайдено {len(product_links)} товарів через DOM.")
             else:
-                logging.warning("⚠️ DOM-парсинг не дав жодного результату. Можливо, змінилась структура сайту?")
+                logging.warning("⚠️ DOM-парсинг не дав жодного результату.")
 
         except Exception as e:
             logging.error(f"❌ Помилка парсингу DOM: {e}")
@@ -111,16 +115,16 @@ class UniversalCollectionParser:
         return product_links
 
     def _build_full_url(self, href: str) -> str:
-        """ 🏗️ Формує повний URL товару на основі відносного посилання.
-        """
-        base = "https://eu.youngla.com" if "eu." in self.url else \
-               "https://uk.youngla.com" if "uk." in self.url else \
-               "https://www.youngla.com"
+        """🏗️ Формує повний URL товару на основі відносного посилання."""
+        base = (
+            "https://eu.youngla.com" if "eu." in self.url else
+            "https://uk.youngla.com" if "uk." in self.url else
+            "https://www.youngla.com"
+        )
         return href if href.startswith("http") else f"{base}{href}"
 
     def _get_domain(self) -> str:
-        """ 🌐 Повертає домен сайту (без https://).
-        """
+        """🌐 Повертає домен поточного сайту."""
         if "eu." in self.url:
             return "eu.youngla.com"
         elif "uk." in self.url:
@@ -128,6 +132,5 @@ class UniversalCollectionParser:
         return "www.youngla.com"
 
     def get_currency(self) -> str:
-        """ 💱 Повертає валюту сайту.
-        """
+        """💱 Повертає валюту сайту."""
         return self.currency

@@ -1,17 +1,20 @@
-"""
-🧪 test_size_chart_handler_bot.py — unit-тести для SizeChartHandlerBot
+"""🧪 test_size_chart_handler_bot.py — unit-тести для SizeChartHandlerBot
 
-Перевіряє:
-- Обробку команди /size_chart
-- Завантаження або використання HTML
-- Генерацію таблиці розмірів
-- Відправку зображення
+✅ Перевіряє:
+- 📥 Обробку команди /size_chart
+- 🌐 Завантаження або використання HTML-контенту
+- 📐 Генерацію таблиці розмірів через генератори
+- 📤 Відправку зображення користувачу
 """
 
-import pytest
+# 📦 Стандартні бібліотеки
 from unittest.mock import AsyncMock, MagicMock, patch, mock_open
-from bot.handlers.size_chart_handler_bot import SizeChartHandlerBot
 
+# 🧪 Pytest
+import pytest
+
+# 🧠 Тестований клас
+from bot.handlers.size_chart_handler_bot import SizeChartHandlerBot
 
 @pytest.mark.asyncio
 async def test_resolve_url_from_args():
