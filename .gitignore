@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+
+# Logs
+*.log
+
+# Secret environment variables
+.env
+
+# OS junk files
+.DS_Store
+
+# Caches
+current_rate.txt
+
+# IDE files
+.idea/
+*.iml
+
