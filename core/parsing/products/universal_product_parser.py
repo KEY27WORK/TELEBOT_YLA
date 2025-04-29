@@ -59,11 +59,19 @@ class UniversalProductParser(BaseParser):
     async def format_colors_with_stock(self) -> str:
         """
         🎨 Формує текст із кольорами та доступністю розмірів.
-
-        :return: Рядок для Telegram з форматованими даними
         """
-        raw = await self.extract_colors_sizes()
-        return ColorSizeFormatter.format_color_size_availability(raw)
+        color_size_map = await self.extract_colors_sizes()
+        stock_data = await self.extract_color_size_availability()
+
+        # 🛠 Якщо stock_data порожній (немає JSON-LD) — формуємо словарь вручну
+        if not stock_data:
+            stock_data = {
+                color: {size: True for size in sizes}
+                for color, sizes in color_size_map.items()
+            }
+
+        return ColorSizeFormatter.format_color_size_availability(stock_data)
+
     
     # --- 🛒 Перевірка наявності товару ---
 
@@ -107,7 +115,7 @@ class UniversalProductParser(BaseParser):
         description = await self.extract_description()
         image_url = await self.extract_image()
         raw = await self.extract_colors_sizes()
-        colors_sizes = await self.format_colors_sizes(raw)
+        colors_sizes = await self.format_colors_with_stock()
         weight = await self.determine_weight(title, description, image_url)
         images = await self.extract_all_images()
         price = await self.extract_price()
