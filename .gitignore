@@ -1,23 +1,37 @@
-# Python cache
+# __pycache__ та .pyc
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 
-# Virtual environments
-venv/
+# VSCode
+.vscode/
 
-# Logs
+# Playwright
+playwright-report/
+playwright/.cache/
+
+# Кеш Telegram-бота
+music_cache/
+*.mp3
+
+# Тестові файли
+*.png
+*.jpg
+*.jpeg
+generated_size_chart.png
+size_chart.png
+
+# Лог-файли
 *.log
 
-# Secret environment variables
+# Віртуальне середовище
+venv/
 .env
+.env.*
 
-# OS junk files
+# MacOS системне
 .DS_Store
 
-# Caches
-current_rate.txt
-
-# IDE files
-.idea/
-*.iml
-
+# Pytest runtime
+.pytest_cache/
+.cache/
