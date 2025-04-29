@@ -48,24 +48,29 @@ class BaseParser(ABC):
         self.translator = TranslatorService()
 
     async def fetch_page(self, retries: int = 5) -> bool:
-        """🌐 Завантажує HTML-код сторінки через Selenium WebDriver."""
+        """🌐 Завантажує HTML-код сторінки через WebDriverService."""
         self.page_source = None
         start_time = time.time()
 
         for attempt in range(1, retries + 1):
-            self.page_source = await asyncio.to_thread(
-                WebDriverService().fetch_page_source, self.url
-            )
+            self.page_source = await WebDriverService().fetch_page_source(self.url)
 
             if self.page_source:
                 self.soup = BeautifulSoup(self.page_source, "html.parser")
                 logging.info(f"✅ Сторінку завантажено: {self.url}")
                 logging.info(f"⏳ Час завантаження: {time.time() - start_time:.2f} сек.")
                 return True
+            
+            title_tag = self.soup.find("h1")
+            page_not_found = "Page Not Found" in self.page_source or "Your connection needs to be verified" in self.page_source
+            
+            if not title_tag or page_not_found:
+                logging.warning(f"⚠️ Підозріла сторінка (немає h1 або Cloudflare-заглушка): спроба {attempt}")
+                await asyncio.sleep(2)
+                continue
 
-            logging.warning(f"🔄 Спроба {attempt}: не вдалося...")
-
-            time.sleep(3)
+            logging.warning(f"🔄 Спроба {attempt}: не вдалося завантажити сторінку...")
+            await asyncio.sleep(2)
 
         logging.error(f"❌ Не вдалося завантажити сторінку: {self.url}")
         return False
@@ -121,7 +126,7 @@ class BaseParser(ABC):
         """🎨 Форматує словник {колір: [розміри]} у список для Telegram."""
         if not colors_sizes:
             return "❌ Дані про кольори та розміри відсутні."
-    
+
         lines = []
         for color, sizes in colors_sizes.items():
             if sizes:
@@ -129,9 +134,9 @@ class BaseParser(ABC):
             else:
                 line = f"• {color}"
             lines.append(line)
-    
+
         return "\n".join(lines)
-    
+
 
     async def extract_colors_from_html(self) -> list[str]:
         """
