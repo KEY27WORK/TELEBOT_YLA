@@ -1,155 +1,64 @@
-""" 🧭 webdriver_service.py — керування Selenium WebDriver для парсингу YoungLA.
+""" 🧭 webdriver_service.py — керування браузером через Playwright для парсингу YoungLA.
 
 🔹 Клас `WebDriverService`:
-- Налаштовує Chrome WebDriver
-- Завантажує HTML-сторінки з обробкою помилок
-- Підтримує автоматичний перезапуск WebDriver при збої
-- Реалізує Singleton (єдиний екземпляр на процес)
-- Працює з контекстним менеджером (with WebDriverService() as driver)
+- Завантажує HTML-сторінки через асинхронний браузер Playwright
+- Працює без блокувань і зависань
+- Автоматично закриває браузер після кожного запиту
+- Вміє обходити Cloudflare (stealth)
+- Не потребує перезапусків драйвера
 
 Використовує:
-- selenium для автоматизації браузера
+- playwright.async_api для роботи з браузером
+- playwright_stealth для емуляції поведінки користувача
 - logging для логування подій
+- asyncio для затримок між спробами
 """
 
-# 🧱 Системні імпорти
+# 📦 Стандартні
 import logging
-import time
+import asyncio
 
-# 🌐 Selenium API
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-
+# 🌐 Playwright + Stealth
+from playwright.async_api import async_playwright, Error as PlaywrightError
+from playwright_stealth import stealth_async
 
 class WebDriverService:
-    """ 🧭 Клас-обгортка для Chrome WebDriver (Singleton).
+    """ 🧭 Сервіс завантаження сторінок через Playwright."""
 
-    - Автоматично запускає драйвер
-    - Підтримує restart та перевірку стану
-    - Забезпечує стабільну роботу парсера при збої сторінки
-    """
+    @staticmethod
+    async def fetch_page_source(url: str) -> str | None:
+        """ 🌐 Асинхронно завантажує HTML-код сторінки з обхідною обробкою захисту."""
 
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.driver = None
-        return cls._instance
-
-    def setup_driver(self) -> None:
-        """ 🔧 Ініціалізує Chrome WebDriver з потрібними параметрами.
-        """
-        if self.driver:
-            logging.info("⚙️ WebDriver вже активний.")
-            return
-
-        logging.info("🚀 Запускаємо WebDriver...")
-        options = Options()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--disable-dev-shm-usage")
-
-        try:
-            self.driver = webdriver.Chrome(service=Service(), options=options)
-            logging.info("✅ WebDriver успішно запущено.")
-        except Exception as e:
-            logging.error(f"❌ Помилка запуску WebDriver: {e}")
-            self.driver = None
-
-    def get_driver(self):
-        """ 🔁 Повертає активний WebDriver, перезапускаючи його при необхідності.
-        """
-        if self.driver is None or not self.is_driver_alive():
-            logging.warning("⚠️ WebDriver неактивний. Перезапускаємо...")
-            self.setup_driver()
-        return self.driver
-
-    def quit_driver(self):
-        """ 🛑 Завершує роботу драйвера."""
-        if self.driver:
-            logging.info("🧨 Закриваємо WebDriver...")
-            self.driver.quit()
-            self.driver = None
-            logging.info("✅ WebDriver успішно завершено.")
-
-    def restart_driver(self):
-        """ 🔄 Перезапуск WebDriver."""
-        logging.warning("🔄 Перезапуск WebDriver...")
-        self.quit_driver()
-        self.setup_driver()
-
-    def is_driver_alive(self) -> bool:
-        """ 🩺 Перевіряє, чи активний WebDriver (чи є відкриті вікна).
-        """
-        try:
-            return self.driver and self.driver.window_handles
-        except Exception:
-            return False
-
-    def fetch_page_source(self, url: str, max_retries: int = 5, retry_delay: int = 3) -> str | None:
-        """ 🌐 Завантажує HTML-код сторінки.
-
-        :param url: URL сторінки
-        :param max_retries: Кількість спроб при невдачі
-        :param retry_delay: Затримка між спробами (сек)
-        :return: HTML або None
-        """
-        if not self.driver or not self.is_driver_alive():
-            self.setup_driver()
+        max_retries = 5
 
         for attempt in range(1, max_retries + 1):
             try:
-                logging.info(f"🌍 Спроба {attempt}/{max_retries}: завантаження {url}")
-                self.driver.get(url)
+                logging.info(f"🌍 Завантаження через Playwright (спроба {attempt}): {url}")
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch(headless=True)
+                    context = await browser.new_context(
+                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                    )
+                    page = await context.new_page()
+                    await stealth_async(page)
 
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
+                    await page.goto(url, timeout=30000)
+                    await asyncio.sleep(1.5)  # Безпечна пауза
 
-                page_source = self.driver.page_source
+                    # Перевірка на Cloudflare або закриту сторінку
+                    content = await page.content()
+                    if "Your connection needs to be verified" in content or "Please complete the security check" in content:
+                        logging.warning("⚠️ Виявлено захист Cloudflare! Повторна спроба...")
+                        await browser.close()
+                        continue
 
-                # Перевірка на капчу
-                if "Your connection needs to be verified" in page_source or \
-                   "Please complete the security check" in page_source:
-                    logging.warning("⚠️ Виявлено захист Cloudflare! Повторна спроба...")
-                    continue
+                    await browser.close()
+                    logging.info("✅ Сторінка успішно завантажена через Playwright.")
+                    return content
 
-                logging.info("✅ Сторінка успішно завантажена.")
-                return page_source
+            except PlaywrightError as e:
+                logging.error(f"❌ Помилка Playwright при завантаженні: {e}")
+                await asyncio.sleep(1.5)  # Безпечна пауза
 
-            except Exception as e:
-                logging.error(f"❌ Помилка завантаження сторінки: {e}")
-
-                # Якщо драйвер "вмер" — перезапустимо
-                if "no such window" in str(e) or "target window already closed" in str(e):
-                    logging.warning("⚠️ Вікно WebDriver закрилось! Перезапуск...")
-                    self.restart_driver()
-                    continue
-
-                if attempt < max_retries:
-                    logging.info(f"🔄 Повтор через {retry_delay} сек...")
-                    time.sleep(retry_delay)
-
-        logging.error("❌ Спроби завантажити сторінку вичерпано.")
+        logging.error("❌ Не вдалося обійти захист Cloudflare після 5 спроб.")
         return None
-
-    def refresh_page(self):
-        """ 🔄 Оновлює поточну сторінку."""
-        if self.driver:
-            logging.info("🔃 Оновлення сторінки...")
-            self.driver.refresh()
-
-    def __enter__(self):
-        """ ▶️ Автоматичний запуск WebDriver у with-контексті."""
-        self.setup_driver()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """ ⏹️ Завершення WebDriver при виході з контексту."""
-        self.quit_driver()
