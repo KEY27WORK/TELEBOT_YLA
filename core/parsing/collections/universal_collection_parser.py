@@ -48,9 +48,8 @@ class UniversalCollectionParser:
 
     async def fetch_page(self) -> bool:
         """🌐 Завантажує HTML-сторінку колекції через WebDriver."""
-        self.page_source = await asyncio.to_thread(
-            WebDriverService().fetch_page_source, self.url
-        )
+        self.page_source = await WebDriverService().fetch_page_source(self.url)
+
 
         if self.page_source and len(self.page_source) > 1000:
             self.soup = BeautifulSoup(self.page_source, "html.parser")

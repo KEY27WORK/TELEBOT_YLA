@@ -44,27 +44,31 @@ class WebDriverService:
         Повторює до 5 разів при Cloudflare.
         """
         await cls._init_browser()
-
+    
         for attempt in range(1, 6):
             try:
                 logging.info(f"🌍 Завантаження через Playwright (спроба {attempt}): {url}")
-                await cls._page.goto(url, timeout=30000)
+                page = await cls._context.new_page()
+                await stealth_async(page)
+                await page.goto(url, wait_until="networkidle", timeout=30000)
                 await asyncio.sleep(1.5)
-                content = await cls._page.content()
+                content = await page.content()
+                await page.close()
 
                 if "Your connection needs to be verified" in content or "Please complete the security check" in content:
                     logging.warning("⚠️ Виявлено захист Cloudflare! Повторна спроба...")
                     continue
-
+                
                 logging.info("✅ Сторінка успішно завантажена через Playwright.")
                 return content
-
+    
             except PlaywrightError as e:
                 logging.error(f"❌ Помилка Playwright при завантаженні: {e}")
                 await asyncio.sleep(2)
-
+    
         logging.error("❌ Не вдалося обійти захист Cloudflare після 5 спроб.")
         return None
+    
 
     @classmethod
     async def close_browser(cls):

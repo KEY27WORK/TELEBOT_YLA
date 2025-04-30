@@ -41,7 +41,11 @@ async def check_availability_across_regions(product_path: str) -> str:
     ]
     results = await asyncio.gather(*tasks)
 
-    return "\n".join(results)
+    summary = "\n".join(results)
+    summary += "\n🇺🇦 - ❌"
+    
+    return summary
+
 
 # --- 🧪 Допоміжна функція для окремого регіону ---
 

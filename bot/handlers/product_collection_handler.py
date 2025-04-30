@@ -29,7 +29,8 @@ from bot.content.translator import TranslatorService
 from bot.content.hashtag_generator import HashtagGenerator
 
 # 🛍️ Парсинг товарів і колекцій
-from core.parsing.parser import ProductParser, CollectionParser
+from core.parsing.parser import CollectionParser
+from core.parsing.base_parser import BaseParser
 
 # 💰 Валюти та розрахунки
 from core.currency.currency_manager import CurrencyManager
@@ -85,10 +86,10 @@ class ProductHandler:
             self.currency_manager.update_rate()
 
         logging.info(f"📩 Отримано посилання: {url}")
-        parser = ProductParser(url)
+        parser = BaseParser(url)
 
         # 🌍 Логування регіону
-        region_display = self._get_region_display(parser.region)
+        region_display = self._get_region_display(parser.currency)
         await update.message.reply_text(f"🌍 Регіон сайту: <b>{region_display}</b>", parse_mode="HTML")
         logging.info(f"🌍 Регіон сайту: {region_display}")
 

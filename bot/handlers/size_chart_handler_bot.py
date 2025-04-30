@@ -15,7 +15,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 # 🛒 Парсинг товару
-from core.parsing.parser import ProductParser
+from core.parsing.base_parser import BaseParser
 
 # 📏 Таблиця розмірів
 from size_chart.size_chart_handler import SizeChartHandler
@@ -88,7 +88,7 @@ class SizeChartHandlerBot:
         if page_source:
             return page_source
         logging.warning("⚠️ Відсутній page_source, виконується завантаження...")
-        parser = ProductParser(url)
+        parser = BaseParser(url)
         await parser.parser.fetch_page()
         return parser.page_source
 

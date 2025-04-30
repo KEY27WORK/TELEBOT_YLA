@@ -16,7 +16,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 # 🔧 Бізнес-логіка
-from core.parsing.parser import ProductParser
+from core.parsing.base_parser import BaseParser
 from core.calculator.calculator import PriceCalculatorFactory
 from core.currency.currency_manager import CurrencyManager
 
@@ -43,7 +43,7 @@ class PriceCalculationHandler:
         📬 Основной метод — принимает ссылку, парсит товар, считает цену, отправляет сообщение.
         """
         self.currency_manager.update_rate()  # 🔄 Оновлюємо актуальні курси валют
-        parser = ProductParser(url)  # 🌐 Получаем парсер по ссылке
+        parser = BaseParser(url)  # 🌐 Получаем парсер по ссылке
         product_info = await parser.get_product_info()  # 🛍️ Парсимо інформацію про товар
 
         if not product_info:
@@ -65,7 +65,7 @@ class PriceCalculationHandler:
             - Список изображений товара
             """
             self.currency_manager.update_rate()  # 🔄 Обновляем курс валют
-            parser = ProductParser(url)  # 🌐 Создаем парсер
+            parser = BaseParser(url)  # 🌐 Создаем парсер
             product_info = await parser.get_product_info()  # 📦 Получаем данные о товаре
 
             if not product_info or len(product_info) != 8:
