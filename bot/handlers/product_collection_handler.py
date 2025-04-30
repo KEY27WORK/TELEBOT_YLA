@@ -55,6 +55,8 @@ import os
 
 # 🧰 Утиліти
 from utils.region_utils import get_region_from_url
+from utils.url_utils import extract_product_path
+
 
 class ProductHandler:
     """
@@ -128,7 +130,7 @@ class ProductHandler:
         title, price, description, image_url, weight, colors_text, images, currency = product_info
 
         # 🛒 НОВОЕ: Витягуємо доступність по регіонах
-        product_path = self._extract_product_path(url)
+        product_path = extract_product_path(url)
         availability_text = await check_availability_across_regions(product_path)
 
         # ⚙️ Запускаємо обчислення і генерацію паралельно
@@ -226,15 +228,6 @@ class ProductHandler:
         for i in range(0, len(images), 10):
             group = [InputMediaPhoto(img) for img in images[i:i + 10]]
             await update.message.reply_media_group(group)
-
-    @staticmethod
-    def _extract_product_path(url: str) -> str:
-        """ 🔗 Вирізає шлях продукту з повного URL """
-        if "youngla.com" in url:
-            parts = url.split("youngla.com")
-            if len(parts) > 1:
-                return parts[1].split("?")[0]
-        return url
 
 
 class CollectionHandler:
