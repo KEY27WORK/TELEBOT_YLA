@@ -88,6 +88,18 @@ class ProductHandler:
             self.currency_manager.update_rate()
 
         logging.info(f"📩 Отримано посилання: {url}")
+            # 👇 ВСТАВИТЬ ЗДЕСЬ
+        loading_msg = await update.message.reply_text("⏳ Завантаження товару...")
+        for dots in ["⏳.", "⏳..", "⏳..."]:
+            await asyncio.sleep(1.1)
+            try:
+                await loading_msg.edit_text(
+                    f"{dots} Завантаження товару...\nЦе може зайняти до <b>30 секунд</b> через захист сайту 🛡️",
+                    parse_mode="HTML"
+                )
+            except Exception:
+                break
+
         parser = BaseParser(url)
 
         # 🌍 Логування регіону
@@ -97,6 +109,12 @@ class ProductHandler:
 
         # 📦 Парсимо товар
         product_info = await parser.get_product_info()
+
+        try:
+            await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=loading_msg.message_id)
+        except Exception:
+            pass
+        
         if not product_info or len(product_info) != 8:
             logging.error("❌ Не вдалося отримати повні дані про товар")
             await update.message.reply_text("⚠️ Помилка при отриманні інформації!")
@@ -245,7 +263,7 @@ class CollectionHandler:
         logging.info(f"📩 Отримано посилання на колекцію: {url}")
 
         self.currency_manager.update_rate()  # 💱 Оновлюємо курси
-        collection_parser = CollectionParser(url)  # 🧰 Парсер колекції
+        collection_parser = ParserFactory.get_collection_parser(url)  # 🧰 Парсер колекції
         region_display = get_region_from_url(url)  # 🌍 Визначаємо регіон
 
         await self.send_region_info(update, region_display)
