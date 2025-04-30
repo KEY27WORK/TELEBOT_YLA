@@ -29,7 +29,7 @@ from bot.content.translator import TranslatorService
 from bot.content.hashtag_generator import HashtagGenerator
 
 # 🛍️ Парсинг товарів і колекцій
-from core.parsing.parser import CollectionParser
+from core.parsing.parser_factory import ParserFactory
 from core.parsing.base_parser import BaseParser
 
 # 💰 Валюти та розрахунки
