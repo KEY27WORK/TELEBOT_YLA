@@ -24,6 +24,9 @@ from core.config.config_service import ConfigService
 from bot.content.translator import TranslatorService
 from core.parsing.color_size_formatter import ColorSizeFormatter
 
+# 🧰 Утиліти
+from utils.region_utils import get_currency_from_url
+
 
 class BaseParser:
     def __init__(self, url: str):
@@ -32,17 +35,7 @@ class BaseParser:
         self.soup: Optional[BeautifulSoup] = None
         self.config = ConfigService()
         self.translator = TranslatorService()
-        self._currency = self._detect_currency(url)
-
-    def _detect_currency(self, url: str) -> str:
-        if ".com" in url and "eu." not in url and "uk." not in url:
-            return "USD"
-        elif "eu." in url:
-            return "EUR"
-        elif "uk." in url:
-            return "GBP"
-        else:
-            raise ValueError(f"❌ Невідомий регіон: {url}")
+        self._currency = get_currency_from_url(url)
 
     async def fetch_page(self, retries: int = 5) -> bool:
         self.page_source = None

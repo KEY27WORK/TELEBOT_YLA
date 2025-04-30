@@ -22,6 +22,9 @@ from bs4 import BeautifulSoup
 # 🧱 Сервіси
 from core.webdriver.webdriver_service import WebDriverService
 
+# 🧰 Утиліти
+from utils.region_utils import get_currency_from_url
+
 
 class UniversalCollectionParser:
     """🧾 Парсер колекцій товарів з сайтів YoungLA (US 🇺🇸, EU 🇪🇺, UK 🇬🇧).
@@ -36,15 +39,7 @@ class UniversalCollectionParser:
         self.url = url
         self.soup = None
         self.page_source = None
-        self.currency = self._detect_currency()
-
-    def _detect_currency(self) -> str:
-        """🌍 Визначає валюту (регіон) за URL."""
-        if "eu." in self.url:
-            return "EUR"
-        elif "uk." in self.url:
-            return "GBP"
-        return "USD"
+        self.currency = get_currency_from_url(self.url)
 
     async def fetch_page(self) -> bool:
         """🌐 Завантажує HTML-сторінку колекції через WebDriver."""
@@ -116,20 +111,21 @@ class UniversalCollectionParser:
     def _build_full_url(self, href: str) -> str:
         """🏗️ Формує повний URL товару на основі відносного посилання."""
         base = (
-            "https://eu.youngla.com" if "eu." in self.url else
-            "https://uk.youngla.com" if "uk." in self.url else
+            "https://eu.youngla.com" if self.currency == "EUR" else
+            "https://uk.youngla.com" if self.currency == "GBP" else
             "https://www.youngla.com"
         )
+
         return href if href.startswith("http") else f"{base}{href}"
 
     def _get_domain(self) -> str:
         """🌐 Повертає домен поточного сайту."""
-        if "eu." in self.url:
-            return "eu.youngla.com"
-        elif "uk." in self.url:
-            return "uk.youngla.com"
-        return "www.youngla.com"
-
+        return (
+            "eu.youngla.com" if self.currency == "EUR" else
+            "uk.youngla.com" if self.currency == "GBP" else
+            "www.youngla.com"
+        )
+        
     def get_currency(self) -> str:
         """💱 Повертає валюту сайту."""
         return self.currency

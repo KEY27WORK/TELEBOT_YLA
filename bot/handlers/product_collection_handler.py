@@ -53,6 +53,8 @@ import asyncio
 import logging
 import os
 
+# 🧰 Утиліти
+from utils.region_utils import get_region_from_url
 
 class ProductHandler:
     """
@@ -244,9 +246,9 @@ class CollectionHandler:
 
         self.currency_manager.update_rate()  # 💱 Оновлюємо курси
         collection_parser = CollectionParser(url)  # 🧰 Парсер колекції
-        region = collection_parser.parser.get_currency()  # 🌍 Визначаємо регіон
+        region_display = get_region_from_url(url)  # 🌍 Визначаємо регіон
 
-        await self.send_region_info(update, region)
+        await self.send_region_info(update, region_display)
         product_links = await collection_parser.extract_product_links()
 
         if not product_links:
