@@ -27,33 +27,63 @@ from core.parsing.color_size_formatter import ColorSizeFormatter
 # 🧰 Утиліти
 from utils.region_utils import get_currency_from_url
 
+# 🖥 Вивід у консоль
+from rich.progress import Progress, SpinnerColumn, BarColumn, TimeElapsedColumn, TextColumn
+from tqdm import tqdm
+
 
 class BaseParser:
-    def __init__(self, url: str):
+    def __init__(self, url: str, enable_progress: bool = True):
         self.url = url
+        self._currency = get_currency_from_url(url)
+        self.enable_progress = enable_progress
         self.page_source: Optional[str] = None
         self.soup: Optional[BeautifulSoup] = None
         self.config = ConfigService()
         self.translator = TranslatorService()
-        self._currency = get_currency_from_url(url)
 
     async def fetch_page(self, retries: int = 5) -> bool:
         self.page_source = None
         start_time = time.time()
-
+    
         for attempt in range(1, retries + 1):
-            self.page_source = await WebDriverService().fetch_page_source(self.url)
-            if self.page_source:
-                self.soup = BeautifulSoup(self.page_source, "html.parser")
-                logging.info(f"✅ Сторінку завантажено: {self.url}")
-                logging.info(f"⏳ Час завантаження: {time.time() - start_time:.2f} сек.")
-                return True
-
+            if self.enable_progress:
+                from rich.progress import Progress, SpinnerColumn, BarColumn, TimeElapsedColumn, TextColumn
+    
+                with Progress(
+                    SpinnerColumn(),
+                    BarColumn(bar_width=24),
+                    TextColumn("[progress.description]{task.description}"),
+                    TimeElapsedColumn(),
+                    transient=True,
+                ) as progress:
+                    task = progress.add_task(f"🌍 Завантаження (спроба {attempt})...", total=100)
+    
+                    for step in range(100):
+                        if step % 5 == 0:
+                            self.page_source = await WebDriverService().fetch_page_source(self.url)
+                            if self.page_source:
+                                self.soup = BeautifulSoup(self.page_source, "html.parser")
+                                logging.info(f"✅ Сторінку завантажено: {self.url}")
+                                logging.info(f"⏳ Час завантаження: {time.time() - start_time:.2f} сек.")
+                                return True
+                        await asyncio.sleep(0.05)
+                        progress.update(task, advance=1)
+            else:
+                # 🔇 Тихий режим без прогресу
+                self.page_source = await WebDriverService().fetch_page_source(self.url)
+                if self.page_source:
+                    self.soup = BeautifulSoup(self.page_source, "html.parser")
+                    return True
+                await asyncio.sleep(2)
+    
             logging.warning(f"🔄 Спроба {attempt}: не вдалося завантажити сторінку...")
-            await asyncio.sleep(2)
-
+    
         logging.error(f"❌ Не вдалося завантажити сторінку: {self.url}")
         return False
+    
+
+
 
     # --- Витягування даних ---
 

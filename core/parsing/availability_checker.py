@@ -58,7 +58,7 @@ async def _check_region_availability(region_flag: str, url: str) -> str:
     :return: Статус в форматі «🇺🇸 - ✅ / ❌»
     """
     try:
-        parser = BaseParser(url)
+        parser = BaseParser(url, enable_progress=False)
         await parser.fetch_page()
         available = await parser.is_product_available()
         return f"{region_flag} - {'✅' if available else '❌'}"
