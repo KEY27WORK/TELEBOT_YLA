@@ -27,10 +27,11 @@ from core.parsing.color_size_formatter import ColorSizeFormatter
 # 🧰 Утиліти
 from utils.region_utils import get_currency_from_url
 
+# 📦 Моделі даних
+from models.product_info import ProductInfo
+
 # 🖥 Вивід у консоль
 from rich.progress import Progress, SpinnerColumn, BarColumn, TimeElapsedColumn, TextColumn
-from tqdm import tqdm
-
 
 class BaseParser:
     def __init__(self, url: str, enable_progress: bool = True):
@@ -81,9 +82,6 @@ class BaseParser:
     
         logging.error(f"❌ Не вдалося завантажити сторінку: {self.url}")
         return False
-    
-
-
 
     # --- Витягування даних ---
 
@@ -242,30 +240,34 @@ class BaseParser:
             "weight": weight
         }
 
-    async def get_product_info(self) -> tuple:
+    async def get_product_info(self) -> ProductInfo:
         try:
             data = await self.parse()
             self.page_source = getattr(self, "page_source", None)
 
-            title = str(data.get("title", "Нет названия"))
-            description = str(data.get("description", "Нет описания"))
-            image_url = str(data.get("main_image", ""))
-            colors_sizes = str(data.get("colors_sizes", ""))
-            currency = str(data.get("currency", "USD"))
-            images = data.get("images", [])
-
-            price = float(data.get("price", 0.0))
-            weight = float(data.get("weight", 0.5))
-
-            logging.info(
-                f"📦 Отримано товар: {title}, ціна: {price}, вага: {weight}, валюта: {currency}"
+            return ProductInfo(
+                title=str(data.get("title", "Нет названия")),
+                price=float(data.get("price", 0.0)),
+                description=str(data.get("description", "Нет описания")),
+                image_url=str(data.get("main_image", "")),
+                weight=float(data.get("weight", 0.5)),
+                colors_text=str(data.get("colors_sizes", "")),
+                images=data.get("images", []),
+                currency=str(data.get("currency", "USD"))
             )
-
-            return title, price, description, image_url, weight, colors_sizes, images, currency
 
         except Exception as e:
             logging.exception(f"❌ Помилка при парсингу товару: {e}")
-            return "Помилка", 0.0, "Помилка", "", 0.5, "", [], "USD"
+            return ProductInfo(
+                title="Помилка",
+                price=0.0,
+                description="Помилка",
+                image_url="",
+                weight=0.5,
+                colors_text="",
+                images=[],
+                currency="USD"
+            )
 
     @property
     def currency(self) -> str:

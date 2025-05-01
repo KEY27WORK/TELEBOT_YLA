@@ -23,6 +23,9 @@ from core.currency.currency_manager import CurrencyManager
 # 🛠️ Інфраструктура
 from errors.error_handler import error_handler
 
+# 📦 Моделі даних
+from models.product_info import ProductInfo
+
 # 🧱 Системні
 import logging
 import asyncio
@@ -68,11 +71,17 @@ class PriceCalculationHandler:
             parser = BaseParser(url)  # 🌐 Создаем парсер
             product_info = await parser.get_product_info()  # 📦 Получаем данные о товаре
 
-            if not product_info or len(product_info) != 8:
+            if not isinstance(product_info, ProductInfo) or product_info.title == "Помилка":
                 logging.error("❌ Не удалось получить полные данные о товаре")
                 return "Невідомо", "⚠️ Помилка при обробці товару!", []
 
-            title, price, _, image_url, weight, _, images, currency = product_info  # 📋 Распаковка
+            title = product_info.title
+            price = product_info.price
+            image_url = product_info.image_url
+            weight = product_info.weight
+            images = product_info.images
+            currency = product_info.currency
+            
             calculator = self.price_factory.get_calculator(currency)  # 🧮 Калькулятор для валюты
             pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)  # 📈 Расчет в потоке
 

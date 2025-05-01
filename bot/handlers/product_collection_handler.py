@@ -57,6 +57,10 @@ import os
 from utils.region_utils import get_region_from_url
 from utils.url_utils import extract_product_path
 
+# 📦 Моделі даних
+from models.product_info import ProductInfo
+
+
 
 class ProductHandler:
     """
@@ -117,7 +121,7 @@ class ProductHandler:
         except Exception:
             pass
         
-        if not product_info or len(product_info) != 8:
+        if not isinstance(product_info, ProductInfo) or product_info.title == "Помилка":
             logging.error("❌ Не вдалося отримати повні дані про товар")
             await update.message.reply_text("⚠️ Помилка при отриманні інформації!")
             return
@@ -127,7 +131,14 @@ class ProductHandler:
     # --- 🧠 Основна логіка обробки товару ---
 
     async def _process_product(self, update, context, parser, url, product_info):
-        title, price, description, image_url, weight, colors_text, images, currency = product_info
+        title = product_info.title
+        price = product_info.price
+        description = product_info.description
+        image_url = product_info.image_url
+        weight = product_info.weight
+        colors_text = product_info.colors_text
+        images = product_info.images
+        currency = product_info.currency
 
         # 🛒 НОВОЕ: Витягуємо доступність по регіонах
         product_path = extract_product_path(url)
@@ -211,7 +222,7 @@ class ProductHandler:
             f"<b>МАТЕРІАЛ:</b> {material}\n"
             f"<b>ПОСАДКА:</b> {fit}\n"
             f"<b>ОПИС:</b> {desc_text}\n\n"
-            f"{availability_text}\n"
+            f"{availability_text}\n\n"
             f"<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n"
             f"{colors_text}\n\n"
             f"<b>МОДЕЛЬ:</b> {model}\n\n"
