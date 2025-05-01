@@ -6,11 +6,6 @@
 - Групування треків по розміру
 - Надсилання у Telegram: список + медіа-групи
 - Очищення кешу після надсилання
-
-Використовує:
-- MusicFileManager для завантаження/кешування треків
-- Telegram API (InputMediaAudio, ChatAction)
-- Асинхронну обробку через asyncio
 """
 
 # 🌐 Telegram
@@ -21,10 +16,17 @@ from telegram.constants import ChatAction
 # 🧱 Системні
 import asyncio
 import logging
+import glob
 import os
+import re
+import time
+
 
 # 🎵 Музика
 from bot.music.music_file_manager import MusicFileManager
+
+logger = logging.getLogger(__name__)
+
 
 class MusicSender:
     """
@@ -55,27 +57,33 @@ class MusicSender:
         lines = [f"{i + 1}. {name}" for i, name in enumerate(track_names)]
         return "🎵 <b>Музика для поста:</b>\n" + "\n".join(lines)
 
+    async def preload_tracks_async(self, track_names: list[str]):
+        """
+        🚀 Фонова предзагрузка треків без відправки.
+        """
+        self.cache = await self.download_all_tracks(track_names)
+
     async def download_all_tracks(self, track_names: list[str]) -> list[tuple[str, str]]:
         """
-        📥 Завантажує всі треки з YouTube асинхронно.
+        📥 Завантажує всі треки з YouTube асинхронно (одночасно).
         Повертає лише ті треки, які вдалося успішно завантажити.
         """
-        loop = asyncio.get_event_loop()
-        results = []
+        tasks = [self.manager.async_find_or_download_track(name) for name in track_names]
+        results_raw = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for name in track_names:
-            try:
-                path = await loop.run_in_executor(None, self.manager.find_or_download_track, name)
-                results.append((name, path))
-            except Exception as e:
-                logging.warning(f"⚠️ Трек пропущено через помилку: {name} — {e}")
+        results: list[tuple[str, str]] = []
+        for name, path in zip(track_names, results_raw):
+            if isinstance(path, Exception):
+                logging.warning(f"⚠️ Трек пропущено через помилку: {name} — {path}")
                 results.append((name, None))
+            else:
+                results.append((name, path))
 
-        if not any(path for _, path in results):
+        if not any(p for _, p in results):
             logging.error("❌ Не вдалося завантажити жодного треку.")
         else:
-            success_count = sum(1 for _, p in results if p)
-            logging.info(f"✅ Успішно завантажено {success_count} з {len(track_names)} треків.")
+            count = sum(1 for _, p in results if p)
+            logging.info(f"✅ Успішно завантажено {count} з {len(track_names)} треків.")
 
         return results
 
@@ -112,8 +120,9 @@ class MusicSender:
             # 1️⃣ Відправляємо список треків
             await update.message.reply_text(self.format_track_list(track_names), parse_mode="HTML")
 
-            # 2️⃣ Завантажуємо треки
-            self.cache = await self.download_all_tracks(track_names)
+            # 2️⃣ Якщо preload не спрацював — завантажуємо вручну
+            if not self.cache:
+                self.cache = await self.download_all_tracks(track_names)
 
             successful = [(n, p) for n, p in self.cache if p]
             failed = [n for n, p in self.cache if not p]
@@ -151,8 +160,19 @@ class MusicSender:
 
         asyncio.create_task(asyncio.to_thread(self.clear_cache))
 
+
     def clear_cache(self):
-        """
-        🧹 Очищує кеш після відправки.
-        """
-        self.manager.clear_cache()
+     """
+     🧹 Безпечне очищення кешу з перевіркою існування файлів.
+     Чекає 2 секунди перед видаленням, щоб уникнути конфліктів з yt-dlp.
+     """
+     time.sleep(2)  # ⏳ Дати ffmpeg і yt-dlp завершити postprocessing
+ 
+     files = glob.glob(os.path.join(self.CACHE_DIR, "*.mp3"))
+     for f in files:
+         if os.path.exists(f):
+             try:
+                 os.remove(f)
+                 logging.info(f"🧺 Видалено з кешу: {f}")
+             except Exception as e:
+                 logging.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")

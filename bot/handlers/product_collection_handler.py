@@ -139,24 +139,34 @@ class ProductHandler:
         colors_text = product_info.colors_text
         images = product_info.images
         currency = product_info.currency
-
-        # 🛒 НОВОЕ: Витягуємо доступність по регіонах
+    
+        # 🛒 Перевірка наявності в усіх регіонах
         product_path = extract_product_path(url)
         availability_text = await check_availability_across_regions(product_path)
-
-        # ⚙️ Запускаємо обчислення і генерацію паралельно
-        calc_task = self.price_handler.calculate_and_format(url)
+    
+        # 🎶 1️⃣ Генеруємо текст музики і одразу запускаємо preload
+        music_text = await self.music_recommendation.find_music(title, description, image_url)
+        track_list = self.music_sender.parse_song_list(music_text)
+        asyncio.create_task(self.music_sender.preload_tracks_async(track_list))
+    
+        # 🧠 2️⃣ Інші блоки — паралельно
         content_tasks = await asyncio.gather(
             asyncio.to_thread(self.translator.generate_slogan, title, description),
-            self.music_recommendation.find_music(title, description, image_url),
             self.hashtag_generator.generate(title, description),
             asyncio.to_thread(self.translator.translate_text, description),
-            calc_task
+            self.price_handler.calculate_and_format(url)
         )
-
-        slogan, music_text, hashtags, sections, (region, price_message, images) = content_tasks
-        await self._send_all_blocks(update, context, title, colors_text, slogan, hashtags, sections, price_message, music_text, images, url, parser.page_source, availability_text)
-
+    
+        slogan, hashtags, sections, (region, price_message, images) = content_tasks
+    
+        # 📤 Відправка всіх блоків
+        await self._send_all_blocks(
+            update, context,
+            title, colors_text, slogan, hashtags,
+            sections, price_message, music_text,
+            images, url, parser.page_source, availability_text
+        )
+    
     # --- 📤 Відправка всіх блоків повідомлень ---
 
     async def _send_all_blocks(

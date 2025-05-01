@@ -9,18 +9,25 @@
 Використовує:
 - yt_dlp
 - FFmpeg (для конвертації в mp3)
-- logging
+- asyncio для паралельного завантаження
+- logging для логування
 """
 
-# 🧱 Системні
+# 📦 Системні імпорти
 import os
 import re
 import glob
 import logging
+import asyncio
+from typing import List, Optional
 
-# ⬇️ Завантаження
+# 🎵 Зовнішні бібліотеки
 import yt_dlp
 from yt_dlp.utils import DownloadError
+
+# 🛠️ Логгер
+logger = logging.getLogger(__name__)
+
 
 class MusicFileManager:
     """
@@ -28,6 +35,8 @@ class MusicFileManager:
     """
 
     CACHE_DIR = "music_cache"
+    MAX_CONCURRENT_DOWNLOADS = 10
+    DOWNLOAD_TIMEOUT = 15
 
     def __init__(self):
         os.makedirs(self.CACHE_DIR, exist_ok=True)
@@ -40,9 +49,9 @@ class MusicFileManager:
         for f in files:
             try:
                 os.remove(f)
-                logging.info(f"🧺 Видалено з кешу: {f}")
+                logger.info(f"🧺 Видалено з кешу: {f}")
             except Exception as e:
-                logging.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
+                logger.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
 
     def get_cached_filename(self, track_name: str) -> str:
         """
@@ -68,7 +77,8 @@ class MusicFileManager:
         ydl_opts = {
             'format': 'bestaudio/best',
             'noplaylist': True,
-            'quiet': True,
+            'quiet': False,  # ⬅️ тимчасово показує помилки для дебагу
+            'concurrent_fragment_downloads': 1,  # ⬅️ обмежити баги при багатопоточному FFmpeg
             'outtmpl': temp_path + '.%(ext)s',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -79,21 +89,21 @@ class MusicFileManager:
 
         query = f"ytsearch1:{track_name}"
         try:
-            logging.info(f"⬇️ Завантаження з YouTube: {track_name}")
+            logger.info(f"⬇️ Завантаження з YouTube: {track_name}")
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([query])
 
             if not os.path.exists(final_path):
                 raise FileNotFoundError(f"❌ Трек не збережено як mp3: {track_name}")
 
-            logging.info(f"✅ Успішно завантажено: {track_name}")
+            logger.info(f"✅ Успішно завантажено: {track_name}")
             return final_path
 
         except DownloadError as de:
-            logging.error(f"🚫 YouTube помилка для '{track_name}': {de}")
+            logger.error(f"🚫 YouTube помилка для '{track_name}': {de}")
             raise
         except Exception as e:
-            logging.error(f"❌ Невідома помилка завантаження '{track_name}': {e}")
+            logger.error(f"❌ Невідома помилка завантаження '{track_name}': {e}")
             raise
 
     def find_or_download_track(self, track_name: str) -> str:
@@ -101,10 +111,64 @@ class MusicFileManager:
         🔁 Повертає шлях до mp3: з кешу або після завантаження.
         """
         if self.is_cached(track_name):
-            logging.info(f"🎵 Трек знайдено в кеші: {track_name}")
+            logger.info(f"🎵 Трек знайдено в кеші: {track_name}")
             return self.get_cached_filename(track_name)
 
         return self.download_from_youtube(track_name)
+
+    async def async_find_or_download_track(self, name: str) -> str:
+        """
+        ⚡ Асинхронна обгортка для find_or_download_track, виконується в окремому потоці.
+        """
+        return await asyncio.to_thread(self.find_or_download_track, name)
+
+    def download_track(self, track_url: str) -> Optional[str]:
+        """
+        ⬇️ Завантажує один трек через yt_dlp (ytsearch:... або URL). Повертає шлях до mp3.
+        """
+        try:
+            output_template = os.path.join(self.CACHE_DIR, "%(title)s.%(ext)s")
+            ydl_opts = {
+                "format": "bestaudio/best",
+                "outtmpl": output_template,
+                "quiet": True,
+                "noplaylist": True,
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }],
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(track_url, download=True)
+                title = info_dict.get("title", "")
+                filename = os.path.join(self.CACHE_DIR, f"{title}.mp3")
+                return filename if os.path.exists(filename) else None
+        except DownloadError as e:
+            logger.warning(f"❌ Помилка завантаження {track_url}: {e}")
+            return None
+
+    async def _async_download_track(self, url: str) -> Optional[str]:
+        """
+        ⚡ Асинхронне завантаження треку з таймаутом і обмеженням паралельності.
+        """
+        try:
+            async with asyncio.Semaphore(self.MAX_CONCURRENT_DOWNLOADS):
+                return await asyncio.wait_for(
+                    asyncio.to_thread(self.download_track, url),
+                    timeout=self.DOWNLOAD_TIMEOUT
+                )
+        except Exception as e:
+            logger.warning(f"⚠️ Не вдалося завантажити {url}: {e}")
+            return None
+
+    async def download_multiple_tracks(self, urls: List[str]) -> List[str]:
+        """
+        🚀 Паралельне завантаження до 10 треків одночасно. Повертає тільки успішні.
+        """
+        tasks = [self._async_download_track(url) for url in urls]
+        results = await asyncio.gather(*tasks)
+        return [r for r in results if r]
 
     @staticmethod
     def parse_song_list(text: str) -> list[str]:
