@@ -13,10 +13,11 @@
 - logging для логування
 """
 
-# 📦 Системні імпорти
+# 📦 Стандартна бібліотека Python
 import os
 import re
 import glob
+import time
 import logging
 import asyncio
 from typing import List, Optional
@@ -25,7 +26,7 @@ from typing import List, Optional
 import yt_dlp
 from yt_dlp.utils import DownloadError
 
-# 🛠️ Логгер
+# 🛠️ Логер
 logger = logging.getLogger(__name__)
 
 
@@ -43,15 +44,20 @@ class MusicFileManager:
 
     def clear_cache(self):
         """
-        🧹 Видаляє всі mp3-файли з кешу.
+        🧹 Безпечне очищення кешу з перевіркою існування файлів.
+        Чекає 2 секунди перед видаленням, щоб уникнути конфліктів з yt-dlp.
         """
+        time.sleep(2)  # ⏳ Дати ffmpeg і yt-dlp завершити postprocessing
+
         files = glob.glob(os.path.join(self.CACHE_DIR, "*.mp3"))
         for f in files:
-            try:
-                os.remove(f)
-                logger.info(f"🧺 Видалено з кешу: {f}")
-            except Exception as e:
-                logger.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                    logger.info(f"🧺 Видалено з кешу: {f}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
+
 
     def get_cached_filename(self, track_name: str) -> str:
         """
@@ -77,8 +83,7 @@ class MusicFileManager:
         ydl_opts = {
             'format': 'bestaudio/best',
             'noplaylist': True,
-            'quiet': False,  # ⬅️ тимчасово показує помилки для дебагу
-            'concurrent_fragment_downloads': 1,  # ⬅️ обмежити баги при багатопоточному FFmpeg
+            'quiet': True,
             'outtmpl': temp_path + '.%(ext)s',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',

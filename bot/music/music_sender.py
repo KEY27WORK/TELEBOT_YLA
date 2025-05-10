@@ -16,11 +16,7 @@ from telegram.constants import ChatAction
 # 🧱 Системні
 import asyncio
 import logging
-import glob
 import os
-import re
-import time
-
 
 # 🎵 Музика
 from bot.music.music_file_manager import MusicFileManager
@@ -162,17 +158,7 @@ class MusicSender:
 
 
     def clear_cache(self):
-     """
-     🧹 Безпечне очищення кешу з перевіркою існування файлів.
-     Чекає 2 секунди перед видаленням, щоб уникнути конфліктів з yt-dlp.
-     """
-     time.sleep(2)  # ⏳ Дати ffmpeg і yt-dlp завершити postprocessing
- 
-     files = glob.glob(os.path.join(self.CACHE_DIR, "*.mp3"))
-     for f in files:
-         if os.path.exists(f):
-             try:
-                 os.remove(f)
-                 logging.info(f"🧺 Видалено з кешу: {f}")
-             except Exception as e:
-                 logging.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
+        """
+        🧹 Очищає кеш mp3-файлів через менеджер.
+        """
+        self.manager.clear_cache()

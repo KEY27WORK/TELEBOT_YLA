@@ -49,11 +49,19 @@ class PriceCalculationHandler:
         parser = BaseParser(url)  # 🌐 Получаем парсер по ссылке
         product_info = await parser.get_product_info()  # 🛍️ Парсимо інформацію про товар
 
-        if not product_info:
-            await update.message.reply_text("⚠️ Не вдалося отримати інформацію про товар.")
-            return
+        if not isinstance(product_info, ProductInfo) or product_info.title == "Помилка":
+                logging.error("❌ Не удалось получить полные данные о товаре")
+                return "Невідомо", "⚠️ Помилка при обробці товару!", []
 
-        title, price, _, image_url, weight, _, _, currency = product_info  # 📋 Розпаковуємо інформацію про товар
+        title, price, image_url, weight, currency = (
+            product_info.title,
+            product_info.price,
+            product_info.image_url,
+            product_info.weight,
+            product_info.currency
+        )
+
+         # 📋 Розпаковуємо інформацію про товар
         calculator = self.price_factory.get_calculator(currency)  # 🛠️ Вибираємо калькулятор по валюті
         pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)  # 📈 Виконуємо розрахунок ціни в окремому потоці
 
@@ -85,7 +93,7 @@ class PriceCalculationHandler:
             calculator = self.price_factory.get_calculator(currency)  # 🧮 Калькулятор для валюты
             pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)  # 📈 Расчет в потоке
 
-            message = self._build_price_message(title, pricing, weight, image_url, currency)  # 🧩 Готовим сообщение
+            message = self._build_price_message(title, pricing, weight, image_url, currency, product_info.sections)  # 🧩 Готовим сообщение
             region = self._get_region_display(currency)  # 🌍 Регіон з прапором
 
             return region, message, images
@@ -101,7 +109,7 @@ class PriceCalculationHandler:
             }.get(currency, "Невідомо")
 
 
-    def _build_price_message(self, title: str, pricing: dict, weight: float, image_url: str, currency: str) -> str:
+    def _build_price_message(self, title: str, pricing: dict, weight: float, image_url: str, currency: str, sections: dict) -> str:
         """
         🧩 Формуємо повідомлення із блоків (заголовок, ціна, доставка, собівартість, націнка, прибуток).
         """
@@ -112,8 +120,19 @@ class PriceCalculationHandler:
             self._build_cost_block(pricing, currency),  # 🏷️ Блок собівартості
             self._build_markup_block(pricing),  # 📊 Блок накрутки
             self._build_profit_block(pricing, currency),  # 💰 Блок прибутку
+            self._build_section_block(sections),  # 📚 Детальні секції товару
         ]
         return "\n".join(lines)  # 🧾 Складаємо всі частини в одне повідомлення
+
+    def _build_section_block(self, sections: dict) -> str:
+        """📚 Формирует блок из дополнительных секций (accordion) с описанием."""
+        if not sections:
+            return ""
+
+        lines = ["\n<b>📖 Деталі товару:</b>"]
+        for key, value in sections.items():
+            lines.append(f"\n<b>{key}:</b>\n{value}")
+        return "\n".join(lines)
 
     def _build_header(self, title: str, image_url: str) -> str:
         """🔠 Блок с заголовком и ссылкой на изображение товара."""

@@ -17,6 +17,7 @@
 import time
 import sys
 import os
+import asyncio
 
 # Додає корінь проекта в sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -187,9 +188,10 @@ class TelegramBot:
             except Exception as e:
                 logger.critical(f"🔥 Критична помилка: {e}")
                 break
-
+            
         logger.info("🛑 Бота зупинено.")
-        WebDriverService().quit_driver()
+        asyncio.run(WebDriverService.close_browser())
+    
 
 
 if __name__ == "__main__":
