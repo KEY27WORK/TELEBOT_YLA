@@ -4,7 +4,8 @@
 Використовується для передачі даних між парсером і Telegram-обробником.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Dict
 
 @dataclass
 class ProductInfo:
@@ -14,5 +15,6 @@ class ProductInfo:
     image_url: str
     weight: float
     colors_text: str
-    images: list[str]
+    images: List[str]
     currency: str
+    sections: dict  # ⬅️ добавь это

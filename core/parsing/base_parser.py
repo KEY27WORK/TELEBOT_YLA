@@ -98,6 +98,19 @@ class BaseParser:
                 logging.warning(f"⚠️ Неможливо розпізнати ціну: {meta['content']}")
         return 0.0
 
+    async def extract_detailed_sections(self) -> dict:
+        sections = {}
+        accordion = self.soup.select_one("#ProductAccordion")
+        if accordion:
+            for detail in accordion.select("details"):
+                summary = detail.find("summary")
+                body = detail.find("div")
+                if summary and body:
+                    key = summary.get_text(strip=True).upper()
+                    value = body.get_text(separator="\n", strip=True)
+                    sections[key] = value
+        return sections
+
     async def extract_description(self) -> str:
         meta = self.soup.find("meta", {"name": "twitter:description"})
         return meta["content"] if meta else "Опис відсутній"
@@ -217,27 +230,40 @@ class BaseParser:
         return ColorSizeFormatter.format_color_size_availability(stock_data)
 
     async def parse(self) -> Dict[str, Any]:
+        # ⏬ Завантажуємо HTML сторінку
         if not await self.fetch_page():
             return {}
 
-        title = await self.extract_title()
-        description = await self.extract_description()
-        image_url = await self.extract_image()
-        colors_text = await self.format_colors_with_stock()
-        weight = await self.determine_weight(title, description, image_url)
-        images = await self.extract_all_images()
-        price = await self.extract_price()
-        currency = self.currency
+        title = await self.extract_title()  # 🏷 Назва товару
+        description = await self.extract_description()  # 📝 Короткий опис з мета-тега (Twitter)
 
+        # 📑 Витягуємо додаткові секції (Care Instructions, Fit Guide тощо)
+        detailed_sections = await self.extract_detailed_sections()
+
+        # 🧠 Якщо опису немає або він надто короткий — беремо перший блок із detailed_sections
+        if not description or len(description.strip()) < 20:
+            if detailed_sections:
+                first_key = next(iter(detailed_sections))
+                description = detailed_sections[first_key]
+
+        image_url = await self.extract_image()  # 🖼 Основне зображення товару
+        colors_text = await self.format_colors_with_stock()  # 🎨 Кольори + наявність
+        weight = await self.determine_weight(title, description, image_url)  # ⚖️ Вага (з title/опису/GPT)
+        images = await self.extract_all_images()  # 🖼 Галерея
+        price = await self.extract_price() # 💵 Ціна товару
+        currency = self.currency # 💲 Валюта (визначається по URL)
+
+        # 🧾 Повертаємо словник даних товару
         return {
-            "title": title,
-            "price": price,
-            "currency": currency,
-            "description": description,
-            "main_image": image_url,
-            "colors_sizes": colors_text,
-            "images": images,
-            "weight": weight
+            "title": title, # 🏷 Назва товару
+            "price": price, # 💵 Ціна товару
+            "currency": currency, # 💲 Валюта (визначається по URL)
+            "description": description, # 📝 Короткий опис з мета-тега (Twitter)
+            "main_image": image_url, # 🖼 Основне зображення товару (для Telegram-превʼю)
+            "colors_sizes": colors_text, # 🎨 Форматовані кольори та розміри (з наявністю)
+            "images": images, # 🖼 Усі зображення товару (для галереї)
+            "weight": weight, # ⚖️ Вага товару (по назві / GPT)
+            "sections": detailed_sections
         }
 
     async def get_product_info(self) -> ProductInfo:
@@ -253,7 +279,8 @@ class BaseParser:
                 weight=float(data.get("weight", 0.5)),
                 colors_text=str(data.get("colors_sizes", "")),
                 images=data.get("images", []),
-                currency=str(data.get("currency", "USD"))
+                currency=str(data.get("currency", "USD")),
+                sections=data.get("sections", {})  # ⬅️ сюда
             )
 
         except Exception as e:
@@ -266,7 +293,8 @@ class BaseParser:
                 weight=0.5,
                 colors_text="",
                 images=[],
-                currency="USD"
+                currency="USD",
+                sections=data.get("sections", {})
             )
 
     @property
