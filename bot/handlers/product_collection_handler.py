@@ -42,7 +42,8 @@ from size_chart.size_chart_handler import SizeChartHandler
 from .size_chart_handler_bot import SizeChartHandlerBot
 
 # 🛒 Наявність товару по регіонах
-from core.parsing.availability_checker import check_availability_across_regions
+from core.parsing.availability_checker import AvailabilityChecker
+from core.parsing.availability_aggregator import AvailabilityAggregator
 
 # ⚙️ Інше
 from bot.keyboards import Keyboard
@@ -136,20 +137,23 @@ class ProductHandler:
         description = product_info.description
         image_url = product_info.image_url
         weight = product_info.weight
-        colors_text = product_info.colors_text
         images = product_info.images
         currency = product_info.currency
     
-        # 🛒 Перевірка наявності в усіх регіонах
+        # 🛒 Перевірка наявності в усіх регіонах (наличие самого товара)
         product_path = extract_product_path(url)
-        availability_text = await check_availability_across_regions(product_path)
-    
-        # 🎶 1️⃣ Генеруємо текст музики і одразу запускаємо preload
+        availability_regions = await AvailabilityChecker.check(product_path)
+
+        # 🧮 Новый блок: собираем объединенные размеры по регионам
+        # 🚩 Формируем красивый текст цветов и размеров
+        colors_text = await AvailabilityAggregator.aggregate_availability_formatted(product_path)
+
+        # 🎶 Генеруємо текст музики і одразу запускаємо preload
         music_text = await self.music_recommendation.find_music(title, description, image_url)
         track_list = self.music_sender.parse_song_list(music_text)
         asyncio.create_task(self.music_sender.preload_tracks_async(track_list))
     
-        # 🧠 2️⃣ Інші блоки — паралельно
+        # 🧠 Інші блоки — паралельно
         content_tasks = await asyncio.gather(
             asyncio.to_thread(self.translator.generate_slogan, title, description),
             self.hashtag_generator.generate(title, description),
@@ -164,7 +168,7 @@ class ProductHandler:
             update, context,
             title, colors_text, slogan, hashtags,
             sections, price_message, music_text,
-            images, url, parser.page_source, availability_text
+            images, url, parser.page_source, availability_regions
         )
     
     # --- 📤 Відправка всіх блоків повідомлень ---

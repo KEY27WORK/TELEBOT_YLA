@@ -10,6 +10,7 @@
 # 📦 Базові імпорти
 from typing import Dict
 
+import logging
 
 class ColorSizeFormatter:
     """🎨 Сервіс форматування кольорів і розмірів для відображення в Telegram."""
@@ -28,10 +29,13 @@ class ColorSizeFormatter:
 
         for color, sizes in color_data.items():
             available_sizes = [size for size, available in sizes.items() if available]
-
+            logging.info(f"🌍 Перевірка наявності в регіоні: {color} - {f'{available_sizes}' if available_sizes else '🚫'}")
+            
             if not available_sizes:
                 result += f"• {color}: 🚫\n"
             else:
                 result += f"• {color}: {', '.join(available_sizes)}\n"
 
         return result.strip()
+
+    

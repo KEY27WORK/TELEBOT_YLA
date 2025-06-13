@@ -1,8 +1,8 @@
-""" ✅ availability_checker.py — Перевірка наявності товару в різних регіонах (US, EU, UK)
+"""
+📦 availability_checker.py — Перевірка базової доступності товару в регіонах YoungLA.
 
-🔹 Функція `check_availability_across_regions()`:
-- Паралельно перевіряє наявність товару в регіонах
-- Повертає зведене повідомлення для Telegram
+🔹 Клас:
+- `AvailabilityChecker` — перевіряє наявність товару (без деталізації розмірів/кольорів)
 
 Використовує:
 - BaseParser для парсингу
@@ -10,58 +10,59 @@
 - logging для діагностики
 """
 
-# 📦 Стандартні
+# 📦 Стандартні імпорти
 import asyncio
 import logging
-from urllib.parse import urlparse
 
 # 🧠 Парсер
 from core.parsing.base_parser import BaseParser
 
-# --- 🔁 Основна функція ---
 
-async def check_availability_across_regions(product_path: str) -> str:
+class AvailabilityChecker:
     """
-    🔍 Перевіряє наявність товару на сайтах US, EU та UK паралельно.
+    📦 Клас для перевірки базової наявності товару по основних регіонах YoungLA (US, EU, UK).
 
-    :param product_path: Шлях до продукту (без домену)
-    :return: Форматоване повідомлення з наявністю по регіонах
+    ▪️ Дає загальну відповідь — чи доступний товар в кожному регіоні.
+    ▪️ Не перевіряє кольори та розміри — лише глобальну доступність.
     """
-    urls = {
-        "🇺🇸": f"https://www.youngla.com{product_path}",
-        "🇪🇺": f"https://eu.youngla.com{product_path}",
-        "🇬🇧": f"https://uk.youngla.com{product_path}"
+
+    REGIONS = {
+        "🇺🇸": "https://www.youngla.com",
+        "🇪🇺": "https://eu.youngla.com",
+        "🇬🇧": "https://uk.youngla.com"
     }
 
-    logging.info(f"🌍 Перевірка наявності в регіонах: {urls}")
+    @staticmethod
+    async def check(product_path: str) -> str:
+        """
+        🔍 Основна перевірка доступності по всіх регіонах.
 
-    tasks = [
-        _check_region_availability(region, url)
-        for region, url in urls.items()
-    ]
-    results = await asyncio.gather(*tasks)
+        :param product_path: Шлях до товару (наприклад: /products/name-id)
+        :return: Строка для Telegram з емодзі-прапорами і статусами.
+        """
+        tasks = [
+            AvailabilityChecker._check_region(flag, f"{url}{product_path}")
+            for flag, url in AvailabilityChecker.REGIONS.items()
+        ]
 
-    summary = "\n".join(results)
-    summary += "\n🇺🇦 - ❌"
-    
-    return summary
+        results = await asyncio.gather(*tasks)
+        return "\n".join(results) + "\n🇺🇦 - ❌"
 
+    @staticmethod
+    async def _check_region(region_flag: str, url: str) -> str:
+        """
+        📦 Перевірка одного окремого регіону.
 
-# --- 🧪 Допоміжна функція для окремого регіону ---
-
-async def _check_region_availability(region_flag: str, url: str) -> str:
-    """
-    📦 Перевіряє наявність товару в одному регіоні за URL.
-
-    :param region_flag: Емодзі регіону (🇺🇸/🇪🇺/🇬🇧)
-    :param url: Повний URL до товару
-    :return: Статус в форматі «🇺🇸 - ✅ / ❌»
-    """
-    try:
-        parser = BaseParser(url, enable_progress=False)
-        await parser.fetch_page()
-        available = await parser.is_product_available()
-        return f"{region_flag} - {'✅' if available else '❌'}"
-    except Exception as e:
-        logging.error(f"❌ Помилка перевірки для {url}: {e}")
-        return f"{region_flag} - ❌ (помилка)"
+        :param region_flag: Емодзі регіону (🇺🇸/🇪🇺/🇬🇧)
+        :param url: Повний URL до товару в конкретному регіоні
+        :return: Строка формату «🇺🇸 - ✅ / ❌»
+        """
+        try:
+            parser = BaseParser(url, enable_progress=False)
+            await parser.fetch_page()
+            available = await parser.is_product_available()
+            logging.info(f"🌍 Перевірка: {region_flag} — {'✅' if available else '❌'}")
+            return f"{region_flag} - {'✅' if available else '❌'}"
+        except Exception as e:
+            logging.error(f"❌ Помилка в {region_flag}: {e}")
+            return f"{region_flag} - ❌ (помилка)"
