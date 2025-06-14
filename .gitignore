@@ -1,7 +1,9 @@
-# __pycache__ та .pyc
+# __pycache__ та .pyc та  Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyo
+*.pyd
 
 # VSCode
 .vscode/
@@ -24,6 +26,9 @@ size_chart.png
 # Лог-файли
 *.log
 
+# Playwright browsers cache
+~/Library/Caches/ms-playwright/
+
 # Віртуальне середовище
 venv/
 .env
@@ -35,3 +40,6 @@ venv/
 # Pytest runtime
 .pytest_cache/
 .cache/
+
+# Backups
+backup/
