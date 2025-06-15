@@ -42,8 +42,7 @@ from size_chart.size_chart_handler import SizeChartHandler
 from .size_chart_handler_bot import SizeChartHandlerBot
 
 # 🛒 Наявність товару по регіонах
-from core.parsing.availability_checker import AvailabilityChecker
-from core.parsing.availability_aggregator import AvailabilityAggregator
+from core.parsing.availability_manager import AvailabilityManager
 
 # ⚙️ Інше
 from bot.keyboards import Keyboard
@@ -142,11 +141,12 @@ class ProductHandler:
     
         # 🛒 Перевірка наявності в усіх регіонах (наличие самого товара)
         product_path = extract_product_path(url)
-        availability_regions = await AvailabilityChecker.check(product_path)
+        availability_manager = AvailabilityManager()
+        availability = await availability_manager.check_simple_availability(product_path)
 
         # 🧮 Новый блок: собираем объединенные размеры по регионам
         # 🚩 Формируем красивый текст цветов и размеров
-        colors_text = await AvailabilityAggregator.aggregate_availability_formatted(product_path)
+        colors_text = await availability_manager.check_and_aggregate(product_path)
 
         # 🎶 Генеруємо текст музики і одразу запускаємо preload
         music_text = await self.music_recommendation.find_music(title, description, image_url)
@@ -168,7 +168,7 @@ class ProductHandler:
             update, context,
             title, colors_text, slogan, hashtags,
             sections, price_message, music_text,
-            images, url, parser.page_source, availability_regions
+            images, url, parser.page_source, availability
         )
     
     # --- 📤 Відправка всіх блоків повідомлень ---
@@ -307,9 +307,23 @@ class CollectionHandler:
 
     async def process_each_product(self, update: Update, context: CallbackContext, product_links: list[str]):
         """
-        🔄 Обробляє кожен товар з колекції окремо.
+        🔄 Обробляє кожен товар з колекції окремо, додаючи інформацію про наявність товару у різних регіонах.
+
+        :param update: Обʼєкт оновлення Telegram
+        :param context: Контекст обробника Telegram
+        :param product_links: Список URL товарів для обробки
         """
-        for i, product_url in enumerate(product_links):
-            logging.info(f"📦 Обробляю товар {i + 1}/{len(product_links)}: {product_url}")
+        for i, product_url in enumerate(product_links, start=1):
+            logging.info(f"📦 Обробляю товар {i}/{len(product_links)}: {product_url}")
+
+            # Отримуємо форматований текст наявності товару по регіонах
+            availability_info = await AvailabilityAggregator.aggregate_availability_formatted(product_url)
+
+            # Відправляємо інформацію про товар разом з наявністю в Telegram
+            await update.message.reply_text(f"📦 Товар: {product_url}\n{availability_info}")
+
+            # Обробляємо сам товар (парсинг, ціна, опис, музика і т.п.)
             await self.product_handler.handle_url(update, context, product_url, update_currency=False)
-            await asyncio.sleep(2)  # ⏳ Пауза між товарами
+
+            # Пауза між запитами, щоб не створювати навантаження
+            await asyncio.sleep(2)

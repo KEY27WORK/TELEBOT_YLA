@@ -1,66 +1,62 @@
 """
-📦 json_ld_parser.py — парсер JSON-LD блоків з HTML сторінки товарів YoungLA.
+📦 json_ld_parser.py — легковесний утилітний парсер для JSON-LD блоків з HTML сторінки товарів YoungLA.
 
-🔹 Клас:
-- `JsonLdAvailabilityParser` — легковесний утилітний парсер для витягування кольорів і розмірів з JSON-LD.
-
-Використовується:
-- Всередині AvailabilityAggregator
-- Для обробки даних по кожному регіону окремо.
+Відповідає за:
+- Витяг кольорів і розмірів з JSON-LD
+- Фолбек парсинг кольорів з HTML, якщо JSON-LD пустий
+- Нормалізацію розмірів (Shopify → стандарт)
 """
 
-# 📦 Стандартні
 import json
 import logging
 import re
-
-# 🌐 HTML парсинг
 from bs4 import BeautifulSoup
 
 
 class JsonLdAvailabilityParser:
-    """
-    🔍 Парсер JSON-LD із HTML сторінки:
-    - Витягує кольори та розміри із внутрішнього скрипту
-    - Працює швидко та ефективно при наявності валідного JSON-LD
-    """
-
     @staticmethod
     def extract_color_size_availability(page_source: str) -> dict:
-        """
-        📊 Основний метод витягування карти наявності кольорів та розмірів.
-
-        :param page_source: HTML сторінки як строка.
-        :return: Словник виду: {color: {size: доступність (bool)}}
-        """
-        soup = BeautifulSoup(page_source, "html.parser")
         stock = {}
-
-        for script in soup.find_all("script", {"type": "application/ld+json"}):
-            try:
-                data = json.loads(script.string)
-
-                if isinstance(data, dict) and data.get("@type") == "Product" and "offers" in data:
+        try:
+            soup = BeautifulSoup(page_source, "html.parser")
+            for script in soup.find_all("script", {"type": "application/ld+json"}):
+                # Безопасно парсим JSON, если пустой или None — подставляем "{}"
+                data = json.loads(script.string or "{}")
+                if (
+                    isinstance(data, dict) and
+                    data.get("@type") == "Product" and
+                    "offers" in data
+                ):
                     for offer in data["offers"]:
                         name = offer.get("name", "")
                         available = "InStock" in offer.get("availability", "")
                         if " / " in name:
                             color, size = name.split(" / ")
-                            color = color.strip()
                             size = JsonLdAvailabilityParser._map_size(size.strip())
-                            stock.setdefault(color, {}).update({size: available})
-            except Exception as e:
-                logging.warning(f"⚠️ JSON-LD parsing error: {e}")
+                            stock.setdefault(color.strip(), {})[size] = available
+        except Exception as e:
+            logging.warning(f"⚠️ JSON-LD parsing error: {e}")
+
+        # Фолбек, якщо JSON-LD пустий — парсимо кольори з HTML
+        if not stock:
+            stock = JsonLdAvailabilityParser._fallback_colors(page_source)
         return stock
 
     @staticmethod
-    def _map_size(raw_size: str) -> str:
-        """
-        🔄 Нормалізація розмірів з Shopify форматів до стандартних.
+    def _fallback_colors(page_source: str) -> dict:
+        soup = BeautifulSoup(page_source, "html.parser")
+        colors = []
+        swatch_block = soup.find("div", class_="product-form__swatch color")
+        if swatch_block:
+            inputs = swatch_block.find_all("input", {"name": "Color"})
+            colors = [
+                input_tag.get("value", "").strip()
+                for input_tag in inputs if input_tag.get("value")
+            ]
+        return {color: {} for color in colors}
 
-        :param raw_size: Розмір у сирому вигляді (наприклад 'XLarge').
-        :return: Нормалізований розмір (наприклад 'XL').
-        """
+    @staticmethod
+    def _map_size(raw_size: str) -> str:
         size_mapping = {
             "XXSmall": "XXS", "XSmall": "XS", "Small": "S", "Medium": "M",
             "Large": "L", "XLarge": "XL", "XXLarge": "XXL", "XXXLarge": "XXXL"

@@ -1,4 +1,5 @@
-""" 🧠 base_parser.py — Базовий клас для парсингу сторінок товарів YoungLA.
+"""
+🧠 base_parser.py — Базовий клас для парсингу сторінок товарів YoungLA.
 
 🔹 Клас `BaseParser`:
 - Самостійно визначає валюту по URL
@@ -8,7 +9,6 @@
 """
 
 # 📦 Стандартні
-import re
 import time
 import json
 import logging
@@ -27,7 +27,6 @@ from core.parsing.color_size_formatter import ColorSizeFormatter
 # 🧰 Утиліти
 from utils.region_utils import get_currency_from_url
 from core.parsing.json_ld_parser import JsonLdAvailabilityParser
-
 
 # 📦 Моделі даних
 from models.product_info import ProductInfo
@@ -49,12 +48,6 @@ class BaseParser:
     """
 
     def __init__(self, url: str, enable_progress: bool = True):
-        """
-        Ініціалізація парсера.
-
-        :param url: Посилання на товар YoungLA.
-        :param enable_progress: Показувати прогрес бар у терміналі.
-        """
         self.url = url
         self._currency = get_currency_from_url(url)
         self.enable_progress = enable_progress
@@ -64,12 +57,6 @@ class BaseParser:
         self.translator = TranslatorService()
 
     async def fetch_page(self, retries: int = 5) -> bool:
-        """
-        Завантаження HTML сторінки через WebDriverService з повторними спробами.
-
-        :param retries: Кількість спроб завантажити сторінку.
-        :return: Успіх завантаження (True/False)
-        """
         self.page_source = None
         start_time = time.time()
 
@@ -109,12 +96,10 @@ class BaseParser:
     # --- Основні методи витягування даних ---
 
     async def extract_title(self) -> str:
-        """Витягує назву товару з заголовку <h1>."""
         title_tag = self.soup.find("h1")
         return title_tag.text.strip() if title_tag else "Без назви"
 
     async def extract_price(self) -> float:
-        """Витягує ціну товару з meta-тегу."""
         meta = self.soup.find("meta", {"property": "product:price:amount"})
         if meta:
             try:
@@ -124,7 +109,6 @@ class BaseParser:
         return 0.0
 
     async def extract_detailed_sections(self) -> dict:
-        """Парсить додаткові секції (матеріал, посадка, опис тощо) з акордеону ProductAccordion."""
         sections = {}
         accordion = self.soup.select_one("#ProductAccordion")
         if accordion:
@@ -138,17 +122,14 @@ class BaseParser:
         return sections
 
     async def extract_description(self) -> str:
-        """Витягує короткий опис товару з meta-тегу."""
         meta = self.soup.find("meta", {"name": "twitter:description"})
         return meta["content"] if meta else "Опис відсутній"
 
     async def extract_image(self) -> str:
-        """Основне зображення товару для прев'ю."""
         meta = self.soup.find("meta", {"property": "og:image"})
         return meta["content"] if meta else "Зображення відсутнє"
 
     async def extract_all_images(self) -> list[str]:
-        """Всі зображення товару (галерея)."""
         images = []
         gallery = self.soup.select_one(".product-gallery__thumbnail-list")
         if gallery:
@@ -161,7 +142,7 @@ class BaseParser:
         return images
 
     async def extract_colors_from_html(self) -> list[str]:
-        """Витягує кольори з fallback-блоку якщо не знаходить варіанти."""
+        # Залишаємо для fallback, якщо немає JSON-LD даних
         colors = []
         swatch_block = self.soup.find("div", class_="product-form__swatch color")
         if swatch_block:
@@ -173,10 +154,6 @@ class BaseParser:
         return colors
 
     async def determine_weight(self, title: str, description: str, image_url: str) -> float:
-        # все еще не работает до конца как нужно надо изменить
-        """
-        Визначення ваги товару — або через конфіг, або через GPT. 
-        """
         weight_data = self.config.load_weight_data()
         weight = next((w for k, w in weight_data.items() if k in title.lower()), None)
 
@@ -189,7 +166,12 @@ class BaseParser:
         return weight
 
     async def is_product_available(self) -> bool:
-        """Перевіряє глобальну наявність товару."""
+        """
+        Перевіряє базову наявність товару в JSON-LD.
+
+        Ця функція слугує швидкою булевою перевіркою,
+        яку використовує AvailabilityManager для простої перевірки.
+        """
         for script in self.soup.find_all("script", {"type": "application/ld+json"}):
             try:
                 data = json.loads(script.string)
@@ -201,13 +183,16 @@ class BaseParser:
                 logging.warning(f"⚠️ JSON-LD parsing error: {e}")
         return False
 
-
     async def format_colors_with_stock(self) -> str:
-        # Пытаемся достать stock из JSON-LD
+        """
+        Форматує карту кольорів та розмірів для Telegram.
+
+        Використовує JsonLdAvailabilityParser для основного парсингу,
+        якщо даних немає — fallback через extract_colors_from_html.
+        """
         stock_data = JsonLdAvailabilityParser.extract_color_size_availability(self.page_source)
 
         if not stock_data:
-            # Fallback — парсим только список цветов
             colors = await self.extract_colors_from_html()
             stock_data = {color: {} for color in colors}
 
@@ -216,6 +201,9 @@ class BaseParser:
     async def parse(self) -> Dict[str, Any]:
         """
         Головна точка входу: парсинг повного товару.
+
+        Викликає всі необхідні методи для отримання інформації
+        та формує словник для подальшої обробки.
         """
         if not await self.fetch_page():
             return {}
