@@ -1,58 +1,43 @@
 """
-💸 price_calculation_handler.py — модуль для обробки вартості товару в Telegram-боті YoungLA Ukraine.
+💸 price_calculation_handler.py — итоговый обработчик расчета стоимости товара в Telegram-боте YoungLA Ukraine.
 
-🔹 Клас:
-- `PriceCalculationHandler` — розрахунок ціни, доставки, націнки та прибутку по товару.
-
-Використовує:
-- Парсер товару (BaseParser)
-- Калькулятор по валюті (PriceCalculatorFactory)
-- Менеджер курсів валют (CurrencyManager)
-- Telegram API для відправки повідомлень
+Работает на новой архитектуре: CurrencyConverter + ProductPriceService.
+Полностью совместим с твоим текущим CurrencyManager.
 """
 
 # 🌐 Telegram API
 from telegram import Update
 from telegram.ext import CallbackContext
 
-# 🔧 Бізнес-логіка
+# 🔧 Бизнес-логика
 from core.parsing.base_parser import BaseParser
-from core.calculator.calculator import PriceCalculatorFactory
+from core.calculator.product_price_service import ProductPriceService
+from core.calculator.currency_converter import CurrencyConverter
 from core.currency.currency_manager import CurrencyManager
 
-# 🛠️ Інфраструктура
+# 🛠️ Инфраструктура
 from errors.error_handler import error_handler
 
-# 📦 Моделі даних
+# 📦 Модели данных
 from models.product_info import ProductInfo
 
-# 🧱 Системні
+# 🧱 Системные
 import logging
-import asyncio
 
 
 class PriceCalculationHandler:
-    """
-    💸 Основний обробник для розрахунку ціни, доставки та прибутку по товару.
-
-    Використовується:
-    - Для ручного розрахунку вартості по посиланню
-    - Для обробки парсинг-результатів у Telegram-боті
-    """
-
     def __init__(self, currency_manager: CurrencyManager):
-        """
-        Ініціалізація обробника з валютою та калькулятором.
-        """
         self.currency_manager = currency_manager
-        self.price_factory = PriceCalculatorFactory(currency_manager)
 
     @error_handler
     async def handle_price_calculation(self, update: Update, context: CallbackContext, url: str):
-        """
-        📥 Основний обробник команди в Telegram — парсить URL, рахує ціну, відправляє результат.
-        """
         self.currency_manager.update_rate()
+        rates = self.currency_manager.get_all_rates()
+        rates["UAH"] = 1.0  # ✅ фикс на UAH
+
+        currency_converter = CurrencyConverter(rates)
+        price_service = ProductPriceService(currency_converter)
+
         parser = BaseParser(url)
         product_info = await parser.get_product_info()
 
@@ -60,27 +45,19 @@ class PriceCalculationHandler:
             logging.error("❌ Не удалось получить полные данные о товаре")
             return
 
-        title, price, image_url, weight, currency = (
-            product_info.title,
-            product_info.price,
-            product_info.image_url,
-            product_info.weight,
-            product_info.currency
-        )
+        pricing = price_service.calculate(product_info.price, product_info.weight, product_info.currency)
 
-        calculator = self.price_factory.get_calculator(currency)
-        pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)
-
-        message = self._build_price_message(title, pricing, weight, image_url, currency)
+        message = self._build_price_message(product_info.title, pricing, product_info.weight, product_info.image_url, product_info.currency)
         await update.message.reply_text(message, parse_mode="HTML")
 
     async def calculate_and_format(self, url: str) -> tuple:
-        """
-        🔧 Публічний метод: повертає фінальний текст повідомлення для інтеграції в ProductHandler.
-
-        :return: (регіон, повідомлення, список зображень)
-        """
         self.currency_manager.update_rate()
+        rates = self.currency_manager.get_all_rates()
+        rates["UAH"] = 1.0  # ✅ фикс на UAH
+
+        currency_converter = CurrencyConverter(rates)
+        price_service = ProductPriceService(currency_converter)
+
         parser = BaseParser(url)
         product_info = await parser.get_product_info()
 
@@ -88,24 +65,15 @@ class PriceCalculationHandler:
             logging.error("❌ Не удалось получить полные данные о товаре")
             return "Невідомо", "⚠️ Помилка при обробці товару!", []
 
-        title = product_info.title
-        price = product_info.price
-        image_url = product_info.image_url
-        weight = product_info.weight
-        images = product_info.images
-        currency = product_info.currency
+        pricing = price_service.calculate(product_info.price, product_info.weight, product_info.currency)
 
-        calculator = self.price_factory.get_calculator(currency)
-        pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)
+        message = self._build_price_message(product_info.title, pricing, product_info.weight, product_info.image_url, product_info.currency)
+        region = self._get_region_display(product_info.currency)
 
-        message = self._build_price_message(title, pricing, weight, image_url, currency)
-        region = self._get_region_display(currency)
-
-        return region, message, images
+        return region, message, product_info.images
 
     @staticmethod
     def _get_region_display(currency: str) -> str:
-        """🌎 Повертає емодзі-регіон за валютою."""
         return {
             "USD": "🇺🇸 США",
             "EUR": "🇪🇺 Європа",
@@ -113,29 +81,20 @@ class PriceCalculationHandler:
             "PLN": "🇵🇱 Польща"
         }.get(currency, "Невідомо")
 
-    def _build_price_message(self, title: str, pricing: dict, weight: float, image_url: str, currency: str) -> str:
-        """
-        📝 Збирає фінальне повідомлення по ціні з усіх блоків.
-        """
+    def _build_price_message(self, title: str, p: dict, weight: float, image_url: str, currency: str) -> str:
         lines = [
-            self._build_header(title, image_url),
-            self._build_price_block(pricing, currency),
-            self._build_delivery_block(pricing, currency),
-            self._build_cost_block(pricing, currency),
-            self._build_markup_block(pricing),
-            self._build_profit_block(pricing, currency),
+            f"<b>🖼️ Зображення:</b> <a href='{image_url}'>Посилання</a>\n\n<b>{title}:</b>",
+            self._build_price_block(p, currency),
+            self._build_delivery_block(p, currency),
+            self._build_cost_block(p, currency),
+            self._build_markup_block(p),
+            self._build_profit_block(p, currency),
         ]
         return "\n".join(lines)
 
-    def _build_header(self, title: str, image_url: str) -> str:
-        """🔗 Заголовок з посиланням на фото товару."""
-        return (
-            f"<b>🖼️ Зображення:</b> <a href='{image_url}'>Посилання</a>\n\n"
-            f"<b>{title}:</b>"
-        )
+    # === Сборка каждого текстового блока ===
 
     def _build_price_block(self, p: dict, currency: str) -> str:
-        """💰 Блок з базовими цінами продажу."""
         currency_order = {
             "USD": ["usd", "eur", "uah"],
             "EUR": ["eur", "usd", "uah"],
@@ -156,7 +115,6 @@ class PriceCalculationHandler:
         )
 
     def _build_delivery_block(self, p: dict, currency: str) -> str:
-        """🚚 Блок доставки (локальна, Meest, загальна)."""
         region_map = {"USD": "🇺🇸 США", "EUR": "🇪🇺 Європи", "GBP": "🇬🇧 Британії", "PLN": "🇵🇱 Польщі"}
         symbols = {"usd": "$", "eur": "€", "uah": "₴", "gbp": "£", "pln": "zł"}
 
@@ -181,7 +139,6 @@ class PriceCalculationHandler:
         )
 
     def _build_cost_block(self, p: dict, currency: str) -> str:
-        """📊 Блок собівартості товару."""
         symbols = {"usd": "$", "eur": "€", "uah": "₴", "gbp": "£", "pln": "zł"}
 
         currency_order = {
@@ -200,14 +157,12 @@ class PriceCalculationHandler:
         )
 
     def _build_markup_block(self, p: dict) -> str:
-        """📈 Блок накрутки (процент накрутки та корекція)."""
         return (
             f"\n<b>📉 % Коррекция процента накрутки:</b> {p['markup_adjustment']:.2f}\n"
             f"<b>📈 % Процент накрутки:</b> {p['markup']:.2f}"
         )
 
     def _build_profit_block(self, p: dict, currency: str) -> str:
-        """💰 Чистий прибуток до та після округлення."""
         symbols = {"usd": "$", "eur": "€", "uah": "₴", "gbp": "£", "pln": "zł"}
 
         currency_order = {
