@@ -100,7 +100,7 @@ class SizeChartHandler:
      
         for img in images:
             img_src = img.get("src", "")
-            if "size_chart" in img_src or "Size-Chart" in img_src or "SizeChart" in img_src or "SIZE_CHART" in img_src or "SIZECHART" in img_src:
+            if "size_chart" in img_src or "Size-Chart" in img_src or "SizeChart" in img_src or "SIZE_CHART" in img_src or "SIZECHART" in img_src or "_size_" in img_src or "size_" in img_src or "_size" in img_src:
                 unique_size_chart = f"https:{img_src}" if img_src.startswith("//") else img_src
                 logging.info(f"✅ Знайдена унікальна таблиця розмірів: {unique_size_chart}")
             elif "women-size-chart" in img_src:

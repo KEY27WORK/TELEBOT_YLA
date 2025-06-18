@@ -42,6 +42,7 @@ from bot.handlers import (
     CollectionHandler,
     SizeChartHandlerBot,
     PriceCalculationHandler,
+    AvailabilityHandler
 )
 
 # 🧭 Маршрути та меню
@@ -87,6 +88,7 @@ class TelegramBot:
         self.collection_handler = CollectionHandler(self.product_handler)
         self.size_chart_handler = SizeChartHandlerBot()
         self.price_calculator = PriceCalculationHandler(self.currency_manager)
+        self.availibility_handler = AvailabilityHandler()
 
         # Роутинг
         self.link_handler = LinkHandler(
@@ -94,7 +96,9 @@ class TelegramBot:
             product_handler=self.product_handler,
             collection_handler=self.collection_handler,
             size_chart_handler=self.size_chart_handler,
-            price_calculator=self.price_calculator
+            price_calculator=self.price_calculator,
+            availibility_handler = self.availibility_handler
+            
         )
         self.menu_handler = MenuHandler()
 
@@ -121,7 +125,7 @@ class TelegramBot:
         # 📚 Головне меню
         menu_pattern = (
             "^(🔗 Вставляти посилання товарів|📦 Мої замовлення|📚 Режим колекцій|"
-            "💱 Курс валют|📏 Таблиця розмірів|🧮 Режим розрахунку товару|❓ Допомога|⏹️ Вимкнути режим)$"
+            "💱 Курс валют|📏 Таблиця розмірів|🌍 Перевірити розміри в регіонах|🧮 Режим розрахунку товару|❓ Допомога|⏹️ Вимкнути режим)$"
         )
         self.app.add_handler(MessageHandler(filters.TEXT & filters.Regex(menu_pattern), self.menu_handler.handle_menu))
 

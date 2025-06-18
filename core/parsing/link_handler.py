@@ -24,7 +24,8 @@ from bot.handlers import (
     ProductHandler,
     CollectionHandler,
     SizeChartHandlerBot,
-    PriceCalculationHandler
+    PriceCalculationHandler,
+    AvailabilityHandler
 )
 
 # 🧠 Логіка та сервіси
@@ -49,13 +50,15 @@ class LinkHandler:
         product_handler: ProductHandler,
         collection_handler: CollectionHandler,
         size_chart_handler: SizeChartHandlerBot,
-        price_calculator: PriceCalculationHandler
+        price_calculator: PriceCalculationHandler,
+        availibility_handler: AvailabilityHandler
     ):
         self.currency_manager = currency_manager
         self.product_handler = product_handler
         self.collection_handler = collection_handler
         self.size_chart_handler = size_chart_handler
         self.price_calculator = price_calculator
+        self.availibility_handler = availibility_handler
 
     @error_handler
     async def handle_link(self, update: Update, context: CallbackContext):
@@ -71,6 +74,19 @@ class LinkHandler:
         # 🔍 Розпізнавання типу посилання
         is_collection = bool(re.match(r"https://(?:www|eu|uk)\.youngla\.com/collections/", text))
         is_product = bool(re.match(r"https://(?:www|eu|uk)\.youngla\.com/products/", text))
+
+        # --- 🌍 Режим мульти-регіональної перевірки ---
+        if mode == "region_availability":
+            if is_product:
+                await update.message.reply_text("🌍 Виконую мульти-регіональну перевірку...")
+                await self.availibility_handler.handle_availability(update, context, text)
+            elif is_collection:
+                await update.message.reply_text("📚 Це посилання на колекцію. Перемикаю на режим колекцій.")
+                user_data["mode"] = "collection"
+                await self.collection_handler.handle_collection(update, context)
+            else:
+                await update.message.reply_text("❌ Це не посилання на товар. Перевір, будь ласка.")
+            return
 
         # --- 🧮 Режим розрахунку ціни ---
         if mode == "price_calculation":

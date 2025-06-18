@@ -46,7 +46,7 @@ class DeliveryService:
         """📦 Локальна доставка по регіону."""
         return cls.LOCAL_DELIVERY.get(currency, 6.99)
 
-    @classmethod
+    @classmethod 
     def calculate_meest_delivery(cls, weight: float) -> float:
         """✈️ Доставка Meest залежно від ваги.
 
