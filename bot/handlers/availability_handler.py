@@ -1,116 +1,166 @@
-# 📦 availability_handler.py — Перевірка наявності товару у регіонах (US, EU, UK, UA)
+"""
+🔹 Клас `AvailabilityHandler`:
+- Отримує посилання на товар
+- Витягує шлях (`product_path`)
+- Використовує AvailabilityManager для перевірки
+- Формує публічний формат (простий вивід) та адмінський (по регіонах)
 
+Використовує:
+- extract_product_path() — для product_path
+"""
+
+# 🌐 Telegram API
 from telegram import Update
 from telegram.ext import CallbackContext
 
+# 📦 Парсинг доступності
 from core.parsing.availability_manager import AvailabilityManager
-from core.parsing.color_size_formatter import ColorSizeFormatter
+
+# 🔧️ Інфраструктура
 from errors.error_handler import error_handler
+
+# 🧠 Утиліти
 from utils.url_utils import extract_product_path
 
+# 🧱 Системні
 import logging
 import asyncio
 
 
 class AvailabilityHandler:
     """
-    📦 Обробник мульти-регіональної доступності товару.
+    📋 AvailabilityHandler — клас для перевірки наявності товару у всіх регіонах (US, EU, UK, UA).
+
+    Відповідає за:
+    - Обробку запитів користувача (через Telegram)
+    - Формування двох форматів: публічного (кольори + розміри в наявності) і адмінського (по регіонах)
+    - Виведення логів у консоль
     """
 
     def __init__(self):
-        self.formatter = ColorSizeFormatter()
+        # 🏗️ Ініціалізуємо менеджер доступності, який відповідає за збір даних з різних регіонів
         self.manager = AvailabilityManager()
 
     @error_handler
     async def handle_availability(self, update: Update, context: CallbackContext, url: str):
         """
-        📬 Основний виклик від Telegram (LinkHandler)
+        📬 Основна точка входу. Отримує URL товару, перевіряє доступність і надсилає два повідомлення:
+        - Публічний вивід
+        - Адмінський вивід
         """
-        product_path = extract_product_path(url)
+        product_path = extract_product_path(url)  # 🔗 Витягуємо шлях товару з URL
 
-        # 🔹 Булева карта доступності по регіонах (✅/❌)
+        # ✅ Коротка перевірка по регіонах — чи є взагалі в наявності хоч щось у кожному регіоні
         region_checks = await self.manager.check_simple_availability(product_path)
 
-        # 🔹 Змерджена глобальна карта доступності (без поділу по регіонах)
-        public_format = await self.manager.check_and_aggregate(product_path)
-  
-
-        # 🔹 Детальна карта доступності по регіонах
+        # 🌍 Отримання детальної карти наявності: по кожному регіону окремо
         results = await asyncio.gather(*[
             self.manager._fetch_region_data(region_code, product_path)
             for region_code in self.manager.REGIONS
         ])
-        per_region = self._group_by_region(results)
-        admin_format = self._format_admin(per_region)
 
-        logging.info("🧾 Детальна карта по регіонах:")
+        # 🔁 Перетворення отриманих даних у дві структури:
+        # - per_region — що є в наявності
+        # - all_sizes_map — повний список розмірів (навіть якщо вони недоступні)
+        per_region, all_sizes_map = self._group_by_region(results)
+
+        # 🧮 Формування публічного виводу:
+        # Збираємо тільки ті розміри, які є в наявності (загальна агрегація)
+        merged_data = {
+            color: sorted({size for region in per_region.get(color, {}) for size in per_region[color][region]})
+            for color in all_sizes_map
+        }
+        public_format = self._get_public_format(merged_data)
+
+        # 🧑‍💼 Формування розгорнутого адмінського виводу з усіма регіонами
+        admin_format = self._format_admin(per_region, all_sizes_map)
+
+        # 🖨️ Логування в консоль результатів для відлагодження
+        logging.info("\U0001f4de Детальна карта по регіонах:")
         for color, region_sizes in per_region.items():
             logging.info(f"🎨 {color}")
             for region, sizes in region_sizes.items():
                 logging.info(f"  {region.upper()}: {', '.join(sizes) if sizes else '🚫'}")
 
+        # 📤 Надсилання результатів у Telegram (спочатку публічне, потім адмінське повідомлення)
         await update.message.reply_text(
             f"{region_checks}\n\n<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n{public_format}",
             parse_mode="HTML"
         )
         await update.message.reply_text(
-            f"👨‍💼 <b>Детально по регіонах:</b>\n{admin_format}",
+            f"<b>👨‍🎓 Детально по регіонах:</b>\n{admin_format}",
             parse_mode="HTML"
         )
 
-    async def calculate_and_format(self, url: str) -> tuple:
+    def _get_public_format(self, merged: dict) -> str:
         """
-        📦 Метод для ProductHandler
+        🔼 Публічний формат — список кольорів із доступними розмірами
+        :param merged: {color: [sizes]}
+        :return: рядок для повідомлення
         """
-        product_path = extract_product_path(url)
-        region_checks = await self.manager.check_simple_availability(product_path)
-        merged_data = await self.manager._aggregate_availability(product_path)
-        public_format = self.formatter.format_color_size_availability(merged_data)
+        return "\n".join(
+            [
+                f"• {color}: {', '.join(sizes)}" if sizes else f"• {color}: 🚫"
+                for color, sizes in merged.items()
+            ]
+        )
 
-        results = await asyncio.gather(*[
-            self.manager._fetch_region_data(region_code, product_path)
-            for region_code in self.manager.REGIONS
-        ])
-        per_region = self._group_by_region(results)
-        admin_format = self._format_admin(per_region)
-
-        full_message = f"{region_checks}\n\n<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n{public_format}"
-        return "🌍 Мульти-регіон", full_message, admin_format
-
-    def _group_by_region(self, region_data: list[tuple[str, dict]]) -> dict:
+    def _format_admin(self, availability: dict, all_sizes_map: dict) -> str:
         """
-        🔄 Перетворює [(region, {color: {size: bool}}), ...] → {color: {region: [sizes]}}
-        """
-        grouped = {}
+        🧮 Адмінський формат — для кожного розміру показує статус наявності у кожному регіоні.
+        Виводить навіть розміри, яких немає в наявності.
 
-        for region, data in region_data:
-            for color, sizes in data.items():
-                for size, available in sizes.items():
-                    if not available:
-                        continue
-                    grouped.setdefault(color, {}).setdefault(region, []).append(size)
-
-        return grouped
-
-    def _format_admin(self, availability: dict) -> str:
-        """
-        🦾 Форматування детального виводу для адмінів
-        Очікує формат: {color: {region: [sizes]}}
+        :param availability: {color: {region: [sizes_available]}}
+        :param all_sizes_map: {color: set(all_sizes)}
+        :return: розгорнутий вивід для адмінів
         """
         lines = []
+        all_regions = ["us", "eu", "uk", "ua"]  # Визначені регіони
 
-        for color, region_sizes_map in availability.items():
+        for color in all_sizes_map:
             lines.append(f"• {color}")
-            for region in ["us", "eu", "uk", "ua"]:
-                sizes = region_sizes_map.get(region, [])
-                region_flag = self._region_to_flag(region)
-                sizes_str = ", ".join(sizes) if sizes else "🚫"
-                lines.append(f"  {region_flag}: {sizes_str}")
-            lines.append("")
+            all_sizes = sorted(all_sizes_map[color])  # 🔡 Всі розміри, незалежно від наявності
+
+            for size in all_sizes:
+                # 🏷️ Створення рядка: спочатку назва розміру, потім статуси по регіонах
+                parts = [f"{size},"]
+                for region in all_regions:
+                    region_flag = self._region_to_flag(region)
+                    has_size = size in availability.get(color, {}).get(region, [])
+                    parts.append(f"{region_flag} - {'✅' if has_size else '🚫'}")
+                lines.append(" ".join(parts) + ";")
+
+            lines.append("")  # відступ між кольорами
 
         return "\n".join(lines)
 
+    def _group_by_region(self, region_data: list[tuple[str, dict]]) -> tuple[dict, dict]:
+        """
+        🔁 Обробка даних з парсера: створює дві мапи
+        - grouped: {color: {region: [sizes_with_stock]}} — доступні розміри по регіонах
+        - all_sizes_map: {color: set(all_sizes)} — повний перелік розмірів (включно з відсутніми)
+        """
+        grouped = {}
+        all_sizes_map = {}
+
+        for region, data in region_data:
+            for color, sizes in data.items():
+                for size, is_available in sizes.items():
+                    # 🧾 Зберігаємо всі розміри, незалежно від наявності
+                    all_sizes_map.setdefault(color, set()).add(size)
+                    if not is_available:
+                        continue
+                    # ✅ Додаємо лише доступні розміри у grouped
+                    grouped.setdefault(color, {}).setdefault(region, []).append(size)
+
+        return grouped, all_sizes_map
+
     @staticmethod
     def _region_to_flag(region: str) -> str:
+        """
+        🏳️ Перетворює код регіону у відповідний прапор-емодзі
+        :param region: us/eu/uk/ua
+        :return: emoji
+        """
         flags = {"us": "🇺🇸", "eu": "🇪🇺", "uk": "🇬🇧", "ua": "🇺🇦"}
         return flags.get(region, region)
