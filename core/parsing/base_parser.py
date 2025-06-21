@@ -233,7 +233,8 @@ class BaseParser:
             "colors_sizes": colors_text,
             "images": images,
             "weight": weight,
-            "sections": detailed_sections
+            "sections": detailed_sections,
+            "image_url": image_url,
         }
 
     async def get_product_info(self) -> ProductInfo:

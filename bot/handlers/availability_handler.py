@@ -17,6 +17,7 @@ from telegram.ext import CallbackContext
 # 📦 Парсинг доступності
 from core.parsing.availability_manager import AvailabilityManager
 from core.parsing.color_size_formatter import ColorSizeFormatter
+from core.parsing.base_parser import BaseParser
 
 # 🛠️ Інфраструктура
 from errors.error_handler import error_handler
@@ -34,6 +35,7 @@ class AvailabilityHandler:
         # Ініціалізуємо форматер і менеджер доступності
         self.formatter = ColorSizeFormatter()
         self.manager = AvailabilityManager()
+        
 
     @error_handler
     async def handle_availability(self, update: Update, context: CallbackContext, url: str):
@@ -43,6 +45,18 @@ class AvailabilityHandler:
         - Адмінський вивід
         """
         product_path = extract_product_path(url)
+        # 🧠 Отримуємо назву товару та головне фото через BaseParser
+        us_url = f"https://www.youngla.com{product_path}"  # ✅ формуємо повний URL
+        parser = BaseParser(us_url)
+        product_info = await parser.parse()
+
+        title = product_info.get("title", "🔗 Товар").upper()
+        image_url = product_info.get("image_url", None)
+
+        # 🪪 Логування мета-даних
+        logging.info(f"🛍️ {title}")
+        if image_url:
+            logging.info(f"🖼️ Фото: {image_url}")
 
         # ✅ Коротка перевірка по регіонах (прапорці)
         region_checks = await self.manager.check_simple_availability(product_path)
@@ -81,6 +95,11 @@ class AvailabilityHandler:
                 logging.info(f"  {region.upper()}: {', '.join(sizes) if sizes else '🚫'}")
 
         # 📤 Надсилання результатів у Telegram
+        if image_url:
+            await update.message.reply_photo(photo=image_url, caption=title)
+        else:
+            await update.message.reply_text(title)
+            
         await update.message.reply_text(
             f"{region_checks}\n\n<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n{public_format}",
             parse_mode="HTML"
