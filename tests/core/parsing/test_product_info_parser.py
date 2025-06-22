@@ -3,7 +3,7 @@
 
 import pytest
 from models.product_info import ProductInfo
-from core.parsing.base_parser import BaseParser
+from core.parsers.base_parser import BaseParser
 
 # 🔧 Фіктивний HTML (можна розширити або мокнути WebDriver)
 FAKE_HTML = '''

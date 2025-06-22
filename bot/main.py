@@ -47,7 +47,7 @@ from bot.handlers import (
 
 # 🧭 Маршрути та меню
 from bot.menu_handler import MenuHandler
-from core.parsing.link_handler import LinkHandler
+from core.parsers.link_handler import LinkHandler
 from bot.keyboards import Keyboard
 
 # 🧾 Логування
@@ -88,7 +88,8 @@ class TelegramBot:
         self.collection_handler = CollectionHandler(self.product_handler)
         self.size_chart_handler = SizeChartHandlerBot()
         self.price_calculator = PriceCalculationHandler(self.currency_manager)
-        self.availibility_handler = AvailabilityHandler()
+        self.availability_handler = AvailabilityHandler()
+
 
         # Роутинг
         self.link_handler = LinkHandler(
@@ -97,8 +98,7 @@ class TelegramBot:
             collection_handler=self.collection_handler,
             size_chart_handler=self.size_chart_handler,
             price_calculator=self.price_calculator,
-            availibility_handler = self.availibility_handler
-            
+            availability_handler = self.availability_handler
         )
         self.menu_handler = MenuHandler()
 

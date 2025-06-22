@@ -13,7 +13,7 @@ from .product_collection_handler import ProductHandler, CollectionHandler
 from .price_calculation_handler import PriceCalculationHandler
 from .size_chart_handler_bot import SizeChartHandlerBot
 from .bot_command_handler import BotCommandHandler 
-from .availability_handler import AvailabilityHandler 
+from core.product_availability.availability_handler import AvailabilityHandler 
 
 __all__ = [
     "ProductHandler",

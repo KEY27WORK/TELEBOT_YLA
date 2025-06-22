@@ -1,6 +1,6 @@
 
 import pytest
-from core.parsing.regional_availability_checker import RegionalAvailabilityChecker
+from product_availability.regional_availability_checker import RegionalAvailabilityChecker
 
 @pytest.mark.asyncio
 async def test_check_basic():

@@ -29,8 +29,8 @@ from bot.content.translator import TranslatorService
 from bot.content.hashtag_generator import HashtagGenerator
 
 # 🛍️ Парсинг товарів і колекцій
-from core.parsing.parser_factory import ParserFactory
-from core.parsing.base_parser import BaseParser
+from core.parsers.parser_factory import ParserFactory
+from core.parsers.base_parser import BaseParser
 
 # 💰 Валюти та розрахунки
 from core.currency.currency_manager import CurrencyManager
@@ -42,7 +42,7 @@ from size_chart.size_chart_handler import SizeChartHandler
 from .size_chart_handler_bot import SizeChartHandlerBot
 
 # 🛒 Наявність товару по регіонах
-from core.parsing.availability_manager import AvailabilityManager
+from core.product_availability.availability_manager import AvailabilityManager
 
 # ⚙️ Інше
 from bot.keyboards import Keyboard

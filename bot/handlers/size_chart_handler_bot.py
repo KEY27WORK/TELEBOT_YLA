@@ -19,7 +19,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 # 🛒 Парсинг товару
-from core.parsing.base_parser import BaseParser
+from core.parsers.base_parser import BaseParser
 
 # 🛠️ Інше
 from errors.error_handler import error_handler

@@ -8,7 +8,7 @@
 
 import pytest
 from unittest.mock import patch, AsyncMock
-from core.parsing.parser import ProductParser, CollectionParser
+from core.parsers.parser import ProductParser, CollectionParser
 
 
 @pytest.mark.asyncio

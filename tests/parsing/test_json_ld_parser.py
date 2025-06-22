@@ -1,5 +1,5 @@
 import pytest
-from core.parsing.json_ld_parser import JsonLdAvailabilityParser
+from core.parsers.json_ld_parser import JsonLdAvailabilityParser
 
 def test_extract_color_size_availability_empty_html():
     html = "<html></html>"

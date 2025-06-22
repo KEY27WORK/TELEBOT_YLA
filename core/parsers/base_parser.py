@@ -22,11 +22,11 @@ from bs4 import BeautifulSoup
 from core.webdriver.webdriver_service import WebDriverService
 from core.config.config_service import ConfigService
 from bot.content.translator import TranslatorService
-from core.parsing.color_size_formatter import ColorSizeFormatter
+from core.product_availability.formatter import ColorSizeFormatter
 
 # 🧰 Утиліти
 from utils.region_utils import get_currency_from_url
-from core.parsing.json_ld_parser import JsonLdAvailabilityParser
+from core.parsers.json_ld_parser import JsonLdAvailabilityParser
 
 # 📦 Моделі даних
 from models.product_info import ProductInfo
@@ -57,6 +57,7 @@ class BaseParser:
         self.translator = TranslatorService()
 
     async def fetch_page(self, retries: int = 5) -> bool:
+        """Асинхронно завантажує сторінку товару. Повертає True, якщо успішно."""
         self.page_source = None
         start_time = time.time()
 
@@ -70,11 +71,11 @@ class BaseParser:
                     transient=True,
                 ) as progress:
                     task = progress.add_task(f"🌍 Завантаження (спроба {attempt})...", total=100)
-
                     for step in range(100):
                         if step % 5 == 0:
                             self.page_source = await WebDriverService().fetch_page_source(self.url)
                             if self.page_source:
+                                # Парсимо HTML, якщо сторінку отримано
                                 self.soup = BeautifulSoup(self.page_source, "html.parser")
                                 logging.info(f"✅ Сторінку завантажено: {self.url}")
                                 logging.info(f"⏳ Час завантаження: {time.time() - start_time:.2f} сек.")
@@ -142,7 +143,7 @@ class BaseParser:
         return images
 
     async def extract_colors_from_html(self) -> list[str]:
-        # Залишаємо для fallback, якщо немає JSON-LD даних
+        """🔁 Фолбек-метод: витягує список кольорів з HTML, якщо JSON-LD дані відсутні."""
         colors = []
         swatch_block = self.soup.find("div", class_="product-form__swatch color")
         if swatch_block:
@@ -156,25 +157,21 @@ class BaseParser:
     async def determine_weight(self, title: str, description: str, image_url: str) -> float:
         weight_data = self.config.load_weight_data()
         weight = next((w for k, w in weight_data.items() if k in title.lower()), None)
-
         if weight is None:
             logging.info(f"🤖 Визначаємо вагу через GPT для: {title}")
             weight = self.translator.get_weight_estimate(title, description, image_url)
             self.config.update_weight_dict(title.lower(), weight)
-
         logging.info(f"✅ Визначена вага: {weight} кг")
         return weight
 
     async def is_product_available(self) -> bool:
         """
-        Перевіряє базову наявність товару в JSON-LD.
-
-        Ця функція слугує швидкою булевою перевіркою,
-        яку використовує AvailabilityManager для простої перевірки.
+        🔍 Швидка перевірка: чи є товар в наявності (на основі JSON-LD).
+        Повертає True, якщо знайдено хоча б одну позицію InStock.
         """
         for script in self.soup.find_all("script", {"type": "application/ld+json"}):
             try:
-                data = json.loads(script.string)
+                data = json.loads(script.string or "{}")
                 if isinstance(data, dict) and data.get("@type") == "Product" and "offers" in data:
                     for offer in data["offers"]:
                         if "InStock" in offer.get("availability", ""):
@@ -183,40 +180,46 @@ class BaseParser:
                 logging.warning(f"⚠️ JSON-LD parsing error: {e}")
         return False
 
+    async def get_stock_data(self) -> Dict[str, Dict[str, bool]]:
+        """
+        🗃️ Витягує повну карту наявності товару: {color: {size: bool}}.
+        Забезпечує завантаження сторінки та застосовує JSON-LD парсинг або fallback.
+        """
+        # Якщо сторінку ще не завантажено, завантажуємо
+        if not self.page_source:
+            if not await self.fetch_page():
+                return {}
+        # Парсимо JSON-LD дані про наявність
+        stock_data = JsonLdAvailabilityParser.extract_color_size_availability(self.page_source)
+        if not stock_data:
+            # Фолбек: якщо JSON-LD не дав результатів, отримуємо кольори з HTML
+            colors = await self.extract_colors_from_html()
+            stock_data = {color: {} for color in colors}
+        return stock_data
+
     async def format_colors_with_stock(self) -> str:
         """
         Форматує карту кольорів та розмірів для Telegram.
-
-        Використовує JsonLdAvailabilityParser для основного парсингу,
-        якщо даних немає — fallback через extract_colors_from_html.
+        Використовує JSON-LD для основного парсингу, у разі відсутності даних – HTML-фолбек.
         """
-        stock_data = JsonLdAvailabilityParser.extract_color_size_availability(self.page_source)
-
-        if not stock_data:
-            colors = await self.extract_colors_from_html()
-            stock_data = {color: {} for color in colors}
-
+        stock_data = await self.get_stock_data()
         return ColorSizeFormatter.format_color_size_availability(stock_data)
 
     async def parse(self) -> Dict[str, Any]:
         """
-        Головна точка входу: парсинг повного товару.
-
-        Викликає всі необхідні методи для отримання інформації
-        та формує словник для подальшої обробки.
+        📥 Парсить сторінку та збирає всі доступні дані про товар.
+        Повертає словник із ключовою інформацією.
         """
         if not await self.fetch_page():
             return {}
-
         title = await self.extract_title()
         description = await self.extract_description()
         detailed_sections = await self.extract_detailed_sections()
-
+        # Якщо опис надто короткий, доповнюємо першим розділом з detail-розділів
         if not description or len(description.strip()) < 20:
             if detailed_sections:
                 first_key = next(iter(detailed_sections))
                 description = detailed_sections[first_key]
-
         image_url = await self.extract_image()
         colors_text = await self.format_colors_with_stock()
         weight = await self.determine_weight(title, description, image_url)
@@ -239,12 +242,13 @@ class BaseParser:
 
     async def get_product_info(self) -> ProductInfo:
         """
-        Конвертація даних парсера до ProductInfo dataclass.
+        🔄 Обгортає результат парсингу у dataclass ProductInfo.
+        Повертає об'єкт ProductInfo або заповнює поля "Помилка" у разі невдачі.
         """
         try:
             data = await self.parse()
+            # Зберігаємо page_source для можливого повторного використання
             self.page_source = getattr(self, "page_source", None)
-
             return ProductInfo(
                 title=str(data.get("title", "Нет названия")),
                 price=float(data.get("price", 0.0)),
@@ -256,7 +260,6 @@ class BaseParser:
                 currency=str(data.get("currency", "USD")),
                 sections=data.get("sections", {})
             )
-
         except Exception as e:
             logging.exception(f"❌ Помилка при парсингу товару: {e}")
             return ProductInfo(

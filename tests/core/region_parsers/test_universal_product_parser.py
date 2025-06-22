@@ -9,7 +9,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, patch
-from core.parsing.products.universal_product_parser import UniversalProductParser
+from core.parsers.products.universal_product_parser import UniversalProductParser
 
 
 def test_detect_currency_us():

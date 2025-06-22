@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from core.parsing.availability_manager import AvailabilityManager
+from product_availability.availability_manager import AvailabilityManager
 import pytest
 
 pytest_plugins = "pytest_asyncio"
