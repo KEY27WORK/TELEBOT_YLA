@@ -26,10 +26,10 @@ import logging
 
 
 class AvailabilityHandler:
-    def __init__(self):
-        # Ініціалізація менеджера та форматера доступності
-        self.manager = AvailabilityManager()
-        self.formatter = ColorSizeFormatter()
+    def __init__(self, manager: AvailabilityManager = None, formatter: ColorSizeFormatter = None):
+        # Ініціалізація менеджера та форматера доступності (ін'єкція залежностей для гнучкості та тестування)
+        self.manager = manager or AvailabilityManager()
+        self.formatter = formatter or ColorSizeFormatter()
 
     @error_handler
     async def handle_availability(self, update: Update, context: CallbackContext, url: str):
@@ -51,7 +51,7 @@ class AvailabilityHandler:
             logging.info(f"🖼️ Головне зображення: {image_url}")
 
         # Отримуємо звіти про наявність товару
-        region_checks, public_format, admin_format = await self.manager.get_availability_report(product_path)
+        availability_text = await self.get_availability_text(url)
 
         # Надсилаємо результати у Telegram
         if image_url:
@@ -60,11 +60,42 @@ class AvailabilityHandler:
             await update.message.reply_text(title)
         # Публічний звіт (для користувача)
         await update.message.reply_text(
-            f"{region_checks}\n\n<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n{public_format}",
-            parse_mode="HTML"
+            availability_text["public_format"]
         )
         # Адмінський звіт (деталізація)
         await update.message.reply_text(
-            f"<b>👨‍🎓 Детально по регіонах:</b>\n{admin_format}",
-            parse_mode="HTML"
+            availability_text["admin_format"]
         )
+
+    async def get_availability_text(self, url: str) -> dict:
+        """
+        📦 Генерує готові HTML-звіти (публічний + адмінський) по URL товару.
+
+        :param url: Повна URL-адреса товару
+        :return: dict із ключами:
+            - 'public_format': текст з кольорами/розмірами + регіональний чек
+            - 'admin_format': деталізація по регіонах
+        """
+        product_path = extract_product_path(url)
+        region_checks, public_format, admin_format = await self.manager.get_availability_report(product_path)
+
+        return {
+            "public_format": self.get_public_report_text(region_checks=region_checks, public_format=public_format),
+            "admin_format":  self.get_admin_report_text(admin_format=admin_format),
+        }
+
+    def get_public_report_text(self, region_checks: str, public_format: str) -> str:
+        """
+        📄 Повертає HTML для публічного звіту:
+        - Список регіонів (✅/❌)
+        - Доступні кольори та розміри
+        """
+
+        return f"{region_checks}\n\n<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n{public_format}"
+
+    def get_admin_report_text(self, admin_format: str) -> str:
+        """
+        👨‍🎓 Повертає HTML для адмінського звіту з деталізацією по регіонах.
+        """
+
+        return f"<b>👨‍🎓 Детально по регіонах:</b>\n{admin_format}"

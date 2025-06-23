@@ -1,3 +1,4 @@
+# base_parser.py
 """
 🧠 base_parser.py — Базовий клас для парсингу сторінок товарів YoungLA.
 
@@ -7,7 +8,6 @@
 - Витягує ціну, опис, зображення, кольори, розміри, наявність
 - Формує форматований словник для Telegram
 """
-
 # 📦 Стандартні
 import time
 import json
@@ -22,18 +22,13 @@ from bs4 import BeautifulSoup
 from core.webdriver.webdriver_service import WebDriverService
 from core.config.config_service import ConfigService
 from bot.content.translator import TranslatorService
-from core.product_availability.formatter import ColorSizeFormatter
-
-# 🧰 Утиліти
+from core.parsers.unified_parser import UnifiedParser   # Updated import
 from utils.region_utils import get_currency_from_url
-from core.parsers.json_ld_parser import JsonLdAvailabilityParser
-
-# 📦 Моделі даних
+# (ColorSizeFormatter will be used via UnifiedParser.format_availability)
 from models.product_info import ProductInfo
 
 # 🖥 Вивід у консоль
 from rich.progress import Progress, SpinnerColumn, BarColumn, TimeElapsedColumn, TextColumn
-
 
 class BaseParser:
     """
@@ -42,11 +37,10 @@ class BaseParser:
     Відповідає за:
     - Завантаження сторінки через Playwright
     - Витяг даних (назва, опис, ціна, розміри, фото)
-    - Парсинг JSON-LD скриптів для наявності розмірів
+    - Парсинг наявності розмірів (JSON-LD або HTML)
     - Автоматичне визначення валюти
     - Формування готової структури для Telegram
     """
-
     def __init__(self, url: str, enable_progress: bool = True):
         self.url = url
         self._currency = get_currency_from_url(url)
@@ -60,7 +54,6 @@ class BaseParser:
         """Асинхронно завантажує сторінку товару. Повертає True, якщо успішно."""
         self.page_source = None
         start_time = time.time()
-
         for attempt in range(1, retries + 1):
             if self.enable_progress:
                 with Progress(
@@ -88,13 +81,11 @@ class BaseParser:
                     self.soup = BeautifulSoup(self.page_source, "html.parser")
                     return True
                 await asyncio.sleep(2)
-
             logging.warning(f"🔄 Спроба {attempt}: не вдалося завантажити сторінку...")
-
         logging.error(f"❌ Не вдалося завантажити сторінку: {self.url}")
         return False
 
-    # --- Основні методи витягування даних ---
+    # --- Основні методи витягування даних --- (title, price, description, images, etc.)
 
     async def extract_title(self) -> str:
         title_tag = self.soup.find("h1")
@@ -143,12 +134,11 @@ class BaseParser:
         return images
 
     async def extract_colors_from_html(self) -> list[str]:
-        """🔁 Фолбек-метод: витягує список кольорів з HTML, якщо JSON-LD дані відсутні."""
+        """🔁 (Депрековано) Фолбек-метод: витягує список кольорів з HTML, якщо JSON-LD дані відсутні."""
         colors = []
         swatch_block = self.soup.find("div", class_="product-form__swatch color")
         if swatch_block:
-            inputs = swatch_block.find_all("input", {"name": "Color"})
-            for input_tag in inputs:
+            for input_tag in swatch_block.find_all("input", {"name": "Color"}):
                 color_name = input_tag.get("value", "").strip()
                 if color_name:
                     colors.append(color_name)
@@ -183,27 +173,21 @@ class BaseParser:
     async def get_stock_data(self) -> Dict[str, Dict[str, bool]]:
         """
         🗃️ Витягує повну карту наявності товару: {color: {size: bool}}.
-        Забезпечує завантаження сторінки та застосовує JSON-LD парсинг або fallback.
+        Забезпечує завантаження сторінки та застосовує об'єднаний парсинг наявності.
         """
-        # Якщо сторінку ще не завантажено, завантажуємо
         if not self.page_source:
             if not await self.fetch_page():
                 return {}
-        # Парсимо JSON-LD дані про наявність
-        stock_data = JsonLdAvailabilityParser.extract_color_size_availability(self.page_source)
-        if not stock_data:
-            # Фолбек: якщо JSON-LD не дав результатів, отримуємо кольори з HTML
-            colors = await self.extract_colors_from_html()
-            stock_data = {color: {} for color in colors}
+        # Отримуємо дані про наявність через єдиний парсер (спершу JSON-LD, далі Legacy при необхідності)
+        stock_data = UnifiedParser.parse_availability(self.page_source)
         return stock_data
 
     async def format_colors_with_stock(self) -> str:
         """
         Форматує карту кольорів та розмірів для Telegram.
-        Використовує JSON-LD для основного парсингу, у разі відсутності даних – HTML-фолбек.
         """
         stock_data = await self.get_stock_data()
-        return ColorSizeFormatter.format_color_size_availability(stock_data)
+        return UnifiedParser.format_availability(stock_data)
 
     async def parse(self) -> Dict[str, Any]:
         """
@@ -212,21 +196,24 @@ class BaseParser:
         """
         if not await self.fetch_page():
             return {}
-        title = await self.extract_title()
-        description = await self.extract_description()
-        detailed_sections = await self.extract_detailed_sections()
+        # Паралельно отримуємо основні поля товару
+        title_task = self.extract_title()
+        description_task = self.extract_description()
+        sections_task = self.extract_detailed_sections()
+        image_task = self.extract_image()
+        colors_task = self.format_colors_with_stock()   # availability info (formatted text)
+        images_task = self.extract_all_images()
+        price_task = self.extract_price()
+        title, description, detailed_sections, image_url, colors_text, images, price = await asyncio.gather(
+            title_task, description_task, sections_task, image_task, colors_task, images_task, price_task
+        )
         # Якщо опис надто короткий, доповнюємо першим розділом з detail-розділів
         if not description or len(description.strip()) < 20:
             if detailed_sections:
                 first_key = next(iter(detailed_sections))
                 description = detailed_sections[first_key]
-        image_url = await self.extract_image()
-        colors_text = await self.format_colors_with_stock()
         weight = await self.determine_weight(title, description, image_url)
-        images = await self.extract_all_images()
-        price = await self.extract_price()
         currency = self.currency
-
         return {
             "title": title,
             "price": price,

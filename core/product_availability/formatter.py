@@ -4,6 +4,25 @@ from typing import Dict
 
 class ColorSizeFormatter:
     """🎨 Сервіс форматування кольорів і розмірів для відображення в Telegram."""
+    # Мапа прапорців для відомих регіонів
+    FLAGS = {
+        "us": "🇺🇸",
+        "eu": "🇪🇺",
+        "uk": "🇬🇧",
+        "ua": "🇺🇦"
+    }
+
+    @staticmethod
+    def get_flag(region_code: str) -> str:
+        """
+        Повертає емодзі-прапор для заданого коду регіону (для невідомого коду повертає його верхній регістр).
+        """
+        if region_code in ColorSizeFormatter.FLAGS:
+            return ColorSizeFormatter.FLAGS[region_code]
+        if len(region_code) == 2 and region_code.isalpha():
+            # Генеруємо прапор за дволітерним кодом країни (Unicode)
+            return "".join(chr(0x1F1E6 + (ord(ch.upper()) - ord('A'))) for ch in region_code)
+        return region_code.upper()
 
     @staticmethod
     def format_color_size_availability(color_data: Dict[str, Dict[str, bool]]) -> str:
@@ -30,11 +49,12 @@ class ColorSizeFormatter:
         Показує для кожного розміру наявність (✅/🚫) у кожному регіоні (US, EU, UK, UA).
         Виводить навіть ті розміри, що відсутні всюди (позначаються 🚫 у всіх регіонах).
         :param availability: {color: {region: [sizes_available]}}
-        :param all_sizes_map: {color: list усіх розмірів (у порядку появи)}
+        :param all_sizes_map: {color: список усіх розмірів (у порядку появи)}
         """
+        # Динамічно визначаємо актуальні регіони (UA додаємо окремо як відсутній регіон)
+        from core.product_availability.availability_manager import AvailabilityManager
+        regions = list(AvailabilityManager.REGIONS.keys()) + ["ua"]
         lines = []
-        flags = {"us": "🇺🇸", "eu": "🇪🇺", "uk": "🇬🇧", "ua": "🇺🇦"}
-        regions = ["us", "eu", "uk", "ua"]
         for color in all_sizes_map:
             lines.append(f"• {color}")
             all_sizes = all_sizes_map[color]
@@ -42,7 +62,7 @@ class ColorSizeFormatter:
                 parts = [f"{size},"]
                 for region in regions:
                     has_size = size in availability.get(color, {}).get(region, [])
-                    parts.append(f"{flags.get(region, region.upper())} - {'✅' if has_size else '🚫'}")
+                    parts.append(f"{ColorSizeFormatter.get_flag(region)} - {'✅' if has_size else '🚫'}")
                 lines.append(" ".join(parts) + ";")
             lines.append("")  # порожній рядок після кожного кольору
         return "\n".join(lines)

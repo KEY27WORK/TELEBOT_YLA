@@ -39,8 +39,8 @@ class RegionalAvailabilityChecker:
         :return: Словник {color: [розміри, доступні хоча б в одному регіоні]}
         """
         aggregated_data: dict = {}
-        # Проходимо регіони у фіксованому порядку для стабільності результату
-        for region in ["us", "eu", "uk"]:
+        # Проходимо регіони у порядку, заданому в AvailabilityManager.REGIONS (для стабільності)
+        for region in AvailabilityManager.REGIONS:
             if region in data:
                 for color, sizes in data[region].items():
                     for size, available in sizes.items():
