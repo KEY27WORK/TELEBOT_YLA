@@ -82,7 +82,8 @@ class CurrencyManager:
             except Exception as e:
                 logging.warning(f"⚠️ Неможливо прочитати файл з курсами: {e}")
         # 📦 Якщо файл відсутній — повертаємо дефолт
-        return {currency: 42.3 for currency in self.CURRENCY_CODES}
+        return {**{currency: 42.3 for currency in self.CURRENCY_CODES}, "UAH": 1.0}
+
 
     def _save_rates_to_file(self):
         """
@@ -211,6 +212,7 @@ class CurrencyManager:
 
         :return: Словник { "USD": 42.3, "EUR": 44.1, ... }
         """
+        
         return self.rates
 
     def convert(self, amount: float, from_currency: str, to_currency: str, rates: dict) -> float:

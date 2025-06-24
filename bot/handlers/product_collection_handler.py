@@ -43,6 +43,7 @@ from .size_chart_handler_bot import SizeChartHandlerBot
 
 # 🛒 Наявність товару по регіонах
 from core.product_availability.availability_manager import AvailabilityManager
+from core.product_availability.availability_handler import AvailabilityHandler
 
 # ⚙️ Інше
 from bot.keyboards import Keyboard
@@ -80,6 +81,8 @@ class ProductHandler:
         self.music_recommendation = MusicRecommendation()
         self.music_sender = MusicSender()
         self.hashtag_generator = HashtagGenerator()
+        self.availability_handler = AvailabilityHandler()
+
 
     @error_handler
     async def handle_url(
@@ -141,12 +144,13 @@ class ProductHandler:
     
         # 🛒 Перевірка наявності в усіх регіонах (наличие самого товара)
         product_path = extract_product_path(url)
+        availability_text_dict = await self.availability_handler.get_availability_text(url)
         availability_manager = AvailabilityManager()
         availability = await availability_manager.check_simple_availability(product_path)
 
         # 🧮 Новый блок: собираем объединенные размеры по регионам
         # 🚩 Формируем красивый текст цветов и размеров
-        colors_text = await availability_manager.check_and_aggregate(product_path)
+        colors_text = availability_text_dict["public_format"]
 
         # 🎶 Генеруємо текст музики і одразу запускаємо preload
         music_text = await self.music_recommendation.find_music(title, description, image_url)
@@ -236,8 +240,6 @@ class ProductHandler:
             f"<b>МАТЕРІАЛ:</b> {material}\n"
             f"<b>ПОСАДКА:</b> {fit}\n"
             f"<b>ОПИС:</b> {desc_text}\n\n"
-            f"{availability_text}\n\n"
-            f"<b>🎨 ДОСТУПНІ КОЛЬОРИ ТА РОЗМІРИ:</b>\n"
             f"{colors_text}\n\n"
             f"<b>МОДЕЛЬ:</b> {model}\n\n"
             f"<b>{slogan}</b>\n\n"
@@ -317,7 +319,7 @@ class CollectionHandler:
             logging.info(f"📦 Обробляю товар {i}/{len(product_links)}: {product_url}")
 
             # Отримуємо форматований текст наявності товару по регіонах
-            availability_info = await AvailabilityAggregator.aggregate_availability_formatted(product_url)
+            availability_info = await AvailabilityHandler.get_availability_text(product_url)
 
             # Відправляємо інформацію про товар разом з наявністю в Telegram
             await update.message.reply_text(f"📦 Товар: {product_url}\n{availability_info}")

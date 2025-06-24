@@ -19,6 +19,9 @@ from telegram.ext import CallbackContext
 from core.parsers.base_parser import BaseParser
 from core.calculator.calculator import PriceCalculatorFactory
 from core.currency.currency_manager import CurrencyManager
+from core.calculator.product_price_service import ProductPriceService
+from core.calculator.currency_converter import CurrencyConverter
+
 
 # 🛠️ Інфраструктура
 from errors.error_handler import error_handler
@@ -45,7 +48,11 @@ class PriceCalculationHandler:
         Ініціалізація обробника з валютою та калькулятором.
         """
         self.currency_manager = currency_manager
-        self.price_factory = PriceCalculatorFactory(currency_manager)
+        rates = currency_manager.get_all_rates()  # ✅ Отримуємо словник курсів
+        rates["UAH"] = 1.0  # 🛡 Додаємо гривню як базову валюту
+        currency_converter = CurrencyConverter(rates)  # ✅ Передаємо dict, а не менеджер
+        self.price_service = ProductPriceService(currency_converter)
+
 
     @error_handler
     async def handle_price_calculation(self, update: Update, context: CallbackContext, url: str):
@@ -67,9 +74,8 @@ class PriceCalculationHandler:
             product_info.weight,
             product_info.currency
         )
-
-        calculator = self.price_factory.get_calculator(currency)
-        pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)
+        
+        pricing = await asyncio.to_thread(self.price_service.calculate, price, weight, currency)
 
         message = self._build_price_message(title, pricing, weight, image_url, currency)
         await update.message.reply_text(message, parse_mode="HTML")
@@ -95,8 +101,7 @@ class PriceCalculationHandler:
         images = product_info.images
         currency = product_info.currency
 
-        calculator = self.price_factory.get_calculator(currency)
-        pricing = await asyncio.to_thread(calculator.calculate, price, weight, currency)
+        pricing = await asyncio.to_thread(self.price_service.calculate, price, weight, currency)
 
         message = self._build_price_message(title, pricing, weight, image_url, currency)
         region = self._get_region_display(currency)

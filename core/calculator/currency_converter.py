@@ -23,6 +23,7 @@ class CurrencyConverter:
         :param rates: Курси валют, де ключ — код валюти, значення — курс.
                       Наприклад: {"USD": 1.0, "EUR": 1.08, "UAH": 40.0, ...}
         """
+        
         self.rates = rates
 
     def convert(self, amount: float, from_currency: str, to_currency: str) -> float:
