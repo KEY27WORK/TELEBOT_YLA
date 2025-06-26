@@ -11,7 +11,7 @@
 
 from .product_collection_handler import ProductHandler, CollectionHandler
 from .price_calculation_handler import PriceCalculationHandler
-from .size_chart_handler_bot import SizeChartHandlerBot
+from .size_chart_handler import SizeChartHandlerBot
 from .bot_command_handler import BotCommandHandler 
 from core.product_availability.availability_handler import AvailabilityHandler 
 
