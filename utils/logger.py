@@ -1,7 +1,7 @@
 """ 🧾 logger.py — конфігурація логування з підтримкою ротації лог-файлів.
 
 🔹 Клас `Logger`:
-- Створює та конфігурує логгер з ім'ям "BotLogger"
+- Налаштовує глобальний логгер (root logger), який працює для всіх модулів
 - Пише логи у файл `bot.log`
 - Пише логи також у консоль (термінал)
 - Автоматично створює новий лог-файл, коли розмір перевищує 5 MB
@@ -23,19 +23,14 @@ class Logger:
 
     @staticmethod
     def setup_logger():
-        """ 🛠️ Налаштовує логгер:
-        - Ім'я: "BotLogger"
-        - Рівень: DEBUG
-        - Файл: bot.log
-        - Ротація: 5MB, 3 файли
-        - Консоль: виводить логи також у термінал
-
-        :return: Конфігурований логгер
         """
-        logger = logging.getLogger("BotLogger")
-        logger.setLevel(logging.DEBUG)
-
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        🛠️ Налаштовує root logger (глобальний логгер для всієї програми):
+        - Рівень: DEBUG
+        - Формат: [час] [рівень] [модуль] повідомлення
+        - Файл логів: logs/bot.log (з ротацією)
+        - Консоль: виводить у stdout
+        """
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 
         # 📁 Шлях до папки логів
         log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "logs")
@@ -50,9 +45,9 @@ class Logger:
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
 
-        # 🔁 Уникаємо дублювання, якщо вже є хендлери
-        if not logger.handlers:
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
-
-        return logger
+        # 📌 Налаштовуємо root logger
+        logging.basicConfig(
+            level=logging.DEBUG,
+            handlers=[file_handler, console_handler],
+            format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+        )

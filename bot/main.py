@@ -36,14 +36,16 @@ from core.webdriver.webdriver_service import WebDriverService
 from core.currency.currency_manager import CurrencyManager
 
 # 🤖 Обробники
-from bot.handlers import (
-    BotCommandHandler,
-    ProductHandler,
-    CollectionHandler,
-    SizeChartHandlerBot,
-    PriceCalculationHandler,
-    AvailabilityHandler
-)
+from bot.handlers.bot_command_handler import BotCommandHandler
+from bot.handlers.size_chart_handler import SizeChartHandlerBot
+from bot.handlers.price_calculation_handler import PriceCalculationHandler
+
+# 🛍️ Обробка товарів та колекцій (нова структура)
+from bot.handlers.product.product_handler import ProductHandler
+from bot.handlers.product.collection_handler import CollectionHandler
+
+# 🛒 Наявність
+from core.product_availability.availability_handler import AvailabilityHandler
 
 # 🧭 Маршрути та меню
 from bot.menu_handler import MenuHandler
@@ -60,7 +62,7 @@ logging.getLogger("telegram.ext._application").setLevel(logging.WARNING)
 logging.getLogger("telegram.ext._updater").setLevel(logging.WARNING)
 
 # Ініціалізація логера
-logger = Logger.setup_logger()
+logger = logging.getLogger(__name__)
 
 
 class TelegramBot:
