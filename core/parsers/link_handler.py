@@ -22,6 +22,9 @@ from errors.error_handler import error_handler
 import re
 from typing import Dict, Any
 
+from core.parsers.product_search.search_resolver import ProductSearchResolver
+
+
 
 class LinkHandler:
     """🔗 Обробник посилань: визначає тип посилання та перенаправляє у відповідний режим."""
@@ -48,6 +51,21 @@ class LinkHandler:
         user_data: Dict[str, Any] = context.user_data
         text = update.message.text.strip()
         mode = user_data.get("mode")
+    
+        # ✅ Показуємо "друкує"
+        await update.message.chat.send_action("typing")
+    
+        # 🧠 Якщо це не посилання — пробуємо знайти товар по назві
+        is_url = text.startswith("http://") or text.startswith("https://")
+        if not is_url:
+            await update.message.reply_text("🔍 Шукаю товар по назві/артикулу...")
+            found_url = await ProductSearchResolver.resolve(text)
+            if found_url:
+                text = found_url
+            else:
+                await update.message.reply_text("❌ Товар не знайдено.")
+                return
+    
 
         # 🔍 Визначаємо тип посилання за шаблоном
         is_collection = bool(re.match(r"https?://(?:www|eu|uk)\.youngla\.com/collections/", text))
@@ -57,7 +75,7 @@ class LinkHandler:
         if mode == "region_availability":
             if is_product:
                 await update.message.reply_text("🌍 Виконую мульти-регіональну перевірку...")
-                await self.availability_handler.handle_availability(update, context, text)
+                await self.availability_handler.handle_availability(update, context, url=text)  # 🛠️ сюди
             elif is_collection:
                 await update.message.reply_text("📚 Це посилання на колекцію. Перемикаю режим на колекції.")
                 user_data["mode"] = "collection"
@@ -66,11 +84,12 @@ class LinkHandler:
                 await update.message.reply_text("❌ Це не посилання на товар. Перевір, будь ласка.")
             return
 
+
         # --- 🧮 Режим розрахунку ціни ---
         if mode == "price_calculation":
             if is_product:
                 await update.message.reply_text("🧮 Виконую розрахунок ціни товару...")
-                await self.price_calculator.handle_price_calculation(update, context, text)
+                await self.price_calculator.handle_price_calculation(update, context, url=text)
             elif is_collection:
                 await update.message.reply_text("📚 Це посилання на колекцію. Перемикаю режим на колекції.")
                 user_data["mode"] = "collection"
@@ -103,7 +122,7 @@ class LinkHandler:
             if mode != "product":
                 user_data["mode"] = "product"
                 await update.message.reply_text("🔗 Перемикаю режим на окремі товари.")
-            await self.product_handler.handle_url(update, context)
+            await self.product_handler.handle_url(update, context, url=text)  # ✅ головне тут
 
         else:
             await update.message.reply_text("❌ Це не схоже на посилання на товар або колекцію. Перевір, будь ласка.")
