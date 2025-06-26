@@ -39,7 +39,7 @@ from .price_calculation_handler import PriceCalculationHandler
 
 # 📏 Таблиці розмірів
 from size_chart.size_chart_handler import SizeChartHandler
-from .size_chart_handler_bot import SizeChartHandlerBot
+from .size_chart_handler import SizeChartHandlerBot
 
 # 🛒 Наявність товару по регіонах
 from core.product_availability.availability_manager import AvailabilityManager
@@ -130,6 +130,7 @@ class ProductHandler:
             return
 
         await self._process_product(update, context, parser, url, product_info)
+        
 
     # --- 🧠 Основна логіка обробки товару ---
 
