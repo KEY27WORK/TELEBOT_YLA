@@ -1,5 +1,3 @@
-# 📁 core/parsers/product_search/search_resolver.py
-
 """
 🔍 ProductSearchResolver — асинхронний резолвер, що використовує Playwright для UI-пошуку товару на сайті YoungLA.
 

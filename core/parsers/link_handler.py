@@ -1,4 +1,11 @@
-"""🔗 link_handler.py — обробка текстових посилань у Telegram-боті YoungLA Ukraine."""
+"""
+🔗 link_handler.py — обробка текстових посилань у Telegram-боті YoungLA Ukraine.
+
+🔧 Визначає тип запиту (посилання, назва або артикул), обирає відповідний режим:
+- Автоматичне перенаправлення на товар або колекцію
+- Пошук за назвою, якщо це не URL
+- Валідація тексту перед пошуком
+"""
 
 # 🌐 Telegram API
 from telegram import Update
@@ -7,23 +14,36 @@ from telegram.ext import CallbackContext
 # 🤖 Обробники
 from bot.handlers.size_chart_handler import SizeChartHandlerBot
 from bot.handlers.price_calculation_handler import PriceCalculationHandler
-
-# 🛍️ Обробка товарів та колекцій (нова структура)
 from bot.handlers.product.product_handler import ProductHandler
 from bot.handlers.product.collection_handler import CollectionHandler
 
+# 🛒 Перевірка наявності
 from core.product_availability.availability_handler import AvailabilityHandler
 
 # 🧠 Сервіси та інфраструктура
 from core.currency.currency_manager import CurrencyManager
+from core.parsers.product_search.search_resolver import ProductSearchResolver
 from errors.error_handler import error_handler
 
 # 🧱 Системні
 import re
 from typing import Dict, Any
 
-from core.parsers.product_search.search_resolver import ProductSearchResolver
 
+def is_valid_search_query(text: str) -> bool:
+    """
+    🔎 Перевіряє, чи текст схожий на валідний пошуковий запит (назва або артикул).
+
+    ✅ Дозволено: англійські літери, цифри, пробіли, тире
+    ❌ Заборонено: кирилиця, emoji, занадто короткий текст
+    """
+    if len(text) < 3:
+        return False
+    if not re.fullmatch(r"[A-Za-z0-9\s\-]+", text):
+        return False
+    if re.search(r"[а-яА-ЯёЁіІїЇєЄ]|[\U0001F600-\U0001F64F]", text):
+        return False
+    return True
 
 
 class LinkHandler:
@@ -51,13 +71,17 @@ class LinkHandler:
         user_data: Dict[str, Any] = context.user_data
         text = update.message.text.strip()
         mode = user_data.get("mode")
-    
+
         # ✅ Показуємо "друкує"
         await update.message.chat.send_action("typing")
-    
-        # 🧠 Якщо це не посилання — пробуємо знайти товар по назві
+
+        # 🧠 Якщо це не посилання — пробуємо знайти товар по назві/артикулу
         is_url = text.startswith("http://") or text.startswith("https://")
         if not is_url:
+            if not is_valid_search_query(text):
+                await update.message.reply_text("⚠️ Введи назву або артикул англійською. Наприклад: W173 або Stellar Tee.")
+                return
+
             await update.message.reply_text("🔍 Шукаю товар по назві/артикулу...")
             found_url = await ProductSearchResolver.resolve(text)
             if found_url:
@@ -65,7 +89,6 @@ class LinkHandler:
             else:
                 await update.message.reply_text("❌ Товар не знайдено.")
                 return
-    
 
         # 🔍 Визначаємо тип посилання за шаблоном
         is_collection = bool(re.match(r"https?://(?:www|eu|uk)\.youngla\.com/collections/", text))
@@ -75,7 +98,7 @@ class LinkHandler:
         if mode == "region_availability":
             if is_product:
                 await update.message.reply_text("🌍 Виконую мульти-регіональну перевірку...")
-                await self.availability_handler.handle_availability(update, context, url=text)  # 🛠️ сюди
+                await self.availability_handler.handle_availability(update, context, url=text)
             elif is_collection:
                 await update.message.reply_text("📚 Це посилання на колекцію. Перемикаю режим на колекції.")
                 user_data["mode"] = "collection"
@@ -83,7 +106,6 @@ class LinkHandler:
             else:
                 await update.message.reply_text("❌ Це не посилання на товар. Перевір, будь ласка.")
             return
-
 
         # --- 🧮 Режим розрахунку ціни ---
         if mode == "price_calculation":
@@ -122,7 +144,7 @@ class LinkHandler:
             if mode != "product":
                 user_data["mode"] = "product"
                 await update.message.reply_text("🔗 Перемикаю режим на окремі товари.")
-            await self.product_handler.handle_url(update, context, url=text)  # ✅ головне тут
+            await self.product_handler.handle_url(update, context, url=text)
 
         else:
             await update.message.reply_text("❌ Це не схоже на посилання на товар або колекцію. Перевір, будь ласка.")
