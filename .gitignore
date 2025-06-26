@@ -43,3 +43,6 @@ venv/
 
 # Backups
 backup/
+# VSCode ChatGPT
+core/product_availability/chatgpt-vscode/
+core/product_availability/package-lock.json
