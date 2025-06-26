@@ -4,13 +4,14 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
-# 🔧 Обробники режимів
-from bot.handlers import (
-    ProductHandler,
-    CollectionHandler,
-    SizeChartHandlerBot,
-    PriceCalculationHandler
-)
+# 🤖 Обробники
+from bot.handlers.size_chart_handler import SizeChartHandlerBot
+from bot.handlers.price_calculation_handler import PriceCalculationHandler
+
+# 🛍️ Обробка товарів та колекцій (нова структура)
+from bot.handlers.product.product_handler import ProductHandler
+from bot.handlers.product.collection_handler import CollectionHandler
+
 from core.product_availability.availability_handler import AvailabilityHandler
 
 # 🧠 Сервіси та інфраструктура
