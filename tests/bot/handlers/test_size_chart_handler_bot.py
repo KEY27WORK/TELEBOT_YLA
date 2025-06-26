@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, mock_open
 import pytest
 
 # 🧠 Тестований клас
-from bot.handlers.size_chart_handler_bot import SizeChartHandlerBot
+from bot.handlers.size_chart_handler import SizeChartHandlerBot
 
 @pytest.mark.asyncio
 async def test_resolve_url_from_args():
