@@ -1,50 +1,65 @@
 # 📁 core/parsers/product_search/search_resolver.py
 
-"""🔍 search_resolver.py — знаходить URL першого товару по назві чи артикулу через UI пошуку."""
+"""
+🔍 ProductSearchResolver — асинхронний резолвер, що використовує Playwright для UI-пошуку товару на сайті YoungLA.
+
+🔧 Поведінка:
+- Відкриває головну сторінку сайту
+- Імітує клік по кнопці пошуку, вводить запит
+- Якщо зʼявляється дропдаун із підказками — повертає перше посилання
+- Якщо ні — сабмітить форму, парсить сторінку результатів
+- Повертає URL першого товару або None, якщо нічого не знайдено
+
+💡 Працює у headless-режимі — готово до продакшену
+"""
 
 # 🧱 Системні
-import urllib.parse
-import logging
+import logging  # 📋 Логування процесу
 
 # 🧰 Інструменти автоматизації
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError  # 🧪 Асинхронна автоматизація браузера
 
+# 🔧 Налаштування логера
 logger = logging.getLogger(__name__)
 
 
 class ProductSearchResolver:
     """
-    🔍 Пошуковий резолвер: знаходить перший товар на сайті YoungLA по назві або артикулу.
+    🔍 ProductSearchResolver — асинхронний резолвер, що виконує пошук товару за запитом через інтерфейс сайту YoungLA.
+
+    ✅ Алгоритм дій:
+    - відкриває головну сторінку
+    - відкриває вікно пошуку, вводить запит
+    - перевіряє наявність підказок у дропдауні
+    - якщо є — бере перше посилання
+    - якщо ні — сабмітить форму, чекає на повну сторінку результатів
+    - парсить посилання першого товару
+
+    ⚠️ Якщо зустрічає CAPTCHA — повертає None
     """
 
-    BASE_URL = "https://www.youngla.com"
+    BASE_URL = "https://www.youngla.com"  # 🌐 Базова URL-адреса магазину
 
     @classmethod
     async def resolve(cls, query: str) -> str | None:
         """
-        Приймає текстовий запит (назва або артикул), повертає повну URL-адресу першого товару.
+        📥 Пошук товару за назвою або артикулом. Повертає URL першого знайденого товару.
 
-        :param query: Назва або артикул товару (наприклад, "W173 Nova Skirt")
-        :return: Повна URL-адреса першого знайденого товару або None
+        :param query: Назва або артикул (наприклад, "W173 Nova Skirt")
+        :return: URL або None, якщо не знайдено
         """
         logger.info(f"🔍 Виконуємо пошук за запитом: {query}")
 
         try:
             async with async_playwright() as p:
                 logger.info("🚀 Запускаємо браузер Playwright...")
-                browser = await p.chromium.launch(headless=False, slow_mo=200, devtools=True)
+                browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page()
 
                 logger.info(f"🌐 Переходимо на головну сторінку: {cls.BASE_URL}")
                 await page.goto(cls.BASE_URL, timeout=25000)
-                await page.screenshot(path="step1_home.png")
 
-                logger.info("📃 Контент після відкриття головної сторінки:")
-                content_main = await page.content()
-                logger.info(content_main[:3000])
-                with open("page_home.html", "w", encoding="utf-8") as f:
-                    f.write(content_main)
-
+                # 🔍 Клік по кнопці пошуку
                 logger.info("⌛ Очікуємо появу кнопки пошуку...")
                 try:
                     await page.wait_for_selector('a[href="/search"]', timeout=15000, state="attached")
@@ -53,11 +68,10 @@ class ProductSearchResolver:
                 except PlaywrightTimeoutError:
                     html = await page.content()
                     logger.error("❌ Кнопка пошуку не зʼявилась. Частина HTML:")
-                    logger.info(html[:3000])
+                    logger.debug(html[:3000])
                     raise
 
-                await page.screenshot(path="step2_clicked_search.png")
-
+                # ⌨️ Введення запиту у поле
                 logger.info("⌛ Очікуємо поле для введення запиту...")
                 try:
                     await page.wait_for_selector('input[type="search"]', timeout=5000)
@@ -65,12 +79,13 @@ class ProductSearchResolver:
                 except PlaywrightTimeoutError:
                     html = await page.content()
                     logger.error("❌ Поле для пошуку не зʼявилось. Частина HTML:")
-                    logger.info(html[:3000])
+                    logger.debug(html[:3000])
                     raise
 
                 logger.info(f"⌨️ Вводимо запит у поле пошуку: {query}")
                 await page.fill('input[type="search"]', query)
 
+                # 📩 Пробуємо зчитати дропдаун з підказками
                 logger.info("⏳ Чекаємо на появу дропдауну з результатами...")
                 try:
                     await page.wait_for_selector('predictive-search a[href*="/products/"]', timeout=7000)
@@ -88,9 +103,9 @@ class ProductSearchResolver:
                 except PlaywrightTimeoutError:
                     logger.warning("⚠️ Підказки не зʼявились — fallback на повну сторінку")
 
+                # 📤 Фолбек: сабмітимо форму вручну
                 logger.info("📤 Відправляємо форму пошуку вручну")
                 await page.locator('form.header-search__form').evaluate("form => form.submit()")
-                await page.screenshot(path="step3_search_filled.png")
 
                 logger.info("⏳ Очікуємо завантаження результатів (networkidle + selector)...")
                 try:
@@ -102,17 +117,15 @@ class ProductSearchResolver:
                     logger.info(html[:3000])
                     raise
 
+                # 🔒 Перевірка на CAPTCHA
                 logger.info("🧪 Перевірка на наявність CAPTCHA або редиректів...")
                 content = await page.content()
                 if "captcha" in content.lower():
                     logger.error("🛑 Виявлено CAPTCHA на сторінці. Пошук неможливий у headless режимі.")
-                    await page.screenshot(path="step4_captcha_detected.png")
                     await browser.close()
                     return None
 
-                logger.debug("📃 Контент після пошуку:")
-                logger.debug(content[:3000])
-
+                # 🔗 Пошук першого товару
                 logger.info("🔗 Шукаємо перше посилання на товар...")
                 try:
                     await page.wait_for_selector('a[href*="/products/"]', timeout=10000)
