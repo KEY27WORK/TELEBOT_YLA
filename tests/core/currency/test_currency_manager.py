@@ -10,7 +10,7 @@
 """
 
 import pytest
-from core.currency.currency_manager import CurrencyManager
+from app.infrastructure.currency.currency_manager import CurrencyManager
 
 TEST_RATES = {
     "USD": 42.0,

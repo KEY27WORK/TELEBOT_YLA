@@ -9,8 +9,8 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from core.parsers.link_handler import LinkHandler
-from core.currency.currency_manager import CurrencyManager
+from bot.handlers.link_handler import LinkHandler
+from app.infrastructure.currency.currency_manager import CurrencyManager
 
 
 @pytest.fixture

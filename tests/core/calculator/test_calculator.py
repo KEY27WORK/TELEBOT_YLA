@@ -7,8 +7,8 @@
 """
 
 import pytest
-from core.currency.currency_manager import CurrencyManager
-from core.calculator.calculator import (
+from app.infrastructure.currency.currency_manager import CurrencyManager
+from app.cores.calculator.calculator import (
     PriceCalculatorUSD,
     PriceCalculatorGBP,
     PriceCalculatorGermany,

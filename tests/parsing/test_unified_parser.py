@@ -1,6 +1,6 @@
 
 import pytest
-from core.parsers.unified_parser import UnifiedParser
+from app.cores.parsers.unified_parser import UnifiedParser
 
 def test_parse_json_ld():
     page_source = ""  # Add mock JSON-LD content here

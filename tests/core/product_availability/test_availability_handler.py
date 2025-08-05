@@ -8,7 +8,7 @@
 
 import pytest  # 📦 Фреймворк для тестування
 from unittest.mock import AsyncMock, patch, MagicMock  # 🧰 Моки
-from core.product_availability.availability_handler import AvailabilityHandler  # 🧱 Хендлер для Telegram-бота
+from app.infrastructure.availability.availability_handler import AvailabilityHandler  # 🧱 Хендлер для Telegram-бота
 
 @pytest.mark.asyncio
 @patch("core.product_availability.availability_handler.BaseParser")

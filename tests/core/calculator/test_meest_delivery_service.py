@@ -7,7 +7,7 @@
 """
 
 import pytest
-from core.calculator.meest_delivery_service import MeestDeliveryService
+from app.infrastructure.delivery.meest_delivery_service import MeestDeliveryService
 
 
 @pytest.mark.parametrize("weight,expected", [

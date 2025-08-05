@@ -9,7 +9,7 @@
 import pytest
 from bs4 import BeautifulSoup
 from unittest.mock import patch, MagicMock
-from core.parsers.base_parser import BaseParser
+from app.infrastructure.parsers.base_parser import BaseParser
 
 # 🔧 Тестовий підклас
 class TestableParser(BaseParser):

@@ -7,7 +7,7 @@
 
 import pytest
 from unittest.mock import patch, AsyncMock
-from core.parsers import availability_checker
+from app.cores.parsers import availability_checker
 
 pytestmark = pytest.mark.asyncio
 

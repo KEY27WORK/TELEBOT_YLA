@@ -5,7 +5,7 @@
 - Парсинг JSON-LD блоку з HTML
 """
 
-from core.parsers.json_ld_parser import JsonLdAvailabilityParser  # 🧠 Парсер JSON-LD блоків
+from app.cores.parsers.json_ld_parser import JsonLdAvailabilityParser  # 🧠 Парсер JSON-LD блоків
 
 def test_parse_availability_basic():
     parser = JsonLdAvailabilityParser()

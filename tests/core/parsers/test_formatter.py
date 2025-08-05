@@ -7,7 +7,7 @@
 """
 
 import pytest  # 📦 Фреймворк для тестування
-from core.product_availability.formatter import ColorSizeFormatter  # 🧱 Клас для форматування доступності
+from app.infrastructure.availability.formatter import ColorSizeFormatter  # 🧱 Клас для форматування доступності
 
 def test_format_color_size_availability():
     # 🎯 Симуляція наявності по кольорах і розмірах

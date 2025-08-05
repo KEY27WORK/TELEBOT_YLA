@@ -5,8 +5,8 @@
 - Коректне повернення BaseParser для продуктового URL
 """
 
-from core.parsers.parser_factory import ParserFactory  # 🏭 Фабрика парсерів
-from core.parsers.base_parser import BaseParser  # 📦 Базовий парсер
+from app.infrastructure.parsers.parser_factory import ParserFactory  # 🏭 Фабрика парсерів
+from app.infrastructure.parsers.base_parser import BaseParser  # 📦 Базовий парсер
 
 def test_get_parser_returns_base_parser():
     url = "https://www.youngla.com/products/sample-product"

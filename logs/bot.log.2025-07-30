@@ -1,0 +1,18 @@
+2025-07-30 00:58:56,576 [INFO] - (bot_registrar.py).register_handlers(45) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-30 00:58:56,577 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-30 00:58:56,577 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-30 00:58:56,577 [INFO] - (bot_registrar.py).register_handlers(49) - --- Усі фічі зареєстровано ---
+2025-07-30 01:01:51,612 [INFO] - (bot_registrar.py).register_handlers(45) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-30 01:01:51,647 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-30 01:01:51,650 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-30 01:01:51,650 [INFO] - (bot_registrar.py).register_handlers(49) - --- Усі фічі зареєстровано ---
+2025-07-30 02:28:49,411 [INFO] - (bot_registrar.py).register_handlers(45) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-30 02:28:49,411 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-30 02:28:49,412 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-30 02:28:49,412 [INFO] - (bot_registrar.py).register_handlers(49) - --- Усі фічі зареєстровано ---
+2025-07-30 02:33:47,691 [INFO] - (link_handler.py).handle_link(125) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/collections/restock
+2025-07-30 02:36:32,214 [INFO] - (bot_registrar.py).register_handlers(45) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-30 02:36:32,215 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-30 02:36:32,215 [INFO] - (bot_registrar.py).register_handlers(48) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-30 02:36:32,215 [INFO] - (bot_registrar.py).register_handlers(49) - --- Усі фічі зареєстровано ---
+2025-07-30 02:36:41,776 [INFO] - (link_handler.py).handle_link(125) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/collections/restock

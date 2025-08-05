@@ -9,7 +9,7 @@
 
 import pytest  # 📦 Фреймворк для тестування
 from bs4 import BeautifulSoup  # 🧰 Парсер HTML
-from core.parsers.base_parser import BaseParser  # 🧱 Основний парсер сторінки товару
+from app.infrastructure.parsers.base_parser import BaseParser  # 🧱 Основний парсер сторінки товару
 from unittest.mock import AsyncMock, patch  # 🔧 Моки для Playwright
 
 # 👇 Мок-HTML, що емулює сторінку YoungLA

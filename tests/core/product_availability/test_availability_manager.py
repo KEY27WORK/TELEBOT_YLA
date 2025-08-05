@@ -9,7 +9,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, patch
-from core.product_availability.availability_manager import AvailabilityManager
+from from app.infrastructure.availability.availability_manager import AvailabilityManager
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from core.webdriver.webdriver_service import WebDriverService
+from app.infrastructure.web.webdriver_service import WebDriverService
 
 pytestmark = pytest.mark.asyncio
 

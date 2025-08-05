@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from core.parsers.availability_aggregator import AvailabilityAggregator
+from app.cores.parsers.availability_aggregator import AvailabilityAggregator
 
 @pytest.mark.asyncio
 async def test_merge_global_stock_basic():

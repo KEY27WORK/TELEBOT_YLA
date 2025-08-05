@@ -1,0 +1,75 @@
+2025-07-28 00:44:39,925 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 00:44:39,926 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 00:44:39,927 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 00:44:39,927 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 00:44:39,929 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 00:45:33,022 [INFO] - (link_handler.py).handle_link(108) - Режим не встановлено, виконую автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 01:12:18,099 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 01:12:18,099 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 01:12:18,099 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 01:12:18,100 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 01:12:18,101 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 01:12:34,492 [INFO] - (link_handler.py).handle_link(108) - Режим не встановлено, виконую автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 01:53:29,288 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 01:53:29,288 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 01:53:29,288 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 01:53:29,288 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 01:53:29,290 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 01:54:15,037 [INFO] - (link_handler.py).handle_link(108) - Режим не встановлено, виконую автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 02:27:14,750 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 02:27:14,751 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 02:27:14,751 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 02:27:14,751 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 02:27:14,753 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 02:29:06,605 [INFO] - (link_handler.py).handle_link(108) - Режим не встановлено, виконую автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 02:33:05,319 [INFO] - (link_handler.py).handle_link(108) - Режим не встановлено, виконую автоматичне розпізнавання для: https://www.youngla.com/collections/coming-soon
+2025-07-28 02:33:23,107 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 02:33:23,107 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 02:33:23,107 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 02:33:23,108 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 02:33:23,109 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 03:51:05,178 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 03:51:05,179 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 03:51:05,179 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 03:51:05,179 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 03:51:05,180 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 06:13:39,604 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 06:13:39,605 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 06:13:39,605 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 06:13:39,605 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 06:13:39,606 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 06:15:42,920 [INFO] - (link_handler.py).handle_link(134) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 06:33:40,988 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 06:33:40,989 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 06:33:40,989 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 06:33:40,989 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 06:33:40,991 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 06:49:14,659 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 06:49:14,660 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 06:49:14,660 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 06:49:14,660 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 06:49:14,662 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 06:52:25,477 [INFO] - (link_handler.py).handle_link(134) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/collections/coming-soon
+2025-07-28 07:04:27,122 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 07:04:27,123 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 07:04:27,124 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 07:04:27,124 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 07:04:27,125 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 07:04:42,741 [INFO] - (link_handler.py).handle_link(134) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/collections/coming-soon
+2025-07-28 07:06:18,381 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 07:06:18,382 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 07:06:18,382 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 07:06:18,382 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 07:06:18,384 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 08:38:19,128 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 08:38:19,129 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 08:38:19,129 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 08:38:19,129 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 08:38:19,131 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 09:04:41,063 [INFO] - (bot_registrar.py).register_handlers(30) - --- Починаю автоматичну реєстрацію фіч ---
+2025-07-28 09:04:41,064 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-07-28 09:04:41,064 [INFO] - (bot_registrar.py).register_handlers(33) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-07-28 09:04:41,065 [INFO] - (bot_registrar.py).register_handlers(34) - --- Усі фічі зареєстровано ---
+2025-07-28 09:04:41,066 [INFO] - (main.py).run_bot(63) - 🚀 Запускаю Telegram-бота...
+2025-07-28 09:06:17,867 [INFO] - (link_handler.py).handle_link(134) - Режим не встановлено. Автоматичне розпізнавання для: https://www.youngla.com/products/4234?_pos=1&_psq=4234&_ss=e&_v=1.0
+2025-07-28 20:23:53,005 [INFO] - (link_handler.py).handle_link(134) - Режим не встановлено. Автоматичне розпізнавання для: https://www.instagram.com/p/DL3BYgVR_OB/?igsh=M2lrZzlvNTB6cThq

@@ -9,7 +9,7 @@
 
 import pytest
 from bot.handlers.product_collection_handler import ProductHandler
-from core.currency.currency_manager import CurrencyManager
+from app.infrastructure.currency.currency_manager import CurrencyManager
 
 @pytest.mark.asyncio
 async def test_product_price_flow():

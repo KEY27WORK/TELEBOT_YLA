@@ -10,7 +10,7 @@
 
 import pytest
 from bs4 import BeautifulSoup
-from core.parsers.collections.universal_collection_parser import UniversalCollectionParser
+from app.infrastructure.parsers.collections.universal_collection_parser import UniversalCollectionParser
 
 
 def test_detect_currency():
