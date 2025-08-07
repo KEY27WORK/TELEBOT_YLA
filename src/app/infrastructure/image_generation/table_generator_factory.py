@@ -10,16 +10,10 @@ from typing import Dict, List                                          # 📦 Т
 from app.infrastructure.image_generation.font_service import FontService          # ✍️ Сервіс шрифтів
 
 # 🖼️ Генератори таблиць
-#from app.infrastructure.size_chart.generators.base_generator import BaseTableGenerator
-#from app.infrastructure.size_chart.generators.general_table_generator import GeneralTableGenerator
-#from app.infrastructure.size_chart.generators.unique_table_generator import UniqueTableGenerator
-#from app.infrastructure.size_chart.generators.unique_grid_table_generator import UniqueGridTableGenerator
-from app.infrastructure.size_chart.generators.table_generator import (
-    BaseTableGenerator,
-    GeneralTableGenerator,
-    UniqueTableGenerator,
-    UniqueGridTableGenerator
-)
+from app.infrastructure.size_chart.generators.base_generator import BaseTableGenerator
+from app.infrastructure.size_chart.generators.general_table_generator import GeneralTableGenerator
+from app.infrastructure.size_chart.generators.unique_table_generator import UniqueTableGenerator
+from app.infrastructure.size_chart.generators.unique_grid_table_generator import UniqueGridTableGenerator
 
 from app.shared.utils.prompts import ChartType                                   # 📊 Тип графіку/таблиці
 

@@ -44,34 +44,43 @@ class SizeChartService:
     def _find_size_chart_images(self, page_source: str) -> List[Tuple[str, ChartType]]:
         """ 🔎 Шукає всі зображення таблиць розмірів у HTML. """
         logger.info("🔎 Пошук зображень таблиць розмірів у HTML...")
-        soup = BeautifulSoup(page_source, "html.parser")						# 🧽 Розпарсимо HTML у дерево
-        blocks = soup.select(".product-info__block-item")						# 🔍 Шукаємо потрібні блоки
-
+        soup = BeautifulSoup(page_source, "html.parser")  # 🧽 Розпарсимо HTML у дерево
+    
+        # 🔍 Шукаємо всі можливі блоки з таблицями розмірів
+        blocks = soup.select(".product-info__block-item")
+        extra_info = soup.select_one("#product-extra-information")
+        if extra_info:
+            blocks += [extra_info]  # ➕ Додаємо новий блок, якщо він існує
+    
         found_images: List[Tuple[str, ChartType]] = []
         used_urls = set()
-
+    
         for block in blocks:
             for img in block.select("img"):
                 src_attr = img.get("src")
-
-                if not isinstance(src_attr, str) or not src_attr:						# ❗ Пропускаємо невалідні посилання
-                    continue
-
+                logger.info(f"🔗 Знайдено <img>: {src_attr}")
+    
+                if not isinstance(src_attr, str) or not src_attr:
+                    continue  # ❗ Пропускаємо невалідні посилання
+                
                 src = src_attr
-                full_url = f"https:{src}" if src.startswith("//") else src			# 🔗 Уточнюємо повну URL-адресу
-
+                full_url = f"https:{src}" if src.startswith("//") else src  # 🔗 Уточнюємо повну URL-адресу
+    
                 if full_url in used_urls:
-                    continue
+                    continue  # ♻️ Пропускаємо повторення
                 used_urls.add(full_url)
-
+    
                 src_lower = src.lower()
-                if any(k in src_lower for k in ["size_chart", "size-chart", "sizechart", "_size_", "size_"]):
-                    found_images.append((full_url, ChartType.UNIQUE))				# 🧩 Унікальна таблиця
+                if any(k in src_lower for k in ["size_chart", "size-chart", "sizechart", "_size_", "size_"]) \
+                        and "women-size-chart" not in src_lower:
+                    
+                    found_images.append((full_url, ChartType.UNIQUE))  # 🧩 Унікальна таблиця
                 elif "women-size-chart" in src_lower or "size_chart_top_jogger_" in src_lower:
-                    found_images.append((full_url, ChartType.GENERAL))				# 🧩 Стандартна таблиця
-
+                    found_images.append((full_url, ChartType.GENERAL))  # 📐 Стандартна таблиця
+    
         logger.info(f"🔢 Знайдено {len(found_images)} зображень таблиць розмірів.")
         return found_images
+    
 
     # ================================
     # 🚀 ПОВНИЙ ЦИКЛ ОБРОБКИ

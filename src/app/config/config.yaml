@@ -110,13 +110,17 @@ logging:
 # 🎨 НАЛАШТУВАННЯ ГЕНЕРАЦІЇ ЗОБРАЖЕНЬ
 # ================================
 image_generation:
-  # ✅ (НОВЕ) Шляхи до шрифтів для різних ОС
   font_paths:
     bold:
       - "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+      - "/System/Library/Fonts/Roboto-Bold.ttf"
+      - "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
       - "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+      - "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
       - "C:\\Windows\\Fonts\\arialbd.ttf"
+      - "C:\\Windows\\Fonts\\Roboto-Bold.ttf"
     mono:
-      - "/System/Library/Fonts/Supplemental/Menlo.ttc"
+      - "/System/Library/Fonts/Supplemental/Arial.ttf"
       - "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
-      - "C:\\Windows\\Fonts\\consola.ttf"
+      - "/System/Library/Fonts/Supplemental/Courier New Bold.ttf"
+      - "C:\\Windows\\Fonts\\courbd.ttf"

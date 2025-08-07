@@ -12,10 +12,25 @@ from app.shared.utils.logger import LOG_NAME
 logger = logging.getLogger(LOG_NAME)
 
 class FontService:
-    def __init__(self, config_service: ConfigService):
-        self.bold_font_paths: List[str] = config_service.get("image_generation.font_paths.bold", [])
-        self.mono_font_paths: List[str] = config_service.get("image_generation.font_paths.mono", [])
+    DEFAULT_BOLD_PATHS = [
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/System/Library/Fonts/Roboto-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\Roboto-Bold.ttf",
+    ]
 
+
+    DEFAULT_MONO_PATHS = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "/System/Library/Fonts/Supplemental/Courier New Bold.ttf",
+        "C:\\Windows\\Fonts\\courbd.ttf",
+    ]
+
+    def __init__(self, config_service: ConfigService):
+        self.bold_font_paths = config_service.get("image_generation.font_paths.bold", self.DEFAULT_BOLD_PATHS)
+        self.mono_font_paths: List[str] = config_service.get("image_generation.font_paths.mono", self.DEFAULT_MONO_PATHS)
+        
         self._dummy_draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
 
     def get_font(self, font_type: str, size: int) -> ImageFont.FreeTypeFont:
