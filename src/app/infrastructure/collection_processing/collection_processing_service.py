@@ -1,52 +1,80 @@
-# ⚙️ app/infrastructure/collection_processing/collection_processing_service.py
+# 🧳 app/infrastructure/collection_processing/collection_processing_service.py
 """
-⚙️ collection_processing_service.py — сервіс для отримання посилань з колекції.
+🧳 Сервіс витягує посилання на товари зі сторінки колекції.
 
-🔹 Клас `CollectionProcessingService`:
-    • Парсить сторінку колекції через парсер-фабрику
-    • Повертає список URL товарів з цієї колекції
-    • Логує хід процесу
+🔹 Нормалізує та валідовує URL перед роботою.  
+🔹 Створює провайдер через `ParserFactory` і витягує product links.  
+🔹 Повертає список `Url`, логує успіхи/помилки для подальшого моніторингу.
 """
+
+from __future__ import annotations
 
 # 🔠 Системні імпорти
-import logging                                                                          # 🧾 Логування
-from typing import List                                                                 # 📚 Типізація списку
+import logging                                                      # 🧾 Базове логування
+from typing import List                                             # 📐 Типи публічного API
 
 # 🧩 Внутрішні модулі проєкту
-from app.infrastructure.parsers.parser_factory import ParserFactory                     # 🏭 Фабрика парсерів
-from app.shared.utils.logger import LOG_NAME                                            # 🪵 Імʼя логгера
+from app.errors.custom_errors import AppError, ParsingError         # ⚠️ Доменно-орієнтовані винятки
+from app.domain.products.entities import Url                        # 📦 Канонічний Url
+from app.domain.products.interfaces import (
+    ICollectionLinksProvider,
+    ICollectionProcessingService,
+)
+from app.infrastructure.parsers.contracts import IParserFactory     # 🏗️ Контракт фабрики парсерів
+from app.shared.utils.logger import LOG_NAME                       # 🏷️ Імʼя базового логера
+from app.shared.utils.url_parser_service import UrlParserService    # 🔗 Normalization/helpers
 
-logger = logging.getLogger(LOG_NAME)                                                    # 🧾 Ініціалізація логгера
+logger = logging.getLogger(LOG_NAME)                                # 🧾 Модульний логер сервісу
 
 
-# ================================
-# 🏛️ КЛАС СЕРВІСУ ОБРОБКИ КОЛЕКЦІЙ
-# ================================
-class CollectionProcessingService:
-    """
-    📚 Інкапсулює логіку парсингу сторінки колекції
-    для отримання списку посилань на товари.
-    """
+class CollectionProcessingService(ICollectionProcessingService):
+    """⚙️ Оркестратор для витягування посилань із сторінок колекцій."""
 
-    def __init__(self, parser_factory: ParserFactory):
-        self.parser_factory = parser_factory								                    # 🏭 Зберігаємо фабрику парсерів як залежність
+    def __init__(self, *, parser_factory: IParserFactory, url_parser: UrlParserService) -> None:
+        self._factory = parser_factory                               # 🏗️ Фабрика провайдерів
+        self._urls = url_parser                                      # 🔗 Normalization/is_collection helpers
+        logger.debug("⚙️ CollectionProcessingService init (factory=%s)", parser_factory)
 
-    async def get_product_links(self, url: str) -> List[str]:
-        """
-        🔗 Парсить сторінку колекції та повертає список посилань на товари.
+    async def get_product_links(self, raw_url: str) -> List[Url]:
+        logger.info("⚙️ Старт парсингу колекції: %s", raw_url)
 
-        Args:
-            url (str): 🔗 Посилання на колекцію.
+        try:
+            # 1) Нормалізація та груба перевірка
+            normalized = self._urls.normalize(raw_url)               # 🧼 Прибираємо параметри/фрагменти
+            logger.debug("🔗 Normalized URL: %s", normalized)
+            if not self._urls.is_collection_url(normalized):        # 🚫 Перевіряємо, що це колекція
+                raise ParsingError("Посилання не є сторінкою колекції", url=raw_url)
 
-        Returns:
-            List[str]: 📋 Список посилань на сторінки товарів.
-        """
-        logger.info(f"⚙️ Починаю парсинг посилань з колекції: {url}")			                    # 🧾 Лог про старт обробки
+            url = Url(normalized)                                   # 📦 Створюємо доменний Url
 
-        collection_parser = self.parser_factory.create_collection_parser(url)		               # 📚 Отримуємо парсер колекції
-        product_links = await collection_parser.get_product_links()			                       # 🔎 Отримуємо список URL
+            # 2) Провайдер посилань через фабрику
+            provider: ICollectionLinksProvider = self._factory.create_collection_provider(url)
+            logger.debug("🏭 Провайдер колекції створено: %s", provider)
 
-        if not product_links:
-            logger.warning(f"⚠️ Колекція порожня або не вдалося знайти товари: {url}")	            # ⚠️ Лог попередження
+            # 3) Отримуємо посилання
+            links: List[Url] = await provider.get_product_links()   # 📥 Асинхронно тягнемо посилання
 
-        return product_links											                           # 📤 Повертаємо результат
+            if not links:
+                logger.warning("⚠️ Порожня колекція або не знайдені товари: %s", normalized)
+            else:
+                logger.info("✅ Знайдено посилань: %d (колекція: %s)", len(links), normalized)
+
+            return links
+
+        except AppError as e:
+            logger.error(
+                "❌ Помилка обробки колекції: %s",
+                getattr(e, "message", str(e)),
+                extra={"url": raw_url},
+            )
+            raise
+        except Exception as e:                                       # 🔥 Будь-які інші винятки -> ParsingError
+            logger.exception("🔥 Непередбачена помилка під час парсингу: %s", raw_url)
+            raise ParsingError(
+                "Не вдалося обробити сторінку колекції.",
+                details=str(e),
+                url=raw_url,
+            ) from e
+
+
+__all__ = ["CollectionProcessingService"]

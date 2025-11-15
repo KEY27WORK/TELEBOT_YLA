@@ -1,0 +1,11 @@
+title: "Thermal Top"
+price: "55"
+description: ""
+main_image: "https://i.ex/t/thermal.png"
+all_images:
+  - "https://i.ex/t/thermal.png"
+stock_jsonld:
+  Olive:
+    XS: true
+    "S+": true
+stock_legacy: nullм

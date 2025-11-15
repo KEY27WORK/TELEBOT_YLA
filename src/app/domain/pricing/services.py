@@ -1,176 +1,328 @@
 # 📦 app/domain/pricing/services.py
 """
-📦 services.py — Чистые доменные сервисы для расчёта цены товара.
+📦 Чистий сервіс розрахунку вартості товару для доменного шару.
+
+🔹 Інкапсулює повний конвеєр обчислення ціни без побічних ефектів.
+🔹 Працює виключно через доменні інтерфейси конвертера та доставки.
+🔹 Утримує конфігураційні параметри формули у відокремленому контейнері.
 """
-# 🔠 Системные импорты
-from dataclasses import dataclass
-from typing import Tuple
-import math
 
-# 🧩 Внутренние модули проекта
-from app.infrastructure.delivery.meest_delivery_service import MeestDeliveryService
-from .interfaces import IPricingService, PricingContext, FullPriceDetails
+from __future__ import annotations
 
-# ==================================
-# 🏛️ ВСПОМОГАТЕЛЬНЫЕ СЕРВИСЫ
-# ==================================
+# 🔠 Системні імпорти
+import logging                                                # 🪵 Логування кроків розрахунку
+import math                                                   # 🧮 Крокове страхування Navidium
+from dataclasses import dataclass                             # 🧱 Immutable-конфіг сервісу
+from decimal import Decimal                                   # 💵 Точні гроші (без float)
+from typing import Tuple                                      # 🧰 Пара (markup, adjustment)
 
-class ProtectionService:
-    """🛡️ Розраховує вартість страховки Navidium на основі точних тарифних порогів."""
+# 🧩 Внутрішні модулі проєкту
+from .interfaces import (
+    IPricingService,
+    PricingContext,
+    FullPriceDetails,
+    Money as PMoney,                                          # 💵 Money з домену прайсингу
+)
+from .rounding import q2                                      # 🔁 Нормалізоване округлення до 2 знаків
+from app.domain.currency.interfaces import (                  # 💱 Новий Decimal-конвертер
+    IMoneyConverter,
+    Money as CMoney,                                          # 💵 Money з домену currency
+    CurrencyCode,
+)
+from app.domain.delivery.interfaces import (                  # 🚚 Абстракція сервісу доставки
+    IDeliveryService,
+    DeliveryQuote,
+)
+from app.shared.utils.logger import LOG_NAME                  # 🏷️ Базове імʼя логера
 
-    @staticmethod
-    def get_protection_cost(price_usd: float) -> float:
-        """
-        Визначає вартість страховки на основі ціни товару.
-        Логіка відновлена на основі ручного тестування користувачем.
-        """
-        # --- Базові фіксовані тарифи ---
-        if price_usd <= 25.00:  # в этом и хуйня что сначала на сайте эта страховка стартует в диапазоне цены товара от 1$ до 25$ по 0.75$ потом в промежутке от 25$ до 51$ (получается тут уже промежуток 26$) уже 1.50$ и потом стабильно c промежутком в 25$ страховка вырастает на свои 0.75$
-            return 0.75   # Рівень 1
-        if price_usd <= 51.00:
-            return 1.50   # Рівень 2
-       # --- Для всіх цін вище $51 використовуємо єдину формулу ---
-        else:
-            # За основу беремо попередній поріг: $51 з ціною страховки $1.50
-            base_cost_at_threshold = 1.50
-            price_above_threshold = price_usd - 51.00
-            
-            # Розраховуємо, скільки "кроків" по $25 було зроблено
-            steps = math.ceil(price_above_threshold / 25.0)
-            
-            # Кожен крок додає $0.75
-            additional_cost = steps * 0.75
-            
-            return base_cost_at_threshold + additional_cost
-        
-class DiscountService:
-    """🎁 Рассчитывает и применяет фиксированную скидку магазина."""
-    DISCOUNT_PERCENTAGE = 15
-    @staticmethod
-    def apply_discount(price: float) -> float:
-        return price * (1 - DiscountService.DISCOUNT_PERCENTAGE / 100)
+logger = logging.getLogger(f"{LOG_NAME}.domain.pricing")      # 🧾 Іменований логер сервісу
 
-class DeliveryService:
-    """🚚 Рассчитывает доставку, вызывая внешние калькуляторы."""
-    LBS_TO_KG = 0.453592
 
-    @classmethod
-    def calculate_international_delivery(cls, weight_lbs: float, country_code: str) -> tuple[float, str]:
-        """Вызывает калькулятор Meest и возвращает стоимость и валюту."""
-        weight_kg = weight_lbs * cls.LBS_TO_KG
-        
-        price_local = MeestDeliveryService.get_price(
-            country=country_code,
-            method="air",
-            type_="courier",
-            weight_kg=weight_kg
-        )
-        currency_local = MeestDeliveryService.CURRENCY[country_code]
-        
-        return price_local, currency_local
+# ================================
+# ⚙️ ДОДАТКОВІ НАЛАШТУВАННЯ
+# ================================
+@dataclass(frozen=True, slots=True)
+class _Cfg:
+    """Внутрішній конфіг: параметри «з формули», не описані в Protocol."""
+    discount_percent: Decimal = Decimal("15")                  # 🎯 Фіксований відсоток знижки
 
-class MarkupService:
-    """📈 Рассчитывает маржинальную наценку на товар."""
-    @staticmethod
-    def get_markup_percentage(price_usd: float) -> int:
-        if price_usd < 20: return 30
-        if price_usd < 30: return 27
-        if price_usd < 40: return 25
-        if price_usd < 50: return 23
-        return 20
 
-    @staticmethod
-    def get_markup_adjustment(delivery_ratio: float) -> int:
-        if delivery_ratio > 20: return -3
-        if delivery_ratio < 10: return 3
-        return 0
-
-    @classmethod
-    def calculate_final_markup(cls, price_usd: float, delivery_usd: float) -> Tuple[float, float]:
-        cost_with_delivery = price_usd + delivery_usd
-        base_markup = cls.get_markup_percentage(price_usd)
-        delivery_ratio = (delivery_usd / cost_with_delivery) * 100 if cost_with_delivery > 0 else 0
-        adjustment = cls.get_markup_adjustment(delivery_ratio)
-        return base_markup + adjustment, adjustment
-
-class RoundingService:
-    """🔢 Округляет цену до красивого значения (ближайшего десятка)."""
-    @staticmethod
-    def round_to_nearest_ten(value: float) -> float:
-        return (int(value / 10) + (1 if value % 10 != 0 else 0)) * 10
-
-# ==================================
-# 🏛️ ГЛАВНЫЙ ДОМЕННЫЙ СЕРВИС
-# ==================================
-
+# ================================
+# 🏛️ ГОЛОВНИЙ ДОМЕННИЙ СЕРВІС
+# ================================
 class PricingService(IPricingService):
-    """💸 Доменний сервіс, який виконує чистий розрахунок ціни."""
+    """💸 Доменний сервіс, що виконує **чистий** конвеєр розрахунку ціни."""
 
+    def __init__(self, delivery_service: IDeliveryService, cfg: _Cfg | None = None) -> None:
+        """
+        ⚙️ Прив'язує сервіс до абстрактного доставника та базового конфіга.
+
+        Args:
+            delivery_service: Інтерфейс для отримання тарифів доставки.
+            cfg: Кастомний набір параметрів розрахунку, опційний.
+        """
+        self._delivery = delivery_service                               # 🚚 Зберігаємо сервіс доставки
+        cfg_fallback = cfg or _Cfg()                                    # ⚙️ Визначаємо активний конфіг
+        self._cfg = cfg_fallback                                        # 🧾 Кешуємо конфігурацію у сервісі
+
+    # ================================
+    # 🔢 ПУБЛІЧНИЙ API РОЗРАХУНКУ
+    # ================================
     def calculate_full_price(
         self,
-        price_in_base_currency: float,
-        weight_lbs: float,
-        context: PricingContext,
-        converter  # Об'єкт для конвертації валют
+        price: PMoney,                                  # 💵 Базова ціна товару у ВАЛЮТІ ТОВАРУ
+        weight_lbs: Decimal,                            # ⚖️ Вага у фунтах (Decimal)
+        context: PricingContext,                        # 🧭 Money-поля: local_delivery_cost, ai_commission, phone_number_cost
+        converter: IMoneyConverter,                     # 💱 Точний Decimal-конвертер
     ) -> FullPriceDetails:
+        """
+        🚀 Запускає покроковий розрахунок повної вартості товару в USD.
 
-        # --- 🔄 Підготовчий етап: Уніфікація компонентів у USD ---
-        original_price_usd = converter.convert(price_in_base_currency, context.base_currency, "USD")
-        local_delivery_usd = converter.convert(context.local_delivery_cost, context.base_currency, "USD")
-        ai_commission_usd = converter.convert(context.ai_commission, context.base_currency, "USD")
+        Args:
+            price: Початкова ціна товару в оригінальній валюті.
+            weight_lbs: Вага товару у фунтах, підготовлена на стороні парсера.
+            context: Додаткові витрати для регіону продавця.
+            converter: Сервіс конвертації грошей у форматі Decimal.
 
-        # =================================================================
-        # 🟢 ПОЧАТОК ФІНАНСОВОГО КОНВЕЄРА
-        # =================================================================
+        Returns:
+            FullPriceDetails: Повний набір агрегованих сум у USD.
+        """
+        product_price = q2(price.amount)                                # 💵 Нормалізуємо суму товару
+        weight_lbs_clean = q2(weight_lbs)                               # ⚖️ Округлюємо вагу фунтів
+        local_delivery_amount = q2(context.local_delivery_cost.amount)  # 🚚 Локальна доставка (Decimal)
+        ai_commission_amount = q2(context.ai_commission.amount)         # 🤖 Комісія сервісу
+        phone_cost_amount = q2(context.phone_number_cost.amount)        # 📞 Вартість номера
 
-        # --- 🛡️ Крок 0: Розраховуємо вартість Shipping Protection від ЧИСТОЇ ціни товару ---
-        protection_cost_usd = ProtectionService.get_protection_cost(original_price_usd)
-
-        # --- 📉 Крок 1: Застосовуємо знижку магазину до суми (товар + страховка) ---
-        price_before_discount = original_price_usd + protection_cost_usd
-        discounted_price = DiscountService.apply_discount(price_before_discount)
-
-        # --- 🤖 Крок 2: Додаємо сервісні збори (комісія ШІ) ---
-        cost_before_delivery = discounted_price + ai_commission_usd
-
-        # --- 🚚 Крок 3: Розраховуємо і додаємо повну вартість доставки ---
-        meest_price_local, meest_currency = DeliveryService.calculate_international_delivery(
-            weight_lbs, context.country_code
-        )
-        meest_delivery_usd = converter.convert(meest_price_local, meest_currency, "USD")
-        full_delivery_usd = local_delivery_usd + meest_delivery_usd
-
-        # --- 🧾 Крок 4: Визначаємо фінальну повну собівартість ---
-        cost_price_usd = cost_before_delivery + full_delivery_usd
-
-        # --- 📈 Крок 5: Розрахунок маржинальної націнки ---
-        final_markup, markup_adjustment = MarkupService.calculate_final_markup(
-            discounted_price, full_delivery_usd
+        logger.info(
+            f"💸 Pricing started | base_price={product_price} {price.currency} "
+            f"weight={weight_lbs_clean} lbs country={context.country_code} "
+            f"local_delivery={local_delivery_amount} {context.local_delivery_cost.currency} "
+            f"ai_commission={ai_commission_amount} {context.ai_commission.currency} "
+            f"phone_cost={phone_cost_amount} {context.phone_number_cost.currency}"
         )
 
-        # --- 💵 Крок 6: Визначення ціни продажу та прибутку ---
-        sale_price_usd = cost_price_usd * (1 + final_markup / 100)
-        profit_usd = sale_price_usd - cost_price_usd
-
-        # --- 🔁 Крок 7: Округлення через UAH ---
-        usd_to_uah_rate = converter.convert(1, "USD", "UAH")
-        sale_price_uah = sale_price_usd * usd_to_uah_rate
-        sale_price_rounded_uah = RoundingService.round_to_nearest_ten(sale_price_uah)
-        sale_price_rounded_usd = sale_price_rounded_uah / usd_to_uah_rate
-        profit_rounded_usd = sale_price_rounded_usd - cost_price_usd
-        delta_uah = sale_price_rounded_uah - sale_price_uah
-
-        # --- 📦 Крок 8: Повертаємо структурований результат ---
-        return FullPriceDetails(
-            sale_price_usd=sale_price_usd,
-            sale_price_rounded_usd=sale_price_rounded_usd,
-            cost_price_usd=cost_price_usd,
-            profit_usd=profit_usd,
-            profit_rounded_usd=profit_rounded_usd,
-            full_delivery_usd=full_delivery_usd,
-            markup=final_markup,
-            markup_adjustment=markup_adjustment,
-            weight_lbs=weight_lbs,
-            round_delta_uah=delta_uah,
-            protection_usd=protection_cost_usd
+        # --- 🔄 Підготовка: уніфікуємо все у USD ---
+        original_price_usd = self._to_usd(price, converter)                        # 💵 Ціна товару в USD
+        local_delivery_usd = self._to_usd(context.local_delivery_cost, converter)  # 🚚 Локальна доставка в USD
+        ai_commission_usd = self._to_usd(context.ai_commission, converter)         # 🤖 Комісія в USD
+        phone_cost_usd = self._to_usd(context.phone_number_cost, converter)        # 📞 Вартість номера в USD
+        logger.info(
+            "🔄 USD normalization | "
+            f"product={product_price} {price.currency} → {original_price_usd.amount} USD, "
+            f"local_delivery={local_delivery_amount} {context.local_delivery_cost.currency} → {local_delivery_usd.amount} USD, "
+            f"ai_commission={ai_commission_amount} {context.ai_commission.currency} → {ai_commission_usd.amount} USD, "
+            f"phone_cost={phone_cost_amount} {context.phone_number_cost.currency} → {phone_cost_usd.amount} USD"
         )
+
+        # --- 🛡️ Крок 0: Вартість страховки (Navidium) — від ЦІНИ ДО знижки ---
+        protection_usd_amt = q2(self._navidium_cost(original_price_usd.amount))    # 🛡️ Страховка Navidium
+        logger.info(
+            f"🛡️ Navidium insurance | base_price={original_price_usd.amount} USD → protection={protection_usd_amt} USD"
+        )
+
+        # --- 📉 Крок 1: Знижка — ТІЛЬКИ на ціну товару ---
+        discounted_price_usd = q2(self._apply_discount(original_price_usd.amount)) # 📉 Ціна зі знижкою
+        logger.info(
+            f"📉 Discount applied | percent={self._cfg.discount_percent}% "
+            f"base_price={original_price_usd.amount} USD → discounted_price={discounted_price_usd} USD"
+        )
+
+        # --- ✈️ Крок 2: Міжнародна доставка (вага → грам) ---
+        weight_g = self._lbs_to_grams(weight_lbs)                                  # ⚖️ Переводимо фунти у грами
+        quote: DeliveryQuote = self._delivery.quote(                    # ✈️ Запитуємо котирування від сервісу доставки
+            country=context.country_code,
+            method="air",
+            type_="courier",
+            weight_g=weight_g,
+            volumetric_weight_g=None,
+        )                                                                           # ✈️ Отримуємо тариф по доставці
+        quote_price_normalized = q2(quote.price)                                   # 💵 Нормалізуємо вартість доставки
+        meest_delivery_money = self._to_usd(PMoney(quote_price_normalized, quote.currency), converter)  # ✈️ Міжнародна доставка в USD
+        meest_delivery_usd_amt = meest_delivery_money.amount                       # 💵 Decimal сума доставки
+        logger.info(
+            f"✈️ Delivery quote | weight={weight_lbs_clean} lbs → {weight_g} g, "
+            f"quote={quote_price_normalized} {quote.currency} → {meest_delivery_usd_amt} USD"
+        )
+
+        # --- 📦 Крок 3: Повна доставка ---
+        full_delivery_usd_amt = q2(local_delivery_usd.amount + meest_delivery_usd_amt)  # 📦 Сукупна доставка
+        logger.info(
+            f"📦 Delivery total | local={local_delivery_usd.amount} USD + intl={meest_delivery_usd_amt} USD "
+            f"→ full_delivery={full_delivery_usd_amt} USD"
+        )
+
+        # --- 🧾 Крок 4: Собівартість («ціна для друзів») ---
+        cost_price_usd_amt = q2(
+            discounted_price_usd
+            + protection_usd_amt
+            + ai_commission_usd.amount
+            + phone_cost_usd.amount
+            + full_delivery_usd_amt
+        )                                                                          # 🧾 Собівартість з доставкою
+        cost_without_delivery_usd_amt = q2(
+            discounted_price_usd
+            + protection_usd_amt
+            + ai_commission_usd.amount
+            + phone_cost_usd.amount
+        )                                                                          # 🧾 Собівартість без доставки
+        logger.info(
+            "🧾 Cost build-up | "
+            f"discounted_price={discounted_price_usd} USD + protection={protection_usd_amt} USD "
+            f"+ ai_commission={ai_commission_usd.amount} USD + phone_cost={phone_cost_usd.amount} USD "
+            f"+ full_delivery={full_delivery_usd_amt} USD → cost_price={cost_price_usd_amt} USD"
+        )
+
+        # --- 📈 Крок 5: Фінальна маржинальна націнка ---
+        final_markup, markup_adjustment = self._final_markup(
+            price_usd=discounted_price_usd,
+            delivery_usd=full_delivery_usd_amt,
+        )                                                                           # 📈 Отримуємо пару (markup, adjustment)
+        logger.info(
+            f"📈 Markup decision | discounted_price={discounted_price_usd} USD "
+            f"delivery_total={full_delivery_usd_amt} USD → final_markup={final_markup}% adjustment={markup_adjustment}%"
+        )
+
+        # --- 💵 Крок 6: Ціна продажу та прибуток (до округлення) ---
+        sale_price_usd_amt = q2(
+            cost_price_usd_amt * (Decimal("1") + Decimal(str(final_markup)) / Decimal("100"))
+        )                                                                          # 💵 Розраховуємо ціну продажу
+        profit_usd_amt = q2(sale_price_usd_amt - cost_price_usd_amt)              # 💰 Прибуток до округлення
+        logger.info(
+            f"💵 Sale (pre-round) | cost_price={cost_price_usd_amt} USD markup={final_markup}% "
+            f"→ sale_price={sale_price_usd_amt} USD profit={profit_usd_amt} USD"
+        )
+
+        # --- 🔁 Крок 7: Маркетингове округлення «через UAH» до найближчих 10 ↑ ---
+        usd_to_uah = self._rate(converter, Decimal("1"), "USD", "UAH")            # 🔄 Курс USD→UAH (Decimal)
+        sale_price_uah = sale_price_usd_amt * usd_to_uah                          # 💴 Ціна продажу в гривні
+        sale_price_rounded_uah = self._ceil_to_10_uah(sale_price_uah)            # 🔔 Округлена ціна в гривні
+        sale_price_rounded_usd_amt = q2(sale_price_rounded_uah / usd_to_uah)     # 💵 Повертаємо округлення в USD
+        profit_rounded_usd_amt = q2(sale_price_rounded_usd_amt - cost_price_usd_amt)  # 💰 Прибуток після округлення
+        delta_uah = q2(sale_price_rounded_uah - sale_price_uah)                  # 🔄 Дельта округлення в гривнях
+        logger.info(
+            "🔁 UAH rounding | "
+            f"rate={usd_to_uah} UAH per USD, sale_raw={sale_price_usd_amt} USD ({q2(sale_price_uah)} UAH) "
+            f"→ rounded_sale={sale_price_rounded_usd_amt} USD ({sale_price_rounded_uah} UAH), "
+            f"round_delta={delta_uah} UAH, profit_rounded={profit_rounded_usd_amt} USD"
+        )
+
+        # --- 📦 Крок 8: Пакуємо результат (строго Money-поля з Protocol) ---
+        discounted_price_money = PMoney(discounted_price_usd, "USD")              # 💵 Підготовлена знижена ціна
+        cost_without_delivery_money = PMoney(
+            max(cost_without_delivery_usd_amt, Decimal("0")),
+            "USD",
+        )                                                                          # 📦 Собівартість без доставки (без негативів)
+        result = FullPriceDetails(                                                 # 📦 Пакуємо агрегований результат
+            sale_price=PMoney(sale_price_usd_amt, "USD"),
+            sale_price_rounded=PMoney(sale_price_rounded_usd_amt, "USD"),
+            cost_price=PMoney(cost_price_usd_amt, "USD"),
+            profit=PMoney(profit_usd_amt, "USD"),
+            profit_rounded=PMoney(profit_rounded_usd_amt, "USD"),
+            full_delivery=PMoney(full_delivery_usd_amt, "USD"),
+            protection=PMoney(protection_usd_amt, "USD"),
+            discounted_price=discounted_price_money,
+            local_delivery=local_delivery_usd,
+            international_delivery=meest_delivery_money,
+            cost_without_delivery=cost_without_delivery_money,
+            markup=Decimal(str(final_markup)),
+            markup_adjustment=Decimal(str(markup_adjustment)),
+            weight_lbs=q2(weight_lbs),
+            round_delta_uah=q2(delta_uah),
+        )
+        logger.info(
+            "✅ Pricing completed | "
+            f"sale_price={result.sale_price.amount} USD (rounded={result.sale_price_rounded.amount} USD) "
+            f"cost_price={result.cost_price.amount} USD "
+            f"profit={result.profit.amount} USD (rounded={result.profit_rounded.amount} USD) "
+            f"markup={result.markup}% adjustment={result.markup_adjustment}% "
+            f"round_delta={result.round_delta_uah} UAH"
+        )
+        return result                                                             # 📬 Повертаємо результат розрахунку
+
+    # ==================================
+    # 🧰 ПРИВАТНІ ЧИСТІ ДОПОМІЖНІ ФУНКЦІЇ
+    # ==================================
+    def _to_usd(self, money: PMoney, conv: IMoneyConverter) -> PMoney:
+        """Адаптер під IMoneyConverter: PMoney(any) → PMoney(USD)."""
+        if money.currency == "USD":                                    # ✅ Вже у потрібній валюті
+            return PMoney(q2(money.amount), "USD")                     # 💵 Нормалізуємо та повертаємо USD
+        converted = conv.convert_money(                                # 🔄 Конвертуємо через доменний конвертер
+            CMoney(money.amount, CurrencyCode(money.currency)),
+            CurrencyCode("USD"),
+        )                                                               # 🏦 Отримуємо Decimal у USD
+        return PMoney(q2(converted.amount), "USD")                     # 💵 Повертаємо нормалізований результат
+
+    def _rate(self, conv: IMoneyConverter, amount: Decimal, from_ccy: str, to_ccy: str) -> Decimal:
+        """Отримати *amount* у `to_ccy` (Decimal), використовуючи convert_money()."""
+        res = conv.convert_money(                                      # 🔄 Гроші у проміжному контейнері
+            CMoney(amount, CurrencyCode(from_ccy)),
+            CurrencyCode(to_ccy),
+        )                                                               # 🏦 Результат у цільовій валюті
+        return q2(res.amount)                                          # 📏 Повертаємо усічене значення
+
+    @staticmethod
+    def _lbs_to_grams(weight_lbs: Decimal) -> int:
+        """1 lb = 453.59237 g → повертаємо ціле для тарифікації."""
+        grams = (weight_lbs * Decimal("453.59237")).quantize(Decimal("1"))  # ⚖️ Конвертуємо фунти в грами
+        return int(grams)                                              # 🔢 Повертаємо ціле значення грамів
+
+    def _apply_discount(self, price_usd: Decimal) -> Decimal:
+        """🎁 Застосовує фіксовану знижку магазину (cfg.discount_percent)."""
+        return price_usd * (Decimal("1") - self._cfg.discount_percent / Decimal("100"))  # 🎯 Обчислюємо знижку
+
+    @staticmethod
+    def _navidium_cost(price_usd: Decimal) -> Decimal:
+        """🛡️ Розраховує вартість страхування Navidium (ступінчасто)."""
+        normalized_price = q2(price_usd)                               # 💵 Нормалізуємо вхідну суму
+        if normalized_price <= Decimal("25.00"):                       # 🧮 Базовий щабель
+            return Decimal("0.75")                                     # 🛡️ Мінімальна страховка
+        if normalized_price <= Decimal("51.00"):                       # 🧮 Другий щабель тарифу
+            return Decimal("1.50")                                     # 🛡️ Фіксований тариф
+        base_premium = Decimal("1.50")                                 # 🛡️ Стартова сума після порогу
+        amount_above_threshold = normalized_price - Decimal("51.00")   # 📈 Частина понад поріг
+        step_count = Decimal(str(math.ceil(float(amount_above_threshold / Decimal("25.0")))))  # 🪜 Кількість кроків
+        return base_premium + step_count * Decimal("0.75")             # 🛡️ Премія з урахуванням кроків
+
+    @staticmethod
+    def _final_markup(price_usd: Decimal, delivery_usd: Decimal) -> Tuple[float, float]:
+        """📈 Базова націнка + коригування за часткою доставки."""
+        price_usd_amount = float(price_usd)                            # 💵 Ціна товару у float
+        delivery_usd_amount = float(delivery_usd)                      # 🚚 Доставка у float
+        combined_cost = price_usd_amount + delivery_usd_amount         # 🧮 Загальна база для частки
+
+        if price_usd_amount < 20:                                      # 🧮 Діапазон ціни < 20
+            base_markup_percent = 30                                   # 📈 Базова націнка
+        elif price_usd_amount < 30:                                    # 🧮 20–30 USD
+            base_markup_percent = 27                                   # 📈 Націнка для сегменту
+        elif price_usd_amount < 40:                                    # 🧮 30–40 USD
+            base_markup_percent = 25                                   # 📈 Відповідна ставка
+        elif price_usd_amount < 50:                                    # 🧮 40–50 USD
+            base_markup_percent = 23                                   # 📈 Зменшена ставка
+        else:                                                          # 🧮 Більше 50 USD
+            base_markup_percent = 20                                   # 📈 Мінімальна базова націнка
+
+        delivery_share_percent = (delivery_usd_amount / combined_cost * 100) if combined_cost > 0 else 0  # 📊 Частка доставки
+        if delivery_share_percent > 20:                                # 🛫 Доставка занадто дорога
+            adjustment_percent = -3                                    # 🔻 Зменшуємо націнку
+        elif delivery_share_percent < 10:                              # 🛬 Доставка дешева
+            adjustment_percent = 3                                     # 🔺 Збільшуємо націнку
+        else:                                                          # ⚖️ Частка у комфортному коридорі
+            adjustment_percent = 0                                     # ➖ Залишаємо без змін
+        final_markup_percent = float(base_markup_percent + adjustment_percent)  # 📈 Підсумкова націнка
+        logger.info(
+            "🧮 Markup rule | price=%s USD delivery=%s USD cost_share=%.2f%% base=%s%% adj=%s%% → final=%s%%",
+            price_usd,
+            delivery_usd,
+            delivery_share_percent,
+            base_markup_percent,
+            adjustment_percent,
+            final_markup_percent,
+        )
+        return final_markup_percent, float(adjustment_percent)         # 📦 Повертаємо (markup, adjustment)
+
+    @staticmethod
+    def _ceil_to_10_uah(value_uah: Decimal) -> Decimal:
+        """🔢 Округлює «вгору» до найближчих 10 грн (10, 20, 30, ...)."""
+        tens = (value_uah // Decimal("10"))                            # 🔢 Базова кількість десятків
+        needs_up = (value_uah % Decimal("10")) != 0                    # 🔄 Чи потрібне додаткове округлення
+        return (tens + (1 if needs_up else 0)) * Decimal("10")         # 🔔 Повертаємо округлену суму

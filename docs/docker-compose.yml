@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    image: myapp-playwright:latest
+    working_dir: /app
+    # Монтируем код и вар-директорию (для трейсів/кешей/логов)
+    volumes:
+      - ./src:/app/src
+      - ./var:/app/var
+    # Берём секреты из .env (ключи: TELEGRAM_TOKEN, OPENAI_API_KEY)
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app/src
+      # При необходимости можно переопределить поведение без правки YAML:
+      # PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    # В Chromium нужен большой /dev/shm
+    shm_size: "1gb"
+    # На проде/CI — обычный headless запуск
+    command: ["python", "-m", "app.bot.main"]
+
+  # Профиль для локального дебага с виртуальным X-сервером (xvfb)
+  app-debug:
+    image: myapp-playwright:latest
+    working_dir: /app
+    volumes:
+      - ./src:/app/src
+      - ./var:/app/var
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app/src
+    shm_size: "1gb"
+    # Запуск под Xvfb (видимого окна не будет, но браузер будет «headful» внутри Xvfb)
+    command: >
+      bash -lc "xvfb-run -a python -m app.bot.main"
+    profiles: ["debug"]

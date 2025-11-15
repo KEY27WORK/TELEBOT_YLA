@@ -1,94 +1,130 @@
-# 📋 main_menu_feature.py — Фіча, що обробляє кнопки головного меню.
+# 📋 app/bot/commands/main_menu_feature.py
 """
-📋 main_menu_feature.py — Фіча, що обробляє кнопки головного меню.
+📋 Фіча головного меню (Reply‑кнопки).
 
-🔹 Реалізує логіку перемикання режимів бота.
-🔹 Самостійно реєструє свій обробник.
+Призначення:
+- Обробляє натискання кнопок головного меню (ReplyKeyboardMarkup).
+- Вмикає/вимикає режими роботи та показує інлайн‑меню (валюти/довідка).
+
+Інтеграція:
+- `Container` створює `MainMenuFeature(constants=CONST)` і експонує як
+  `container.main_menu_feature` (та legacy‑аліас `menu_handler`).
+- `BotRegistrar` реєструє глобальний MessageHandler із regex‑патерном,
+  який делегує на `MainMenuFeature.handle_menu`.
 """
+
+from __future__ import annotations
 
 # 🌐 Зовнішні бібліотеки
-from telegram import Update
-from telegram.ext import CallbackContext, Application, MessageHandler, filters
+from telegram import Update                                              # ✉️ Подія від Telegram (type-ignore для stubs)
+
+# 🔠 Системні імпорти
+import logging                                                           # 🧾 Логування операцій
 
 # 🧩 Внутрішні модулі проєкту
-from app.bot.commands.base import BaseFeature
-from app.bot.ui import Keyboard 
-from app.config.setup import constants as const
-from app.errors.error_handler import error_handler
-import logging											            # 🧾 Логування подій
-from app.shared.utils.logger import LOG_NAME                       # ⚙️ Назва логера з проєкту
+from app.bot.services.custom_context import CustomContext                # 🧠 Розширений контекст бота
+from app.bot.ui import static_messages as msg                            # 📝 Статичні повідомлення
+from app.bot.ui.keyboards.keyboards import Keyboard                      # 🎛️ Побудова клавіатур
+from app.config.setup.constants import AppConstants                      # ⚙️ Константи застосунку
+from app.shared.utils.logger import LOG_NAME                             # 🏷️ Кореневий логер
 
-# ================================
-# 🧾 ЛОГЕР
-# ================================
-logger = logging.getLogger(LOG_NAME)                               # 🧾 Логер для реєстрації подій
 
-# ================================
-# ✨ ФІЧА ГОЛОВНОГО МЕНЮ
-# ================================
+logger = logging.getLogger(LOG_NAME)                                     # 🧾 Модульний логер
 
-class MainMenuFeature(BaseFeature):
-    """Клас, що інкапсулює логіку обробки кнопок головного меню."""
 
-    def __init__(self):
-        # 🗺️ Карта відповідності: кнопка -> (режим, відповідь)
-        self.mode_map = {
-            const.BTN_INSERT_LINKS: (const.MODE_PRODUCT, "✅ Режим вставки посилань на товари активовано."),
-            const.BTN_COLLECTION_MODE: (const.MODE_COLLECTION, "✅ Режим колекцій активовано."),
-            const.BTN_SIZE_CHART_MODE: (const.MODE_SIZE_CHART, "📏 Режим таблиць розмірів активовано."),
-            const.BTN_REGION_AVAILABILITY: (const.MODE_REGION_AVAILABILITY, "🌍 Режим мульти-регіональної перевірки активовано."),
-            const.BTN_PRICE_CALC_MODE: (const.MODE_PRICE_CALCULATION, "🧮 Режим розрахунку ціни активовано."),
-        }
+class MainMenuFeature:
+    """Обробляє текстові кнопки головного меню та перемикає режими."""
 
-    def register_handlers(self, app: Application):
-        """Реєструє обробник для кнопок головного меню."""
-        # 👇 Викликаємо функцію з констант
-        menu_pattern = const.generate_menu_pattern()
-        app.add_handler(MessageHandler(
-            filters.TEXT & filters.Regex(menu_pattern),
-            self.handle_menu
-        ))
+    def __init__(self, *, constants: AppConstants) -> None:
+        self.const = constants                                            # 📦 Константи з UI/LOGIC/COMMANDS
+        logger.info("📋 MainMenuFeature initialised with constants=%s", type(constants).__name__)  # 🧾 Діагностика DI
 
-    @error_handler
-    async def handle_menu(self, update: Update, context: CallbackContext):
-        """
-        📥 Приймає текстову команду з меню та виконує відповідну дію.
-        """
-        # 💬 Отримуємо текст натиснутої кнопки
-        text = update.message.text.strip()
-        user_data = context.user_data
-
-        # 🚀 Спроба обробити як команду на зміну режиму через карту
-        if text in self.mode_map:
-            mode, reply_text = self.mode_map[text]
-            user_data["mode"] = mode
-            await update.message.reply_text(reply_text)
+    async def handle_menu(self, update: Update, context: CustomContext) -> None:
+        """Єдина точка обробки натискань на кнопки головного меню."""
+        if not update.message:                                           # 🚫 Немає тексту, нічого обробляти
+            logger.debug("📭 Skip main menu: update without message")
             return
 
-        # ⚙️ Обробка інших кнопок, що не встановлюють простий режим
-        if text == const.BTN_MY_ORDERS:
-            await update.message.reply_text("📦 У вас поки що немає замовлень.")
-        
-        elif text == const.BTN_CURRENCY:
+        user_id = getattr(update.effective_user, "id", "unknown")         # 🆔 Ідентифікатор користувача
+        text = (update.message.text or "").strip()                        # 📝 Текст кнопки
+        buttons = self.const.UI.REPLY_BUTTONS                             # 🎛️ Набір кнопок
+        modes = self.const.LOGIC.MODES                                    # 🧭 Режими роботи
+        parse_mode = getattr(self.const.UI, "DEFAULT_PARSE_MODE", None)   # ✍️ Форматування відповіді
+
+        logger.info("🕹️ MainMenu click user=%s text=%r", user_id, text)
+
+        # 🧭 Маршрут за назвою кнопки
+        if text == buttons.INSERT_LINKS:
+            context.mode = modes.PRODUCT                                  # 🛒 Вмикаємо режим товарів
+            logger.info("🛒 PRODUCT mode enabled for user=%s", user_id)
             await update.message.reply_text(
-                "💱 Виберіть дію з курсом валют:",
-                reply_markup=Keyboard.currency_menu()
+                msg.MENU_MODE_PRODUCT_ENABLED,
+                parse_mode=parse_mode,
+                reply_markup=Keyboard(self.const).build_main_menu(),
             )
-        
-        elif text == const.BTN_HELP:
+            return
+
+        if text == buttons.MY_ORDERS:
+            logger.info("📦 MY_ORDERS requested by user=%s", user_id)
+            await update.message.reply_text(msg.MENU_MY_ORDERS_EMPTY, parse_mode=parse_mode)
+            return
+
+        if text == buttons.COLLECTION_MODE:
+            context.mode = modes.COLLECTION                               # 🧺 Режим колекцій
+            logger.info("🧺 COLLECTION mode enabled for user=%s", user_id)
+            await update.message.reply_text(msg.MENU_MODE_COLLECTION_ENABLED, parse_mode=parse_mode)
+            return
+
+        if text == buttons.SIZE_CHART_MODE:
+            context.mode = modes.SIZE_CHART                               # 📏 Пошук таблиць
+            logger.info("📏 SIZE_CHART mode enabled for user=%s", user_id)
+            await update.message.reply_text(msg.MENU_MODE_SIZE_CHART_ENABLED, parse_mode=parse_mode)
+            return
+
+        if text == buttons.CURRENCY:
+            logger.info("💱 Currency menu requested by user=%s", user_id)
             await update.message.reply_text(
-                "🆘 Чим можу допомогти?",
-                reply_markup=Keyboard.help_menu()
+                msg.MENU_CURRENCY_PROMPT,
+                parse_mode=parse_mode,
+                reply_markup=Keyboard(self.const).build_currency_menu(),
             )
-        
-        elif text == const.BTN_DISABLE_MODE:
-            user_data["mode"] = None
+            return
+
+        if text == buttons.HELP:
+            logger.info("🆘 Help menu requested by user=%s", user_id)
             await update.message.reply_text(
-                "⏹️ Усі режими вимкнено.",
-                reply_markup=Keyboard.main_menu()
+                msg.MENU_HELP_PROMPT,
+                parse_mode=parse_mode,
+                reply_markup=Keyboard(self.const).build_help_menu(),
             )
-            
-        else:
-            # ❔ Обробка невідомої команди
-            logger.warning(f"📭 Отримана невідома команда з меню: {text}")
-            await update.message.reply_text("❓ Ця опція поки що не підтримується.")
+            return
+
+        if text == buttons.PRICE_CALC_MODE:
+            context.mode = modes.PRICE_CALCULATION                       # 🧮 Режим калькулятора
+            logger.info("🧮 PRICE_CALC mode enabled for user=%s", user_id)
+            await update.message.reply_text(msg.MENU_MODE_PRICE_CALC_ENABLED, parse_mode=parse_mode)
+            return
+
+        if text == buttons.REGION_AVAILABILITY:
+            context.mode = modes.REGION_AVAILABILITY                     # 🌍 Перевірка наявності
+            logger.info("🌍 REGION_AVAILABILITY mode enabled for user=%s", user_id)
+            await update.message.reply_text(msg.MENU_MODE_AVAILABILITY_ENABLED, parse_mode=parse_mode)
+            return
+
+        if text == buttons.DISABLE_MODE:
+            context.mode = None                                           # 🔕 Скидаємо режими
+            context.url = None                                            # 🧹 Чистимо останній URL
+            logger.info("🛑 All modes disabled for user=%s", user_id)
+            await update.message.reply_text(
+                msg.MENU_ALL_MODES_DISABLED,
+                parse_mode=parse_mode,
+                reply_markup=Keyboard(self.const).build_main_menu(),
+            )
+            return
+
+        # Фолбек — незнайома кнопка (не повинно траплятися)
+        logger.warning("⚠️ Unknown main-menu option text=%r user=%s", text, user_id)
+        await update.message.reply_text(msg.MENU_UNKNOWN_OPTION, parse_mode=parse_mode)  # 📣 Сповіщаємо користувача
+
+
+__all__ = ["MainMenuFeature"]                                             # 📤 Експортуємо фічу для зовнішнього використання

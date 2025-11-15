@@ -1,0 +1,10 @@
+title: "Gloves"
+price: "19"
+description: ""
+main_image: "https://i.ex/g/gloves.jpg"
+all_images:
+  - "https://i.ex/g/gloves.jpg"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: true
+stock_legacy: null

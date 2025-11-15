@@ -1,109 +1,175 @@
 # 🧠 app/infrastructure/content/product_content_service.py
 """
-🧠 product_content_service.py — сервіс для агрегації контенту про товар.
+🧠 Сервіс агрегує контент для картки товару (слоган, переклади, хештеги, ціна, ALT).
 
-🔹 Клас `ProductContentService`:
-- Асинхронно збирає дані з різних джерел (AI, ціни, наявність).
-- Повертає структурований об'єкт з усіма даними для подальшого форматування.
+🔹 «ProductContentService» координує AI-запити, побічні генератори та форматування ціни.  
+🔹 Повертає строго типізований `ProductContentDTO`, придатний до подальшого відображення.  
+🔹 Виключення не ковтаються — оркестратор має побачити збій (вимога IMP-011).
 """
 
+from __future__ import annotations
+
 # 🔠 Системні імпорти
-import asyncio                                                    # 🔄 Паралельне виконання задач
-import logging                                                    # 🧾 Логування
-from dataclasses import dataclass                                 # 📦 Структуровані DTO
-from typing import Dict, List, Tuple                              # 🧩 Типи даних
+import asyncio                                                      # 🔄 Паралельні виклики
+import logging                                                      # 🧾 Журналювання стану
+from dataclasses import dataclass                                   # 📦 DTO
+from typing import Dict, List, Optional, TYPE_CHECKING             # 📐 Типи
 
-# 🧩 Внутрішні модулі проєкту
-from app.infrastructure.ai.translator import TranslatorService                # 🤖 AI-переклад і генерація
-from app.infrastructure.content.hashtag_generator import HashtagGenerator     # 🏷️ Генерація хештегів
-from app.infrastructure.telegram.handlers.price_calculator_handler import PriceCalculationHandler  # 💰 Розрахунок ціни
-from app.shared.utils.logger import LOG_NAME                                  # 📒 Імʼя логера
+# 🧩 Доменні контракти
+from app.domain.ai.task_contracts import ITextAI                    # 🤖 Генератор текстів
+from app.domain.content.interfaces import IHashtagGenerator         # 🏷️ Контракт хештегів
+from app.domain.products.entities import ProductInfo                # 📦 Дані продукту
 
-logger = logging.getLogger(LOG_NAME)
+# 🧰 Інфраструктура / адаптери
+from app.infrastructure.adapters import (                           # 🔗 Компонування фасадів
+    HashtagGeneratorStringAdapter,                                  # Set[str] -> str
+    IPriceMessageFacade,                                            # 💸 Фасад ціни
+    PriceMessageFacade,
+)
+from app.infrastructure.content.alt_text_generator import AltTextGenerator  # 🖼️ ALT-тексти
+from app.shared.utils.logger import LOG_NAME                        # 🏷️ Імʼя логера
+
+if TYPE_CHECKING:                                                   # 🧠 Лише для типізації
+    from app.bot.handlers.price_calculator_handler import PriceCalculationHandler
+
+logger = logging.getLogger(LOG_NAME)                                # 🧾 Модульний логер
+
 
 # ================================
-# 📦 DTO ДЛЯ КОНТЕНТУ ТОВАРУ
+# 📦 DTO ДЛЯ КОНТЕНТУ
 # ================================
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductContentDTO:
-    """
-    📦 Data Transfer Object для контенту одного товару.
-    Забезпечує уніфіковану структуру для подальшого форматування в повідомлення.
-    """
-    title: str                                                    # 🏷️ Назва товару
-    slogan: str                                                   # 💬 Короткий слоган
-    hashtags: str                                                 # #️⃣ Хештеги
-    sections: Dict[str, str]                                      # 📚 Перекладені секції опису
-    colors_text: str                                              # 🎨 Опис кольорів
-    price_message: str                                            # 💸 Розрахована вартість
-    images: List[str]                                             # 🖼️ Список URL зображень
+    title: str                                                       # 🏷️ Назва товару
+    slogan: str                                                      # 💬 Слоган від AI
+    hashtags: str                                                    # #️⃣ Хештеги рядком
+    sections: Dict[str, str]                                         # 📚 Перекладені секції
+    colors_text: str                                                 # 🎨 Опис наявності
+    price_message: str                                               # 💸 Повідомлення ціни
+    images: List[str]                                                # 🖼️ URL зображень
+    alt_texts: Dict[str, str]                                        # 🔎 ALT-тексти url → alt
+
+
+__all__ = ["ProductContentDTO", "ProductContentService"]
+
 
 # ================================
-# 🏛️ КЛАС СЕРВІСУ АГРЕГАЦІЇ
+# 🏛️ СЕРВІС АГРЕГАЦІЇ
 # ================================
 class ProductContentService:
-    """
-    🧠 Сервіс, що відповідає за збір усього текстового та медіа-контенту для товару.
-    """
+    """🧠 Координує текст/медіа-дані для `ProductInfo`."""
+
     def __init__(
         self,
-        translator_service: TranslatorService,                                    # 🤖 Перекладач (GPT)
-        hashtag_generator: HashtagGenerator,                                      # 🏷️ Генератор хештегів
-        price_handler: PriceCalculationHandler,                                   # 💰 Обчислення вартості
-    ):
-        self.translator = translator_service                                      # 📥 Зберігаємо залежність
-        self.hashtag_generator = hashtag_generator
-        self.price_handler = price_handler
+        translator: ITextAI,
+        hashtag_generator: IHashtagGenerator,
+        price_handler: "PriceCalculationHandler",
+        alt_text_generator: Optional[AltTextGenerator] = None,
+    ) -> None:
+        self._translator = translator                                 # 🤖 Переклад/слогани
+        self._hashtags = HashtagGeneratorStringAdapter(hashtag_generator)  # 🏷️ → str
+        self._price: IPriceMessageFacade = PriceMessageFacade(price_handler)  # 💸 Фасад ціни
+        self._alt = alt_text_generator                                # 🖼️ ALT (необов'язково)
+        logger.debug(
+            "⚙️ ProductContentService init (alt=%s)",
+            bool(alt_text_generator),
+        )
 
     async def build_product_content(
         self,
-        title: str,
-        description: str,
-        image_url: str,
+        product: ProductInfo,
+        *,
         url: str,
-        colors_text: str
+        colors_text: str,
     ) -> ProductContentDTO:
-        """
-        📦 Агрегує весь контент, виконуючи запити паралельно.
+        """📦 Агрегує всі поля DTO та повертає `ProductContentDTO`."""
+        logger.info("🧠 Початок побудови контенту для: %s", product.title)
 
-        Args:
-            title (str): Назва товару
-            description (str): Оригінальний опис з сайту
-            image_url (str): Головне зображення товару
-            url (str): Посилання на товар
-            colors_text (str): Витягнуті кольори у текстовій формі
-
-        Returns:
-            ProductContentDTO: Повністю зібраний структурований контент
-        """
-        logger.info(f"🧠 Починаю побудову контенту для: {title}")
-
-        # 🧠 Запускаємо генерацію в паралельних потоках
-        slogan_task = asyncio.to_thread(self.translator.generate_slogan, title, description)       # 💬 Слоган
-        translate_task = asyncio.to_thread(self.translator.translate_text, description)            # 🌐 Переклад опису
-        hashtags_task = self.hashtag_generator.generate(title, description)                        # 🏷️ Хештеги
-        price_task = self.price_handler.calculate_and_format(url)                                  # 💰 Ціна + зображення
+        slogan_task = self._translator.generate_slogan(               # 💬 Слоган
+            title=product.title,
+            description=product.description,
+        )
+        translate_task = self._translator.translate_sections(        # 🌐 Переклад секцій
+            text=product.description,
+        )
+        hashtags_task = self._hashtags.generate(product)              # 🏷️ Хештеги рядком
+        price_task = self._price.calculate_and_format(url)            # 💸 Повідомлення ціни
 
         try:
-            # ⏳ Чекаємо завершення всіх задач паралельно
-            slogan, sections, hashtags, (_, price_message, images) = await asyncio.gather(
+            slogan, sections, hashtags, price_tuple = await asyncio.gather(
                 slogan_task,
                 translate_task,
                 hashtags_task,
-                price_task
+                price_task,
+            )                                                         # ⏳ Паралельне очікування
+            logger.debug(
+                "📦 gather done: slogan=%s, sections=%s, hashtags_len=%d",
+                bool(slogan),
+                len(sections) if isinstance(sections, dict) else -1,
+                len(hashtags) if isinstance(hashtags, str) else -1,
             )
-        except Exception as e:
-            logger.error(f"❌ Помилка під час побудови контенту для '{title}': {e}")
+        except asyncio.CancelledError:
+            logger.info("🛑 Побудову контенту скасовано для: %s", product.title)  # 🛑 propagate cancel
+            raise
+        except Exception as exc:
+            logger.exception("❌ Збій під час побудови контенту для '%s'", product.title)  # 🧯 лог для оркестратора
             raise
 
-        logger.info(f"✅ Контент успішно збудовано для: {title}")
+        if not isinstance(price_tuple, tuple) or len(price_tuple) < 3:  # 📏 гарантований контракт price-фасаду
+            logger.error("💥 Price facade повернув: %r", price_tuple)
+            raise ValueError("Price facade returned unexpected shape.")
+        _, price_message, images = price_tuple                        # 📤 Розпаковуємо результат
+        logger.debug("💸 Price facade images=%d", len(images) if isinstance(images, list) else -1)  # 🧾 логимо метадані
 
-        return ProductContentDTO(
-            title=title,                            # 🏷️ Назва товару
-            slogan=slogan,                          # 💬 Згенерований слоган
-            hashtags=hashtags,                      # 🏷️ Згенеровані хештеги
-            sections=sections,                      # 📚 Переклад опису
-            colors_text=colors_text,                # 🎨 Кольори як текст
-            price_message=price_message,            # 💸 Форматована вартість
-            images=images                           # 🖼️ Список зображень
+        if not isinstance(sections, dict):                            # 🛡️ гарантуємо очікувані типи
+            raise TypeError("Translator повернув не dict.")
+        if not isinstance(hashtags, str):
+            raise TypeError("Hashtag adapter повинен повертати рядок.")
+        if not isinstance(images, list):
+            images = list(product.images or [])                       # 🛟 Фолбек на зображення з продукту
+
+        alt_texts: Dict[str, str] = {}                                # 🔎 ALT-тексти за замовчуванням порожні
+        image_candidates = [img for img in images if isinstance(img, str) and img]  # 🖼️ нормалізуємо URL
+        if not image_candidates:
+            image_candidates = [img for img in (product.images or ()) if isinstance(img, str) and img]  # ↩️ fallback
+
+        if self._alt and image_candidates:
+            try:
+                alt_texts = await self._alt.generate(product, tuple(image_candidates))  # 🤖 генеруємо ALT
+                logger.debug("🔎 ALT-тексти згенеровано: %d", len(alt_texts))  # 📊 скільки отримали
+            except asyncio.CancelledError:
+                logger.info("🛑 ALT-генерацію скасовано для: %s", product.title)  # 🛑 propagate cancel
+                raise
+            except Exception as alt_err:
+                logger.warning("⚠️ ALT-генерація не вдалася: %s", alt_err)  # ⚠️ не валимо пайплайн
+                alt_texts = {}                                            # ↩️ Порожні ALT
+
+        raw_parser_sections: Dict[str, str] = {
+            str(k): str(v)
+            for k, v in dict(product.sections or {}).items()
+            if isinstance(k, str) and isinstance(v, str)
+        }                                                             # 🧾 Оригінальні секції з парсера (англ)
+        translated_sections: Dict[str, str] = {
+            str(k): str(v)
+            for k, v in sections.items()
+            if isinstance(k, str) and isinstance(v, str)
+        }                                                             # 🌐 Перекладені (AI) секції
+
+        merged_sections: Dict[str, str] = dict(raw_parser_sections)   # 🔁 Починаємо з даних парсера
+        for key, value in translated_sections.items():
+            cleaned_value = value.strip()
+            if cleaned_value:                                         # 🧼 Уникаємо порожніх перезаписів
+                merged_sections[key] = cleaned_value                  # 🔄 Переклад має пріоритет
+
+        dto = ProductContentDTO(
+            title=product.title or "",
+            slogan=slogan or "",
+            hashtags=hashtags or "",
+            sections=merged_sections,
+            colors_text=colors_text or "",
+            price_message=price_message or "",
+            images=image_candidates,
+            alt_texts=alt_texts,
         )
+        logger.info("✅ Контент збудовано: %s", product.title)
+        return dto

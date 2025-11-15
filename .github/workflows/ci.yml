@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type-test:
+    name: Lint/Types/Tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # pyproject ограничивает <3.11 → оставляем только 3.10
+        python-version: ["3.10"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: "1.7.1"
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config installer.max-workers 8
+
+      - name: Cache Poetry/Pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: v1-${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            v1-${{ runner.os }}-poetry-${{ matrix.python-version }}-
+
+      - name: Install deps
+        run: poetry install --no-interaction --no-ansi
+
+      # ---------- Ruff ----------
+      - name: Ruff (lint)
+        run: poetry run ruff check .
+
+      - name: Ruff (format check)
+        run: poetry run ruff format --check .
+
+      # ---------- Black ----------
+      - name: Black (check)
+        run: poetry run black --check .
+
+      # ---------- Pyright (types) ----------
+      - name: Pyright
+        run: poetry run pyright
+
+      # ---------- pytest + coverage ----------
+      - name: pytest
+        env:
+          OPENAI_API_KEY: "test"
+          TELEGRAM_BOT_TOKEN: "test"
+          PYTHONHASHSEED: "0"
+        run: |
+          poetry run pytest

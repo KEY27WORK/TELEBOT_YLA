@@ -1,79 +1,130 @@
 # 🎵 app/infrastructure/music/music_recommendation.py
-""" 🎵 music_recommendation.py — Оптимізований модуль для підбору музики до товарів.
+"""
+🎵 MusicRecommendation — добір музики до товарів через AI (IMusicRecommender).
 
-🔹 Клас `MusicRecommendation`:
-- Генерує музичні рекомендації за допомогою OpenAI GPT-4
-- Аналізує назву, опис і зображення товару
-- Працює як Singleton (один інстанс на весь процес)
-- Логує процес генерації та помилки
-
-📦 Використовує:
-- OpenAIService — для запиту до GPT
-- PromptService — для створення промпту
-- ErrorHandler — для обробки помилок
+🔹 Головний метод `recommend(ProductPromptDTO)` будує prompt і звертається до LLM.
+🔹 Фолбек `recommend_legacy` підтримує старе API з title/description/image_url.
+🔹 Модель/temperature встановлюються безпосередньо в ChatPrompt, як очікує OpenAIService.
 """
 
-# 📦 Стандартні бібліотеки
-import logging
-import asyncio
+from __future__ import annotations
 
-# 🧠 Внутрішні сервіси
-from app.infrastructure.ai.prompt_service import PromptService
-from app.errors.error_handler import error_handler
-from app.infrastructure.ai.open_ai_serv import OpenAIService
+# 🔠 Системні імпорти
+import logging	# 🧾 Логування кроків рекомендацій
+import re	# 🧹 Нормалізація рядків із треками
+from typing import List, Tuple	# 🧰 Типізація
+
+# 🧩 Внутрішні модулі проєкту
 from app.config.config_service import ConfigService
+from app.domain.ai import ProductPromptDTO
+from app.domain.music.interfaces import (
+    IMusicRecommender,
+    MusicRecommendationResult,
+    RecommendedTrack,
+)
+from app.infrastructure.ai.open_ai_serv import OpenAIService
+from app.infrastructure.ai.prompt_service import PromptService  # у stubs може не бути методів
+from app.shared.utils.logger import LOG_NAME
+
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logger = logging.getLogger(LOG_NAME)	# 🧾 Використовуємо загальний логер
 
 
-class MusicRecommendation:
-    """🎧 Генератор музичних рекомендацій на основі опису товару.
+class MusicRecommendation(IMusicRecommender):
+    """🎶 Підбирає музику через LLM: формує prompt, викликає OpenAI, парсить відповіді."""
 
-    🔹 Логіка:
-    - Формує промпт через PromptService
-    - Надсилає запит до OpenAI GPT-4
-    - Повертає результат або повідомлення про помилку
-    """
+    def __init__(
+        self,
+        openai_service: OpenAIService,
+        prompt_service: PromptService,
+        config_service: ConfigService,
+    ) -> None:
+        """⚙️ Зберігає залежності та логгує готовність."""
+        self._openai = openai_service	# 🤖 API клієнт OpenAI
+        self._prompts = prompt_service	# 🧾 Сервіс промтів
+        self._config = config_service	# ⚙️ Конфіг (модель/temperature)
+        logger.info("✅ MusicRecommendation ініціалізовано.")	# 🪵 Подія
 
-    def __init__(self, openai_service: OpenAIService):
+    # ===== Доменно правильний метод (вимога IMusicRecommender) =====
+    async def recommend(self, product: ProductPromptDTO) -> MusicRecommendationResult:
+        """Згенерувати добірку для продукту (title/description/image_url всередині DTO)."""
+        title = product.title or ""
+        logger.info("🎼 Підбір музики для: %s", title)
+
+        # Налаштування моделі (строго приводимо типи, щоб не отримати Optional)
+        model: str = self._config.get("music.recommendation.model", "gpt-4o-mini") or "gpt-4o-mini"
+        temperature: float = self._config.get(  # type: ignore[assignment]
+            "music.recommendation.temperature",
+            0.7,
+            cast=float,
+        ) or 0.7
+
+        # Формуємо ChatPrompt для LLM
+        prompt = self._prompts.get_music_prompt(product)
+
+        # Кладемо модель/температуру прямо у prompt (так очікує OpenAIService.chat_completion)
+        try:
+            setattr(prompt, "model", model)
+            setattr(prompt, "temperature", float(temperature))
+        except Exception:
+            logger.debug("ℹ️ Не вдалося виставити model/temperature у ChatPrompt; продовжую.", exc_info=False)
+
+        # Запит до LLM
+        raw = await self._openai.chat_completion(prompt)
+        if not raw:
+            logger.warning("⚠️ AI не повернув відповідь для музичних рекомендацій.")
+            return MusicRecommendationResult(tracks=(), raw_text="", model=model)
+
+        tracks = self._parse_response_to_tracks(raw)
+        return MusicRecommendationResult(tracks=tuple(tracks), raw_text=raw, model=model)
+
+    # ===== Легаси-обгортка для старих викликів (не входить у контракт) =====
+    async def recommend_legacy(self, title: str, description: str, image_url: str) -> MusicRecommendationResult:
+        """Сумісність зі старим API. Створює DTO та делегує у recommend()."""
+        dto = ProductPromptDTO(title=title or "", description=description or "", image_url=image_url or "")
+        return await self.recommend(dto)
+
+    # =========================
+    # Helpers (парсинг відповіді)
+    # =========================
+    def _parse_response_to_tracks(self, text: str) -> List[RecommendedTrack]:
         """
-        🔧 Ініціалізація з впровадженням залежності OpenAIService.
+        Видобуває список `RecommendedTrack` з «сирого» тексту моделі.
+        Забирає маркери списку і пробує поділити на «Артист — Трек».
         """
-        self.openai_service = openai_service
-        logging.info("✅ MusicRecommendation успішно ініціалізовано.")
+        lines = (text or "").splitlines()	# 📄 Розбиваємо текст моделі на рядки
+        cleaned: List[str] = []	# 🧼 Зберігаємо очищені рядки
+        for line in lines:	# 🔁 Нормалізуємо кожен рядок
+            stripped = re.sub(r"^\s*(?:[-•*]|\d+[.)])\s*", "", line).strip()	# ✂️ Прибираємо маркери списку
+            if stripped:	# ✅ Ігноруємо порожні рядки
+                cleaned.append(stripped)	# 🧺 Додаємо у список
 
-    @error_handler
-    async def find_music(self, title: str, description: str, image_url: str) -> str:
+        result: List[RecommendedTrack] = []	# 🎵 Підсумковий список треків
+        seen: set[Tuple[str, str]] = set()	# ♻️ Відстежуємо дублікати (artist/title)
+
+        for entry in cleaned:	# 🔁 Обходимо очищені рядки
+            artist, title = self._split_artist_title(entry)	# 🎙️ Розбиваємо на артиста/трек
+            dedupe_key = (artist.lower(), title.lower())	# 🔑 Кей для унікальності
+            if dedupe_key in seen:	# 🚫 Вже доданий
+                continue
+            seen.add(dedupe_key)	# ♻️ Позначаємо як бачене
+            result.append(RecommendedTrack(artist=artist, title=title))	# 📦 Додаємо у результат
+
+        logger.debug("🎶 Parsed %d унікальних треків із відповіді AI.", len(result))	# 🪵 Метрика
+        return result	# 🔁 Повертаємо список
+
+    @staticmethod
+    def _split_artist_title(s: str) -> Tuple[str, str]:
         """
-        🎵 Підбирає музику на основі товару (асинхронно).
-
-        :param title: Назва товару
-        :param description: Опис товару
-        :param image_url: Посилання на зображення
-        :return: Рекомендовані треки або повідомлення про помилку
+        Пробуємо «Артист — Трек» з різними тире/дефісами.
+        Якщо розділити не вдалося — вся строка вважається назвою треку.
         """
-        logging.info(f"🎼 Підбір музики для: {title}")
-        prompt = PromptService.get_music_prompt(title, description, image_url)
-        
-        # ✅ Використовуємо asyncio.to_thread для запуску синхронного коду в асинхронному потоці
-        song_response = await asyncio.to_thread(
-            self.openai_service.chat_completion, prompt, temperature=0.7
-        )
-
-        if "ERROR" not in song_response:
-            logging.info(f"🎶 Рекомендовані треки:\n{song_response}")
-            return song_response
-
-        logging.warning("⚠️ Не вдалося підібрати музику через OpenAI.")
-        return "Музика не була підібрана!"
-
-
-# 🔹 Приклад локального запуску
-if __name__ == "__main__":
-    config_serv = ConfigService()
-    open_ai_serv = OpenAIService(config_service=config_serv)
-    music_service = MusicRecommendation(open_ai_serv)
-    result = music_service.find_music(
-        title="W621 Headband Trio",
-        description="Еластична і зручна пов'язка на голову для спорту.",
-        image_url="https://example.com/image.jpg"
-    )
-    print(result)
+        for separator in (" — ", " – ", " - ", " —", " –", " -"):	# 🔁 Випробовуємо різні тире/дефіси
+            if separator in s:	# ✅ Є роздільник
+                artist, title = s.split(separator, 1)	# ✂️ Ділимо рядок
+                artist, title = artist.strip(), title.strip()	# 🧼 Прибираємо пробіли
+                if artist and title:	# ✅ Обидві частини непорожні
+                    return artist, title	# 🔁 Повертаємо як (artist, title)
+        return "", s.strip()	# 🔁 Default: без артиста, весь рядок — назва треку

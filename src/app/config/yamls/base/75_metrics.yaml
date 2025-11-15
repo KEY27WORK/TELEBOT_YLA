@@ -1,0 +1,12 @@
+# ⚙️ app/config/yamls/base/75_metrics.yaml
+# 📈 Метрики застосунку
+# Керує запуском Prometheus-експортера (maybe_start_prometheus).
+
+# ================================
+# 🚀 PROMETHEUS
+# ================================
+metrics:
+  enabled: true                        # 🔛 Увімкнути збір метрик
+  exporter: "prometheus"               # 📦 "prometheus" або "none"
+  prometheus:
+    port: 9108                         # 🌐 Порт HTTP /metrics

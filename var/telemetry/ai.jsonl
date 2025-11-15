@@ -1,0 +1,330 @@
+{"ts": 1762143086.785801, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762143088.624513, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762233945.9687622, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762233949.057533, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762234122.691148, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762234124.612372, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762234124.634519, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1762234124.6453362, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1762234124.6457322, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1762234125.5479329, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762234127.30663, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762234127.8101928, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 48}}
+{"ts": 1762234132.224908, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762234133.221994, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762234136.1000562, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 0, "total_len": 0}}
+{"ts": 1762234159.4957702, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762234161.598742, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762234161.614065, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762234162.840526, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762792144.245641, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762792147.965719, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762792147.979361, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1762792147.983232, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1762792147.984472, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1762792148.442061, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762792150.931913, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762792151.299793, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 38}}
+{"ts": 1762792154.74139, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762792155.467575, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762792171.593326, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762792172.988308, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762792186.316236, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762792188.637419, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881578.807845, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762881581.182202, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881587.129998, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762881588.963875, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881600.378777, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762881600.957023, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762881603.1976168, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881603.251861, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881603.26401, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1762881603.274514, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1762881603.2771788, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1762881604.0315259, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1762881605.6031559, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1762881606.988759, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 29}}
+{"ts": 1763045967.032219, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763045969.4431832, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 345}}
+{"ts": 1763045976.100459, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763045977.954043, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 345}}
+{"ts": 1763045989.3338869, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 760, "has_image": true}}
+{"ts": 1763045990.243478, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 760, "has_image": true}}
+{"ts": 1763045991.774477, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763045992.2837372, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763045992.306897, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 33, "desc_len": 784}}
+{"ts": 1763045992.31999, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 784, "norm_len": 784}}
+{"ts": 1763045992.320461, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763045993.6624892, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763045995.360963, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 345}}
+{"ts": 1763045995.749813, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 36}}
+{"ts": 1763046017.6563609, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 0, "total_len": 0}}
+{"ts": 1763066579.880252, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763066582.0934541, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763066589.747916, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763066591.004215, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763066604.040648, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763066604.89631, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763066606.1620321, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763066606.57481, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763066606.58907, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763066606.6037068, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763066606.606248, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763066607.928812, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763066609.137326, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763066609.860978, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 34}}
+{"ts": 1763068048.070137, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763068049.548484, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763068055.825689, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763068058.169707, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763068069.7297988, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763068070.349066, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763068071.9099789, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763068071.928558, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763068071.942361, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763068071.9559941, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763068071.958184, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763068073.141312, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763068074.631391, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763068074.8424268, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 45}}
+{"ts": 1763075722.065835, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763075724.478368, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763075730.8877928, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763075732.9602911, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763075746.768246, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763075748.735492, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763075750.273345, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763075751.829258, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763075751.8436759, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763075751.859135, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763075751.8610828, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763075753.051601, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763075754.231518, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763075754.871511, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 35}}
+{"ts": 1763077554.62734, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763077556.311641, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763077563.675264, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763077564.926689, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763077576.763781, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763077577.536659, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763077578.847569, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763077579.0548391, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763077579.071239, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763077579.084765, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763077579.0872488, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763077580.248366, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763077581.513144, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763077587.9561942, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 38}}
+{"ts": 1763078837.596246, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763078839.954761, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763078846.1933959, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763078848.3152242, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763078859.433262, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763078860.07744, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763078861.758025, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763078861.826001, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763078861.8398988, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763078861.8532422, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763078861.855455, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763078863.026001, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763078864.281523, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763078864.627993, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 32}}
+{"ts": 1763080475.318214, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763080479.8773272, "type": "service", "name": "ai.weight.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763080486.177613, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763080489.791511, "type": "service", "name": "ai.weight.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763080501.521909, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 760, "has_image": true}}
+{"ts": 1763080505.315253, "type": "service", "name": "ai.weight.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763080512.406736, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 37, "desc_len": 40, "has_image": true}}
+{"ts": 1763080516.2928698, "type": "service", "name": "ai.weight.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763080516.296512, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 33, "desc_len": 784}}
+{"ts": 1763080516.310293, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 784, "norm_len": 784}}
+{"ts": 1763080516.310853, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763080517.493809, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 33, "desc_len": 784, "has_image": true}}
+{"ts": 1763080520.568741, "type": "service", "name": "ai.slogan.result", "payload": {"ok": false, "reason": "empty", "fallback": true}}
+{"ts": 1763080521.483572, "type": "service", "name": "ai.translate.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763080521.7926688, "type": "service", "name": "ai.weight.result", "payload": {"ok": false, "reason": "empty"}}
+{"ts": 1763081907.4804769, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763081909.507992, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763081916.129178, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763081917.185101, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763081929.791926, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763081930.429101, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763081931.715445, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763081931.733653, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763081931.748197, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763081931.762418, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763081931.762982, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763081932.953238, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763081934.0703502, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763081934.181921, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 36}}
+{"ts": 1763081953.528877, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 0, "total_len": 0}}
+{"ts": 1763082742.277227, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763082743.7351959, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763082750.222708, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763082750.9915469, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763082763.4864671, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763082764.242622, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763082765.3248188, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763082765.633718, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763082765.648546, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763082765.662961, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763082765.665268, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763082766.9896262, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763082768.199189, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763082768.59827, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 42}}
+{"ts": 1763093019.2962291, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093021.6008809, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093032.7548852, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093033.738812, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093035.2875159, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093035.673718, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093599.702641, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093602.1815732, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093629.372417, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093631.013845, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093729.20452, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093730.413764, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093760.858788, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093762.4580538, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093794.970929, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093799.201039, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093889.241921, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093891.434939, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093926.7192268, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093928.345073, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093955.8868852, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093956.968158, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763093993.967817, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763093995.901768, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094021.093518, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094022.16131, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094049.5240262, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094050.846137, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094218.486115, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094220.95026, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094532.205898, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094533.636323, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094540.000135, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094541.200383, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094553.684675, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094554.4889941, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094555.443594, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094556.1665878, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094556.18542, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763094556.198823, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763094556.1993809, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763094557.40152, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763094558.768209, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763094559.639002, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 41}}
+{"ts": 1763094568.649605, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 0, "total_len": 0}}
+{"ts": 1763123138.193692, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763123140.2271948, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763123140.230887, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763123140.233479, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763123167.8580759, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763123169.373328, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763126273.231182, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763126275.0326998, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763126389.424813, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763126392.003338, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763126392.0071502, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763126392.0083132, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 0}}
+{"ts": 1763126460.732818, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763126462.0529332, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763126462.056706, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763126462.0570471, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763126478.475661, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 4, "total_len": 696}}
+{"ts": 1763127533.569865, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763127535.0948339, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127542.150763, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763127543.38725, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127555.977938, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763127556.614352, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763127557.7298272, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127558.122793, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127558.1413271, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 30, "desc_len": 749}}
+{"ts": 1763127558.155512, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 749, "norm_len": 749}}
+{"ts": 1763127558.1572201, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 4}}
+{"ts": 1763127559.3256168, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763127560.542222, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127561.590061, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 40}}
+{"ts": 1763127735.982908, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763127737.3001611, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127744.4424891, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763127745.6515222, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127753.1052659, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763127754.094419, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763127754.128151, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127755.97956, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127755.995583, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 22, "desc_len": 389}}
+{"ts": 1763127756.0099041, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 389, "norm_len": 389}}
+{"ts": 1763127756.010422, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763127757.107189, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763127758.484668, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763127759.522263, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 43}}
+{"ts": 1763127766.453716, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 4, "total_len": 356}}
+{"ts": 1763152294.4281468, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763152297.2121139, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763158033.999722, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763158035.858619, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763160175.536654, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763160177.877269, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763169541.049769, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763169543.712358, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763172800.976039, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 30, "desc_len": 749, "has_image": true}}
+{"ts": 1763172802.752328, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763213811.278116, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 31, "desc_len": 629, "has_image": true}}
+{"ts": 1763213814.560343, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 300}}
+{"ts": 1763213993.453103, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763213995.337533, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763217459.9918132, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763217461.390624, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220914.452657, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763220916.3721411, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220922.083745, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763220923.3627698, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220935.1458418, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763220935.871469, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763220936.7234612, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220936.791115, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220936.803499, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 36, "desc_len": 482}}
+{"ts": 1763220936.818347, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 482, "norm_len": 482}}
+{"ts": 1763220936.818961, "type": "service", "name": "ai.translate.cache", "payload": {"hit": false}}
+{"ts": 1763220937.934335, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763220939.394627, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 38}}
+{"ts": 1763220939.4915872, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763220949.52103, "type": "service", "name": "ai.translate.result", "payload": {"ok": true, "sections": 4, "total_len": 528}}
+{"ts": 1763221026.4551969, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763221028.388151, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763221454.678411, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 31, "desc_len": 629, "has_image": true}}
+{"ts": 1763221457.157197, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 310}}
+{"ts": 1763221702.199268, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 26, "desc_len": 426, "has_image": true}}
+{"ts": 1763221703.675756, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 500}}
+{"ts": 1763221762.717331, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 22, "desc_len": 389, "has_image": true}}
+{"ts": 1763221764.900149, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763221813.286775, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763221814.631165, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228031.768953, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228033.576149, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228039.451363, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228041.113392, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228053.024686, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228055.2234628, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228055.245603, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228057.033246, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228057.0460029, "type": "service", "name": "ai.slogan.request", "payload": {"title_len": 36, "desc_len": 482}}
+{"ts": 1763228057.059795, "type": "service", "name": "ai.translate.request", "payload": {"text_len": 482, "norm_len": 482}}
+{"ts": 1763228057.06256, "type": "service", "name": "ai.translate.cache", "payload": {"hit": true, "sections": 4}}
+{"ts": 1763228058.154767, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228059.682147, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228059.9206452, "type": "service", "name": "ai.slogan.result", "payload": {"ok": true, "len": 42}}
+{"ts": 1763228136.1861062, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228137.737032, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763228798.86952, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 36, "desc_len": 482, "has_image": true}}
+{"ts": 1763228800.850214, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 200}}
+{"ts": 1763229165.137633, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 31, "desc_len": 629, "has_image": true}}
+{"ts": 1763229166.536875, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 300}}
+{"ts": 1763229211.983003, "type": "service", "name": "ai.weight.request", "payload": {"title_len": 24, "desc_len": 407, "has_image": true}}
+{"ts": 1763229214.104117, "type": "service", "name": "ai.weight.result", "payload": {"ok": true, "grams": 1200}}

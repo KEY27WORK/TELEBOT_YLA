@@ -1,14 +1,23 @@
+# 🎵 app/infrastructure/music/__init__.py
 """
-📦 Ініціалізація пакету bot.music
+🎵 Інфраструктурний пакет для роботи з музичними рекомендаціями.
 
-Експортує:
-- MusicSender — клас для відправки музики в Telegram
-- MusicRecommendation — підбір музики через GPT
-- MusicFileManager — менеджер кешу, завантажень, парсингу
+🔹 `MusicRecommendation` — підбір треків через AI/PromptService.
+🔹 `MusicSender` — оркестратор відправки музики в Telegram.
+🔹 `MusicFileManager` — файловий кеш аудіо.
+🔹 `YtDownloader` — завантажувач аудіо з YouTube.
 """
 
-from .music_sender import MusicSender
-from .music_recommendation import MusicRecommendation
-from .music_file_manager import MusicFileManager
+from __future__ import annotations
 
-__all__ = ["MusicSender", "MusicRecommendation", "MusicFileManager"]
+from .music_file_manager import MusicFileManager   # 💾 Кешування файлів
+from .music_recommendation import MusicRecommendation  # 🤖 Рекомендації
+from .music_sender import MusicSender              # 📬 Відправка треків
+from .yt_downloader import YtDownloader            # 📥 Завантаження з YouTube
+
+__all__ = [
+    "MusicFileManager",
+    "MusicRecommendation",
+    "MusicSender",
+    "YtDownloader",
+]

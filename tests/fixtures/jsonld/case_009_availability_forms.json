@@ -1,0 +1,10 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Gloves",
+  "image": "https://i.ex/g/gloves.jpg",
+  "offers": [
+    {"@type": "Offer", "price": "19", "availability": "InStock"},
+    {"@type": "Offer", "price": "19", "availability": "https://schema.org/OutOfStock"}
+  ]
+}

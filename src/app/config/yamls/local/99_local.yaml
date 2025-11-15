@@ -1,0 +1,168 @@
+# ⚙️ app/config/yamls/local/99_local.yaml
+# ================================
+# 🧩 ЛОКАЛЬНІ ОВЕРРАЙДИ (НЕ КОМІТИТИ)
+# ================================
+# Використовується для локальної розробки. Додай у .gitignore:
+#   app/config/99_local.yaml
+#
+# Цей файл ПЕРЕЗАПИСУЄ значення з app/config/yamls/**.
+# Тримай тут секрети, локальні таймінги та оверрайди селекторів парсера.
+
+# 🔑 Секрети з .env
+telegram:
+  token: ${TELEGRAM_TOKEN}                  # 🤖 Локальний бот-токен
+
+openai:
+  api_key: ${OPENAI_API_KEY}               # 🔐 Секрет із .env
+  model: "gpt-4-turbo"                     # 🧠 Модель за замовчуванням
+  max_tokens: 1024                         # 🔢 Ліміти для локальних тестів
+  # ⬇️ локальний кеш запитів до AI
+  cache:
+    enabled: true                          # 🔛 Увімкнути кеш
+    ttl_hours: 720                         # 📆 30 діб
+    max_items: 1000                        # 📦 In-memory LRU
+    persist_dir: ".cache/ai_translations"  # 💾 Файловий бекенд
+
+# 🌍 Локальні оверрайди регіональних налаштувань
+regions:
+  labels:
+    USD: "США 🇺🇸"                        # 🏷️ Кастомні лейбли
+    EUR: "ЄС 🇪🇺"
+    GBP: "Британія 🇬🇧"
+
+# 🔍 Локальні налаштування Playwright / WebDriver
+playwright:
+  headless: false                          # 🔓 Показувати браузер
+  navigation_timeout_ms: 45000             # ⏱️ Більший таймаут навігації
+  retry_attempts: 2                        # 🔄 Менше ретраїв, щоб швидше фейлилось
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 🧰 Локальні налаштування парсера (IMP-005)
+# ──────────────────────────────────────────────────────────────────────────────
+parser:
+  selectors:
+    # Поточний бренд (необов'язково). Якщо заданий — застосуються overrides з .brands.<brand>.
+    brand: "youngla"                         # 🧾 Приклад локального бренда
+
+    # === Глобальні дефолти (перекривають хардкод) ===
+    defaults:
+      TITLE_LIST:
+        - "h1.product-title"
+        - "h1.product__title"
+        - "h1[itemprop='name']"
+        - "meta[property='og:title']"
+        - "title"
+
+      PRICE_LIST:
+        - ".price__current, .price--large, .product__price .price"
+        - ".product-price, .sale-price, .price-item--regular, .price-item--sale"
+        - "meta[itemprop='price']"
+
+      MAIN_IMAGE_LIST:
+        - 'meta[property="og:image"]'
+        - ".product__media img[src], .product-gallery__image img[src]"
+        - "img#FeaturedMedia-product-template[src]"
+
+      ALL_IMAGES_LIST:
+        - ".product-gallery__image-list img[src]"
+        - ".product-gallery__thumbnail img[src]"
+        - ".product-gallery__thumbnail-list img[src]"
+
+      DESCRIPTION_CONTAINER_LIST:
+        - '.product-info__block-item[data-block-type="description"] .prose'
+        - 'div[data-block-type="description"] .prose'
+        - "div.product__description, div#ProductAccordion-product-description .prose"
+        - "div#product-description, section.product-description, .rte.product-description, .prose"
+
+      JSON_LD_SCRIPT: 'script[type="application/ld+json"]'
+
+      LEGACY_STOCK_SELECTORS:
+        - "script#ProductJson"               # 🧾 Shopify JSON
+        - 'script[data-product-json="true"]'
+        - "script"
+
+    # === Оверрайди для брендів (опційно) ===
+    brands:
+      youngla:
+        DESCRIPTION_CONTAINER_LIST:
+          - '.product-info__block-item[data-block-type="description"] .prose'
+          - "div.product__description, #tab-description, .ProductMeta__Description, .prose"
+          - 'div[data-block-type="description"] .prose'
+          - "div#product-description, section.product-description, .rte.product__description, .prose"
+
+        PRICE_LIST:
+          - ".price__current, .price--large, .product__price .price, .ProductMeta__Price, .price-item"
+          - ".product-price, .sale-price, .price-item--regular, .price-item--sale"
+          - "meta[itemprop='price']"
+
+        # приклад розширення key_map під бренд:
+        # key_map:
+        #   "MATERIAL & CARE": "МАТЕРИАЛ"
+        #   "CARE INSTRUCTIONS": "ДОГЛЯД"
+
+  # 🖼️ Фільтри зображень (локально агресивніші)
+  images:
+    min_side_px: 160                        # 📐 Локально жорсткіший поріг
+    bad_tokens: ["sprite","logo","icon","placeholder","thumb"]  # 🧹 Додаємо більше стоп-слів
+    allowed_ext: [".jpg",".jpeg",".png",".webp",".avif"]        # ✅ Розширення
+
+  # ✍️ Налаштування рендера описів (IMP-049)
+  description:
+    as_markdown: true                       # 📝 Конвертуємо в Markdown
+    preserve_lists: true                    # ✅ Зберігати списки
+    drop_tables: true                       # ❌ Прибирати таблиці
+    collapse_newlines: true                 # 🧼 Згортати зайві переноси
+    max_len: 0                              # ♾️ Без обрізання
+    strip_images: true                      # 🖼️ Видаляти <img>
+    strip_links: false                      # 🔗 Лишати посилання
+    allowed_inline_tags: ["strong","em","b","i"]  # ✍️ Базові стилі
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 🧪 Feature-flags для екстракторів
+# ──────────────────────────────────────────────────────────────────────────────
+flags:
+  extractors:
+    description:
+      enabled: true        # головний тумблер фічі
+      strategy: "v2"       # "v1" або "v2"
+      rollout_percent: 0   # 0..99 — частка трафіку на v2, якщо strategy != "v2"
+
+# як користуватися:
+# 1) Увімкнути нову гілку ВСІМ:
+#    flags.extractors.description:
+#      enabled: true
+#      strategy: "v2"
+#      rollout_percent: 0
+#
+# 2) A/B 20% на v2 (решта — v1):
+#    flags.extractors.description:
+#      enabled: true
+#      strategy: "v1"
+#      rollout_percent: 20
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 🔊 Локальний рівень логування
+# ──────────────────────────────────────────────────────────────────────────────
+logging:
+  level: "DEBUG"                           # 🔊 DEBUG|INFO|WARNING|ERROR
+  console: true                            # 🖥️ true/false — виводити в stdout
+  console_level: "INFO"                    # 🔉 Рівень для консолі (DEBUG...ERROR)
+  json: false                              # 📄 true = JSON формат, false = plain
+  file: "logs/dev.log"                     # 🗂️ Шлях до файлу (будь-який)
+  file_level: "DEBUG"                      # 🧾 Рівень для файлу (DEBUG...ERROR)
+  console_format: "[%(levelname).1s] %(message)s"   # 🧱 Формат консолі (%(levelname)s тощо)
+  file_format: "%(asctime)s [%(levelname)s] - (%(name)s).%(funcName)s(%(lineno)d) - %(message)s"  # 📜 Формат файлу
+  suppress:
+    httpx: "WARNING"                       # 🤫 Менше шуму від httpx
+
+ocr:
+  request_timeout_s: 45.0                 # ⏳ Коротший таймаут для локальних тестів
+  max_retries: 1                          # 🔁 Менше повторів
+  backoff_s: 2.0                          # 🕒 Фіксований backoff
+
+# 🔍 Локальні таймаути пошуку YoungLA (уникаємо надто ранніх таймаутів)
+search:
+  goto_timeout_ms: 60000                   # ⏳ 60 c, бо сайт інколи повільний
+  idle_timeout_ms: 20000                   # 😴 +5 c до очікування network idle
+  retry_attempts: 3                        # 🔁 Більше повторів
+  retry_backoff_ms: 800                    # 🕒 Збільшуємо паузу між спробами

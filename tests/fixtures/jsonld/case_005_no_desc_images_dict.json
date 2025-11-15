@@ -1,0 +1,14 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Training Shorts",
+  "image": [
+    {"url": "https://ex.com/i/shorts_400x400.jpg"},
+    {"url": "https://ex.com/i/shorts_1200x1200.jpg"}
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "39.5",
+    "availability": "https://schema.org/InStock"
+  }
+}

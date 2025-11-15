@@ -1,0 +1,40 @@
+# ⚙️ app/config/yamls/base/30_pricing.yaml
+# 🪙 Налаштування ціноутворення
+# Використовується доменним PriceService і інфраструктурним калькулятором.
+
+# ================================
+# 💵 БАЗОВІ ПАРАМЕТРИ
+# ================================
+pricing:
+  discount_percentage: 15                     # 🔻 Знижка магазину (у %)
+
+  free_shipping_thresholds:                   # 🚚 Пороги безкоштовної доставки
+    USD: 75
+    EUR: 100
+    GBP: 80
+    PLN: 100
+
+  # ================================
+  # 🌍 РЕГІОНАЛЬНІ ВИТРАТИ
+  # ================================
+  regional_costs:                             # Значення у валюті регіону
+    us:
+      local_delivery_cost: 6.99              # 📦 Локальна доставка
+      ai_commission: 1.0                     # 🤖 Комісія AI/парсерів
+      phone_number_cost: 2.0                 # ☎️ Витрати на місцевий номер
+      country_code: "us"                     # 🔗 Використовується у delivery.yaml
+    eu:
+      local_delivery_cost: 8.99
+      ai_commission: 1.0
+      phone_number_cost: 2.0
+      country_code: "germany"
+    uk:
+      local_delivery_cost: 7.49
+      ai_commission: 1.0
+      phone_number_cost: 2.0
+      country_code: "uk"
+    pl:
+      local_delivery_cost: 22.99
+      ai_commission: 1.0
+      phone_number_cost: 2.0
+      country_code: "poland"

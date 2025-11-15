@@ -1,8 +1,16 @@
 # 📚 app/infrastructure/parsers/collections/__init__.py
 """
-📚 Модуль `collections` — парсери для колекцій товарів YoungLA.
+📚 Парсери сторінок колекцій YoungLA.
+
+🔹 `UniversalCollectionParser` — INFRA-парсер, що читає JSON-LD, DOM та пагінацію.
+🔹 Повертає унікальний список продуктів для подальшої обробки.
 """
 
-from .universal_collection_parser import UniversalCollectionParser
+from __future__ import annotations
 
-__all__ = ["UniversalCollectionParser"]
+# 🧩 Внутрішні модулі проєкту
+from .universal_collection_parser import UniversalCollectionParser			# 🌐 Парсер coll-page (JSON-LD + DOM)
+
+__all__ = [
+    "UniversalCollectionParser",											# 🌐 Публічний парсер колекцій YoungLA
+]

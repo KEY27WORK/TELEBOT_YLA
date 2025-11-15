@@ -1,0 +1,30 @@
+# ⚙️ app/config/yamls/base/80_logging.yaml
+# 📘 Єдиний конфіг логування + AI-telemetry
+# Використовується `init_logging_from_config` та TelemetryService.
+
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logging:
+  level: "DEBUG"                        # 🧱 Рівень для всього застосунку
+  console: true                         # 🖥️ Дублювати в stdout
+  console_level: "DEBUG"                 # 🔉 Рівень консольного виводу
+  json: false                           # 📄 Формат логів (false=plain, true=json)
+  file: "logs/bot.log"                  # 📁 Файл із денною ротацією
+  file_level: "DEBUG"                   # 🧾 Деталізація у файлі
+  console_format: "[%(levelname).1s] %(message)s"
+  file_format: "%(asctime)s [%(levelname)s] - (%(name)s).%(funcName)s(%(lineno)d) - %(message)s"
+  suppress:                             # 🤫 Приглушуємо «шум»
+    urllib3: "WARNING"
+    asyncio: "WARNING"
+    playwright: "WARNING"
+
+# ================================
+# 📡 TELEMETRY (AI)
+# ================================
+telemetry:
+  ai:
+    enabled: true                       # 🔛 Вмикає збір телеметрії
+    mask_prompts: true                  # 🛡️ Маскуємо email/телефони
+    stdout: false                       # 📣 Дублювання в stdout
+    path: "var/telemetry/ai.jsonl"      # 🗂️ Шлях до JSONL файлу

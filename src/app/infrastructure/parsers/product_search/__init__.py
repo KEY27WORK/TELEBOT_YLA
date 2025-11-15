@@ -1,8 +1,12 @@
 # 🔎 app/infrastructure/parsers/product_search/__init__.py
 """
-🔎 Модуль `product_search` — логіка пошуку товарів на сайті YoungLA.
+🔎 Парсери результатів пошуку YoungLA.
+
+🔹 `ProductSearchResolver` — витягує посилання товарів зі сторінки пошуку.
 """
 
-from .search_resolver import ProductSearchResolver
+from __future__ import annotations
 
-__all__ = ["ProductSearchResolver"]
+from .search_resolver import ProductSearchResolver	# 🔍 Основний резолвер UI-пошуку
+
+__all__ = ["ProductSearchResolver"]	# 📦 Публічний експорт search-резолвера

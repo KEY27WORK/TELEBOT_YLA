@@ -1,111 +1,147 @@
 # 📬 app/bot/commands/core_commands_feature.py
 """
-📬 core_commands_feature.py — Модуль фічі для базових команд.
+📬 Реалізація базових команд `/start` та `/help`.
 
-🔹 Реалізує логіку для команд `/start` та `/help`.
-🔹 Реєструє свої обробники команд та callback'ів для кнопок меню допомоги.
+🔹 Реєструє командні хендлери та callback-кнопки розділу «Допомога»
+🔹 Відповідає за відправку привітального повідомлення й головного меню
+🔹 Інкапсулює логіку показу FAQ, інструкцій та контактів підтримки
 """
 
+from __future__ import annotations
+
 # 🌐 Зовнішні бібліотеки
-from telegram import Update                                                   # 📩 Оновлення з Telegram
-from telegram.ext import CallbackContext, Application, CommandHandler        # ⚙️ Контекст, апка, хендлери
+from telegram import Update                                              # 📡 Об'єкт вхідного апдейту
+from telegram.ext import Application, CommandHandler                     # 🧰 Реєстрація команд у застосунку
 
 # 🔠 Системні імпорти
-from typing import Dict, Callable, Awaitable                                 # 🧰 Типізація обробників callback'ів
+import logging                                                           # 🧾 Логування подій
+from typing import Dict, cast                                            # 🧰 Типізація та допоміжні касти
 
 # 🧩 Внутрішні модулі проєкту
-from app.bot.commands.base import BaseFeature, CallbackHandlerType           # 🧱 Базовий клас фічі та тип для callback'ів
-from app.bot.ui.keyboards import Keyboard                                    # 🎛️ Клавіатури для меню
-from app.errors.error_handler import error_handler                           # 🛡️ Декоратор обробки помилок
-from app.bot.services.callback_registry import CallbackRegistry              # 📚 Реєстрація callback-хендлерів
-from app.bot.ui import static_messages as msg                                # 💬 Статичні повідомлення
+from app.bot.commands.base import BaseFeature                            # 🏛️ Базовий контракт фічі
+from app.bot.services.callback_data_factory import CallbackData          # 🏷️ Типи callback-даних
+from app.bot.services.callback_registry import CallbackRegistry          # 📚 Централізований реєстр callback-хендлерів
+from app.bot.services.custom_context import CustomContext                # 🧠 Розширений контекст
+from app.bot.services.types import CallbackHandlerType                   # 🔗 Сигнатура callback-хендлера
+from app.bot.ui import static_messages as msg                            # 📝 Статичні тексти інтерфейсу
+from app.bot.ui.keyboards.keyboards import Keyboard                      # 🎛️ Генератор клавіатур
+from app.config.setup.constants import AppConstants                      # ⚙️ Константи застосунку
+from app.shared.utils.logger import LOG_NAME                             # 🏷️ Ім'я кореневого логера
+
+# ================================
+# 🧾 ЛОГЕР МОДУЛЯ
+# ================================
+logger = logging.getLogger(LOG_NAME)                                     # 🧾 Модульний логер
 
 
 # ================================
-# ✨ ФІЧА БАЗОВИХ КОМАНД
+# 🏛️ ФІЧА БАЗОВИХ КОМАНД
 # ================================
 class CoreCommandsFeature(BaseFeature):
     """
-    ✨ Клас, що інкапсулює логіку для обробки основних команд
-    та відповідних їм inline-кнопок.
+    ✨ Інкапсулює `/start`, `/help` та callback-кнопки розділу «Допомога».
     """
 
-    def __init__(self, registry: CallbackRegistry):
-        """
-        ⚙️ Ініціалізація фічі з DI реєстром для callback'ів.
-        """
-        self.registry = registry                                                       # 📚 Зберігаємо інʼєкцію реєстру
-        self.registry.register(self)                                                   # ✅ Реєструємо цю фічу як постачальника callback'ів
+    def __init__(self, registry: CallbackRegistry, constants: AppConstants) -> None:
+        self.registry = registry                                          # 🗂️ Реєстр callback-хендлерів
+        self.const = constants                                            # ⚙️ Константи інтерфейсу
+        self.registry.register(self)                                      # ✅ Регіструємо фічу у callback-реєстрі
 
-    def register_handlers(self, application: Application):
+    # ================================
+    # 🔌 РЕЄСТРАЦІЯ КОМАНД
+    # ================================
+    def register_handlers(self, application: Application) -> None:
         """
-        🧾 Реєструє обробники для команд /start та /help.
+        Реєструє `/start` та `/help` у Telegram Application.
         """
-        application.add_handler(CommandHandler("start", self.start_command))          # ▶️ /start
-        application.add_handler(CommandHandler("help", self.help_command))            # 🆘 /help
+        commands = self.const.LOGIC.COMMANDS                              # 🧭 Простір імен команд
+        application.add_handler(CommandHandler(commands.START, self.start_command))  # ➕ /start
+        application.add_handler(CommandHandler(commands.HELP, self.help_command))    # ➕ /help
+        logger.info("🧾 Core commands registered (start/help)")           # 🧾 Фіксуємо реєстрацію
 
-    def get_callback_handlers(self) -> Dict[str, CallbackHandlerType]:
+    # ================================
+    # 📚 CALLBACK-КНОПКИ
+    # ================================
+    def get_callback_handlers(self) -> Dict[CallbackData, CallbackHandlerType]:
         """
-        🧩 Повертає словник обробників для кнопок меню допомоги.
-        Використовує простір імен 'help:'.
+        Повертає мапу callback-ключів на корутини для розділу «Допомога».
         """
-        return {
-            "help:faq": self.show_faq,                                                # ❓ Часті питання
-            "help:usage": self.show_help_usage,                                      # 📖 Інструкція
-            "help:support": self.show_help_support,                                  # 💬 Підтримка
+        callbacks = self.const.CALLBACKS                                  # 🧭 Простір імен callback-ів
+        mapping = {
+            callbacks.HELP_SHOW_FAQ: self.show_faq,                       # ❓ FAQ
+            callbacks.HELP_SHOW_USAGE: self.show_help_usage,              # 📘 Як користуватись
+            callbacks.HELP_SHOW_SUPPORT: self.show_help_support,          # 🆘 Підтримка
         }
+        logger.debug("📚 Core commands callbacks prepared (%d items)", len(mapping))  # 🧾 Діагностика мапи
+        return cast(Dict[CallbackData, CallbackHandlerType], mapping)     # 🔁 Приводимо до очікуваного типу
 
     # ================================
-    # ▶️ ОБРОБНИКИ КОМАНД
+    # ▶️ /START
     # ================================
+    async def start_command(self, update: Update, context: CustomContext) -> None:
+        """
+        Обробляє команду `/start`: надсилає привітання та головне меню.
+        """
+        user_id = getattr(update.effective_user, "id", "unknown")         # 🆔 ID користувача для логів
+        logger.info("➡️ /start by user=%s", user_id)                      # 🧾 Журнал аудиту
 
-    @error_handler
-    async def start_command(self, update: Update, context: CallbackContext):
-        """
-        🎉 Обробляє команду /start.
-        """
-        if update.message:
-            await update.message.reply_text(
-                "👋 Вітаю в YoungLA Ukraine Bot! Обери пункт меню 👇",
-                reply_markup=Keyboard.main_menu()
-            )
+        if update.message is None:                                        # 🚫 Немає повідомлення → відповідати нікуди
+            return
 
-    @error_handler
-    async def help_command(self, update: Update, context: CallbackContext):
-        """
-        🆘 Обробляє команду /help.
-        """
-        if update.message:
-            help_text = (
-                "<b>👋 Ласкаво просимо до YoungLA Ukraine Bot!</b>\n\n"
-                "Ось що я можу зробити для тебе:\n\n"
-                "🔗 <b>Посилання на товари</b>\n"
-                "Надішли посилання на будь-який товар YoungLA, і я автоматично покажу інформацію...\n\n"
-                "📚 <b>Посилання на колекції</b>\n"
-                "Надішли посилання на колекцію, і я опрацюю усі товари з неї.\n\n"
-                "🆘 Якщо щось не зрозуміло — тисни кнопки нижче!"
-            )
-            await update.message.reply_text(
-                text=help_text,
-                parse_mode="HTML",
-                reply_markup=Keyboard.help_menu()
-            )
+        await update.message.reply_text(                                  # 📤 Привітальне повідомлення
+            msg.HELP_WELCOME_SHORT,
+            reply_markup=Keyboard(self.const).build_main_menu(),          # 🎛️ Головне меню (через DI-константи)
+            parse_mode="HTML",
+        )
 
     # ================================
-    # 📞 ОБРОБНИКИ ДЛЯ КНОПОК
+    # ▶️ /HELP
     # ================================
+    async def help_command(self, update: Update, context: CustomContext) -> None:
+        """
+        Обробляє команду `/help`: показує головну сторінку довідки.
+        """
+        user_id = getattr(update.effective_user, "id", "unknown")         # 🆔 ID користувача для логів
+        logger.info("ℹ️ /help by user=%s", user_id)                       # 🧾 Журнал аудиту
 
-    async def show_faq(self, update: Update, context: CallbackContext):
-        """ 📖 Обробляє натискання кнопки 'FAQ'. """
-        if update.callback_query:
-            await update.callback_query.edit_message_text(msg.HELP_FAQ_TEXT)
+        if update.message is None:                                        # 🚫 Немає повідомлення → відповідати нікуди
+            return
 
-    async def show_help_usage(self, update: Update, context: CallbackContext):
-        """ 🧾 Обробляє натискання кнопки 'Як користуватись?'. """
-        if update.callback_query:
-            await update.callback_query.edit_message_text(msg.HELP_USAGE_TEXT, parse_mode="HTML")
+        await update.message.reply_text(                                  # 📤 Відправляємо основний довідковий текст
+            msg.HELP_MAIN_TEXT,
+            parse_mode="HTML",
+            reply_markup=Keyboard(self.const).build_help_menu(),          # 🎛️ Inline-меню довідки
+        )
 
-    async def show_help_support(self, update: Update, context: CallbackContext):
-        """ 🆘 Обробляє натискання кнопки 'Підтримка'. """
-        if update.callback_query:
-            await update.callback_query.edit_message_text(msg.HELP_SUPPORT_TEXT, parse_mode="HTML")
+    # ================================
+    # 📞 CALLBACK-КНОПКИ
+    # ================================
+    async def show_faq(self, update: Update, context: CustomContext) -> None:
+        """
+        Відображає секцію «FAQ».
+        """
+        if update.callback_query is None:                                 # 🚫 Немає callback'у → робити нічого
+            return
+        await update.callback_query.edit_message_text(msg.HELP_FAQ_TEXT)  # ✏️ Оновлюємо повідомлення
+
+    async def show_help_usage(self, update: Update, context: CustomContext) -> None:
+        """
+        Відображає інструкцію користування.
+        """
+        if update.callback_query is None:                                 # 🚫 Немає callback'у → завершити
+            return
+        await update.callback_query.edit_message_text(
+            msg.HELP_USAGE_TEXT,
+            parse_mode=self.const.UI.DEFAULT_PARSE_MODE,                  # 🅷 Форматування з констант
+        )
+
+    async def show_help_support(self, update: Update, context: CustomContext) -> None:
+        """
+        Відображає контакти підтримки.
+        """
+        if update.callback_query is None:                                 # 🚫 Немає callback'у → завершити
+            return
+        await update.callback_query.edit_message_text(
+            msg.HELP_SUPPORT_TEXT,
+            parse_mode=self.const.UI.DEFAULT_PARSE_MODE,                  # 🅷 Форматування з констант
+        )

@@ -1,0 +1,78 @@
+# Авто-форматирование и быстрые проверки на commit.
+# Медленные штуки (pytest и т.п.) можно повесить на pre-push — см. коммент внизу.
+
+default_language_version:
+  python: python3.10
+
+exclude: >
+  (?x)^(
+    venv/|
+    \.venv/|
+    \.git/|
+    node_modules/|
+    music_cache/|
+    \.cache/|
+    dist/|
+    build/
+  )
+
+repos:
+  # ---------- Ruff ----------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        args: ["--fix"]     # авто-фиксы где возможно
+        types_or: [python]
+      - id: ruff-format
+        name: ruff (format)
+        types_or: [python]
+
+  # ---------- Black ----------
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        args: ["--line-length=100", "--target-version=py310"]
+        types_or: [python]
+
+  # ---------- Базовые текстовые хуки ----------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: debug-statements   # запрет print/pdb в коммитах
+
+  # ---------- TOML/YAML форматирование (опционально, но полезно) ----------
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.13.0
+    hooks:
+      - id: pretty-format-yaml
+        args: ["--autofix", "--preserve-quotes"]
+        files: "\\.(yml|yaml)$"
+      - id: pretty-format-toml
+        args: ["--autofix"]
+        files: "\\.(toml)$"
+
+# --------- (опционально) быстрый sanity тест перед пушем ----------
+# default_stages: [commit]
+#   ↑ по умолчанию все хуки выполняются на commit.
+#
+# Если хочешь запускать быстрые тесты перед пушем — раскомментируй блок ниже
+# и поставь фикстивные ключи ENV в CI/локально:
+#
+# repos:
+#   - repo: local
+#     hooks:
+#       - id: pytest-quick
+#         name: pytest (quick)
+#         entry: bash -c 'OPENAI_API_KEY=test TELEGRAM_BOT_TOKEN=test pytest -q -k "not e2e"'
+#         language: system
+#         pass_filenames: false
+#         stages: [push]

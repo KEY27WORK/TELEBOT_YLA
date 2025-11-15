@@ -1,46 +1,110 @@
 # 🎛️ app/bot/handlers/callback_handler.py
 """
-🎛️ callback_handler.py — Централізований обробник для всіх inline-кнопок.
+🎛️ callback_handler.py — централізований обробник для всіх inline‑кнопок (callback_query).
+
+Призначення:
+- Приймає натискання на inline‑кнопки.
+- Безпечно парсить payload через `CallbackData`.
+- Кладе параметри в `context.callback_params`.
+- Делегує виконання зареєстрованому хендлеру з `CallbackRegistry`.
+- Всі помилки йдуть у централізований `ExceptionHandlerService`.
+
+Архітектура:
+- Шар: bot (UI Telegram). Жодної бізнес‑логіки.
+- Залежності приходять через конструктор (DI).
 """
 
-# 🌐 Telegram API
-from telegram import Update                                                    # 📩 Оновлення від Telegram
-from telegram.ext import ContextTypes                                          # 🧩 Контекст (callback + user)
+# ==========================
+# 🌐 ЗОВНІШНІ БІБЛІОТЕКИ
+# ==========================
+from telegram import Update													# 📦 Тип апдейту Telegram
 
-# 🔠 Системні імпорти
-import logging                                                                  # 🧾 Логування
+# ==========================
+# 🔠 СИСТЕМНІ ІМПОРТИ
+# ==========================
+import asyncio														# 🔄 Корутини / CancelledError
+import logging														# 🧾 Логування
+from typing import Awaitable, Callable, Optional						# 🧰 Типізація колбеків
 
-# 🧩 Внутрішні модулі проєкту
-from app.bot.services.callback_registry import CallbackRegistry                # 📚 Реєстр callback-обробників
-from app.errors.error_handler import error_handler                             # 🛡️ Декоратор для обробки помилок
-from app.shared.utils.logger import LOG_NAME                                     # 🧾 Назва логгера
+# ==========================
+# 🧩 ВНУТРІШНІ МОДУЛІ
+# ==========================
+from app.bot.services.callback_data_factory import CallbackData			# 🧩 Парсинг та валідація payload
+from app.bot.services.callback_registry import CallbackRegistry			# 📚 Реєстр колбек‑хендлерів
+from app.bot.services.custom_context import CustomContext				# 🧱 Розширений контекст застосунку
+from app.errors.exception_handler_service import ExceptionHandlerService	# 🚑 Централізована обробка помилок
+from app.shared.utils.logger import LOG_NAME							# 🏷️ Імʼя логера проєкту
 
-logger = logging.getLogger(LOG_NAME)                                            # 🧾 Ініціалізуємо логер
+# ==========================
+# 🧾 ЛОГЕР
+# ==========================
+logger = logging.getLogger(LOG_NAME)										# 🧾 Глобальний логер модуля
 
-# ================================
-# 🎛️ КЛАС ОБРОБНИКА CALLBACK-КНОПОК
-# ================================
+
+# ==========================
+# 🏛️ КЛАС ОБРОБНИКА
+# ==========================
 class CallbackHandler:
     """
-    🎛️ Клас, що обробляє всі натискання на inline-кнопки (callback_query).
+    🎛️ Централізовано обробляє натискання на inline‑кнопки.
+
+    Вхідні залежності:
+        registry: реєстр відповідностей (ключ callback → обробник).
+        exception_handler: централізований сервіс обробки винятків.
+
+    Примітка:
+        Клас не містить бізнес‑логіки; тільки парсинг і делегування.
     """
 
-    def __init__(self, registry: CallbackRegistry):
-        self.registry = registry												# 📚 Зберігає реєстр callback-функцій
+    def __init__(self, registry: CallbackRegistry, exception_handler: ExceptionHandlerService) -> None:
+        self.registry = registry												# 📚 DI: реєстр колбек‑хендлерів
+        self._eh = exception_handler											# 🚑 DI: сервіс обробки винятків
 
-    @error_handler
-    async def handle(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query												# 📩 Отримуємо callback-запит
+    # ==========================
+    # 🎯 ГОЛОВНИЙ МЕТОД
+    # ==========================
+    async def handle(self, update: Update, context: CustomContext) -> None:
+        """
+        Приймає callback_query, парсить дані та викликає відповідний обробник.
+
+        Args:
+            update: апдейт Telegram.
+            context: кастомний контекст застосунку.
+        """
+        query = update.callback_query											# ✉️ Сам обʼєкт callback_query
         if not query or not query.data:
-            return														# 🚫 Якщо пустий — нічого не робимо
+            return																# 🚫 Немає даних — нічого обробляти
 
-        await query.answer() 													# ✅ Підтверджуємо callback, щоб прибрати спінер
+        try:
+            # Best‑effort: прибрати «годинник» на кнопці
+            try:
+                await query.answer()												# ✅ Миттєва відповідь користувачу
+            except Exception as e:  # noqa: BLE001
+                logger.debug("Callback answer failed (non‑critical): %s", e, exc_info=True)	# ℹ️ Не критично — просто лог
 
-        callback_data = query.data												# 🔡 Отримуємо текст callback'у
-        logger.info(f"👆 Отримано callback: {callback_data}")							# 🧾 Логуємо callback
+            raw_data = query.data												# 🧾 Сирий payload з кнопки
+            logger.info("👆 Callback received: %s", raw_data)					# 📝 Записуємо факт натискання
 
-        handler = self.registry.get_handler(callback_data)							# 📦 Отримуємо відповідний обробник
-        if handler:
-            await handler(update, context)										# ▶️ Викликаємо обробник
-        else:
-            logger.warning(f"⚠️ Обробник для callback '{callback_data}' не знайдено.")		# ⚠️ Якщо не знайдено — лог попередження
+            # 🧩 Безпечний розбір даних
+            try:
+                key, params = CallbackData.parse(raw_data)						# 🔍 Валідація та парсинг payload
+                context.callback_params = params								# 📦 Кладемо параметри в контекст
+                logger.debug("🧩 Parsed: key='%s', params=%s", key.id(), params)	# 🔎 Для дебагу: що саме розібрали
+            except (ValueError, IndexError) as e:
+                logger.warning("⚠️ Failed to parse callback_data '%s': %s", raw_data, e)	# ⚠️ Некоректний payload — ігноруємо
+                return
+
+            # 🔎 Пошук хендлера в реєстрі
+            handler: Optional[Callable[[Update, CustomContext], Awaitable[None]]] = self.registry.get_handler(key)	# 🗂️ Отримуємо зареєстрований обробник
+            if not handler:
+                logger.warning("⚠️ Handler for callback '%s' not found.", key.id())		# ⚠️ Ключ не зареєстрований
+                return
+
+            # ▶️ Делегування виконання
+            await handler(update, context)										# 🎬 Викликаємо потрібний хендлер
+
+        except asyncio.CancelledError:
+            logger.warning("Callback handling cancelled.")							# ⏹️ Завдання скасоване — передаємо далі
+            raise
+        except Exception as e:  # noqa: BLE001
+            await self._eh.handle(e, update)									# 🚑 Централізована обробка будь‑яких винятків

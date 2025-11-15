@@ -1,0 +1,16 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Ultra Hoodie 2.0",
+  "description": "Soft fleece hoodie with ribbed cuffs.",
+  "image": [
+    "https://cdn.example.com/p/hoodie/main.jpg",
+    "https://cdn.example.com/p/hoodie/alt1.jpg"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "USD",
+    "price": "79.99",
+    "availability": "https://schema.org/InStock"
+  }
+}

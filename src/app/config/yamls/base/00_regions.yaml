@@ -1,0 +1,28 @@
+# 🌍 app/config/yamls/base/00_regions.yaml
+# 🗺️ Регіони YoungLA + базові URL
+# Використовується AvailabilityManager та UrlParserService для мульти-регіональної логіки.
+# 🔗 Ключі валют (USD/EUR/GBP/PLN) мають збігатися з `LOGIC.CURRENCY_TO_REGION`.
+
+# ================================
+# 🏷️ ЛЕЙБЛИ ТА БАЗОВІ ПОСИЛАННЯ
+# ================================
+
+regions:
+  labels:                            # 🏷️ Людинозрозумілі назви регіонів
+    USD: "US 🇺🇸"
+    EUR: "EU 🇪🇺"
+    GBP: "UK 🇬🇧"
+    PLN: "PL 🇵🇱"                     # 🔜 Підтримка Польщі (поки опціонально)
+
+  # ================================
+  # 🌐 РЕГІОНАЛЬНІ БАЗОВІ НАЛАШТУВАННЯ
+  # ================================
+  us:
+    base_url: "https://www.youngla.com"   # 🌎 Продажі США
+    currency: "USD"                       # 💱 Валюта регіону
+  eu:
+    base_url: "https://eu.youngla.com"    # 🇪🇺 Європейський магазин
+    currency: "EUR"
+  uk:
+    base_url: "https://uk.youngla.com"    # 🇬🇧 Британський магазин
+    currency: "GBP"

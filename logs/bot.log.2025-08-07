@@ -1,0 +1,27 @@
+2025-08-07 19:34:34,419 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-07 19:34:34,420 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-07 19:34:34,441 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-07 19:34:34,441 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-07 19:34:34,442 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-07 19:34:34,443 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-07 19:34:34,444 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-07 19:34:34,444 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-07 19:34:34,444 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-07 19:34:34,444 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-07 19:34:34,444 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-07 19:34:34,493 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-07 19:34:34,493 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-07 19:34:34,493 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-07 19:34:34,494 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-07 19:34:34,495 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-07 19:34:35,422 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/w625?hcUrl=%2Fen-US
+2025-08-07 19:34:35,555 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-07 19:34:35,555 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: product
+2025-08-07 19:34:35,556 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-07 19:34:35,556 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/w625?hcUrl=%2Fen-US
+2025-08-07 19:34:35,721 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/w625?hcUrl=%2Fen-US
+2025-08-07 19:34:35,721 [INFO] - (telebot_ukraine_v2).process_url(74) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/w625?hcUrl=%2Fen-US
+2025-08-07 19:34:36,370 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-07 19:34:36,750 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-07 19:34:37,031 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/w625?hcUrl=%2Fen-US
+2025-08-07 19:34:44,700 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.

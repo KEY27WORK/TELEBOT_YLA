@@ -1,0 +1,161 @@
+# Актуальний статус рефакторингу
+
+**Легенда:**
+- 💎 — Завершено та стабілізовано (інтегровано, покрито ретраями/логами/обробкою edge-кейсів).
+- ✅ — Рефакторинг завершено (стиль/архітектура ок), можна ще полірувати README/дрібниці.
+- 🟡 — Частково: базові правки є, але потрібен догляд/узгодження інтерфейсів/тести.
+- ❌ — Ще не чіпали.
+- ✨ — Новий модуль, створений під час рефакторингу.
+
+---
+
+📦 **app**
+┣ 📂 **bot**
+┃ ┣ 📜 main.py (💎)
+┃ ┣ 📜 README.md (✅)
+┃ ┣ 📜 __init__.py (🟡)
+┃ ┣ 📂 commands
+┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┣ 📜 base.py (💎)
+┃ ┃ ┣ 📜 core_commands_feature.py (💎)
+┃ ┃ ┣ 📜 currency_feature.py (💎)
+┃ ┃ ┗ 📜 main_menu_feature.py (💎)
+┃ ┣ 📂 handlers
+┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┣ 📜 callback_handler.py (💎)
+┃ ┃ ┣ 📜 link_handler.py (💎)
+┃ ┃ ┣ 📜 price_calculation_handler.py (💎)
+┃ ┃ ┣ 📜 size_chart_handler_bot.py (💎)
+┃ ┃ ┗ 📂 product
+┃ ┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┃ ┣ 📜 collection_handler.py (💎)
+┃ ┃ ┃ ┣ 📜 collection_runner.py (✨)
+┃ ┃ ┃ ┣ 📜 image_sender.py (💎)
+┃ ┃ ┃ ┗ 📜 product_handler.py (💎)
+┃ ┣ 📂 services
+┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┣ 📜 callback_data_factory.py (✨)
+┃ ┃ ┣ 📜 callback_registry.py (💎)
+┃ ┃ ┣ 📜 custom_context.py (✨)
+┃ ┃ ┗ 📜 types.py (💎)
+┃ ┗ 📂 ui
+┃ ┃ ┣ 📂 formatters
+┃ ┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┃ ┣ 📜 message_formatter.py (✅)
+┃ ┃ ┃ ┗ 📜 price_report_formatter.py (✅)
+┃ ┃ ┣ 📂 keyboards
+┃ ┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┃ ┗ 📜 keyboards.py (💎)
+┃ ┃ ┣ 📂 messengers
+┃ ┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┃ ┣ 📜 availability_messenger.py (✅)
+┃ ┃ ┃ ┣ 📜 product_messenger.py (💎)
+┃ ┃ ┃ ┗ 📜 size_chart_messenger.py (✅)
+┃ ┃ ┣ 📜 README.md (❌)
+┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┗ 📜 static_messages.py (💎)
+
+┣ 📂 **config**
+┃ ┣ 📂 setup
+┃ ┃ ┣ 📜 README.md (❌)
+┃ ┃ ┣ 📜 __init__.py (💎)
+┃ ┃ ┣ 📜 bot_registrar.py (💎)
+┃ ┃ ┣ 📜 constants.py (💎)
+┃ ┃ ┗ 📜 container.py (💎)
+┃ ┣ 📂 yamls
+┃ ┃ ┣ 📂 base (✅)
+┃ ┃ ┣ 📂 features (✅)
+┃ ┃ ┣ 📂 local (✅)
+┃ ┃ ┣ 📂 providers (✅)
+┃ ┃ ┗ 📜 README.md (✅)
+┃ ┣ 📜 README.md (✅)
+┃ ┣ 📜 __init__.py (🟡)
+┃ ┣ 📜 config_service.py (💎)
+┃ ┗ 📜 weights.json (✅)
+
+┣ 📂 **domain**
+┃ ┣ 📂 ai/interfaces/prompt_service_interface.py (✅)
+┃ ┣ 📂 availability
+┃ ┃ ┣ 📜 interfaces.py (💎)
+┃ ┃ ┣ 📜 services.py (💎)
+┃ ┃ ┣ 📜 sorting_strategies.py (💎)
+┃ ┃ ┗ 📜 status.py (💎)
+┃ ┣ 📂 currency/interfaces.py (💎)
+┃ ┣ 📂 delivery/interfaces.py (✅)
+┃ ┣ 📂 music/interfaces.py (✅)
+┃ ┣ 📂 pricing
+┃ ┃ ┣ 📜 __init__.py (💎)
+┃ ┃ ┣ 📜 interfaces.py (💎)
+┃ ┃ ┣ 📜 rounding.py (💎)
+┃ ┃ ┗ 📜 services.py (💎)
+┃ ┣ 📂 products
+┃ ┃ ┣ 📜 entities.py (✅)
+┃ ┃ ┣ 📜 interfaces.py (✅)
+┃ ┃ ┣ 📜 __init__.py (🟡)
+┃ ┃ ┗ 📂 services/weight_resolver.py (✅)
+┃ ┣ 📜 README.md (❌)
+┃ ┗ 📜 __init__.py (🟡)
+
+┣ 📂 **errors**
+┃ ┣ 📜 custom_errors.py (✨)
+┃ ┣ 📜 error_handler.py (✨)
+┃ ┣ 📜 exception_handler_service.py (✨)
+┃ ┣ 📜 README.md (✅)
+┃ ┗ 📜 __init__.py (🟡)
+
+┣ 📂 **infrastructure**
+┃ ┣ 📂 ai
+┃ ┃ ┣ 📜 open_ai_serv.py (✅)
+┃ ┃ ┣ 📜 prompt_service.py (✅)
+┃ ┃ ┣ 📜 translator.py (✅)
+┃ ┃ ┗ 📜 __init__.py (🟡)
+┃ ┣ 📂 availability (усі модулі 💎, README — ✅)
+┃ ┣ 📂 collection_processing/collection_processing_service.py (✅)
+┃ ┣ 📂 content (усі модулі ✅)
+┃ ┣ 📂 currency
+┃ ┃ ┣ 📜 currency_converter.py (💎)
+┃ ┃ ┣ 📜 currency_manager.py (💎)
+┃ ┃ ┣ 📜 current_rate.txt (❌)
+┃ ┃ ┗ 📜 __init__.py (🟡)
+┃ ┣ 📂 data_storage/weight_data_service.py (✅)
+┃ ┣ 📂 delivery/meest_delivery_service.py (✅)
+┃ ┣ 📂 image_generation/font_service.py (✅)
+┃ ┣ 📂 music (усі модулі ✅, __init__.py — 🟡)
+┃ ┣ 📂 parsers
+┃ ┃ ┣ 📜 base_parser.py (💎)    <!-- оркестратор допиляний, іммутабельні mapping, Decimal -->
+┃ ┃ ┣ 📜 html_data_extractor.py (💎)  <!-- багаторівневі fallback’и, JSON-LD/Shopify, фільтри зображень -->
+┃ ┃ ┣ 📜 parser_factory.py (✅)
+┃ ┃ ┣ 📂 collections/universal_collection_parser.py (✅)
+┃ ┃ ┣ 📂 product_search/search_resolver.py (✅)
+┃ ┃ ┣ 📜 README.md (❌)
+┃ ┃ ┗ 📜 __init__.py (🟡)
+┃ ┣ 📂 product_processing/product_processing_service.py (✅)
+┃ ┣ 📂 size_chart
+┃ ┃ ┣ 📂 generators (усі модулі ✅, README — ❌, __init__.py — 🟡)
+┃ ┃ ┣ 📂 services/table_geometry_service.py (✅)
+┃ ┃ ┣ 📜 image_downloader.py (✅)
+┃ ┃ ┣ 📜 ocr_service.py (✅)
+┃ ┃ ┣ 📜 size_chart_service.py (✅)
+┃ ┃ ┣ 📜 table_generator_factory.py (✅)
+┃ ┃ ┣ 📜 README.md (✅)
+┃ ┃ ┗ 📜 __init__.py (🟡)
+┃ ┗ 📂 web/webdriver_service.py (✅)  <!-- README ❌, __init__.py 🟡 -->
+
+┣ 📂 **shared**
+┃ ┣ 📂 prompts (всі txt/json — ❌ поки що; __init__.py — 🟡)
+┃ ┣ 📂 utils
+┃ ┃ ┣ 📜 logger.py (✅)
+┃ ┃ ┣ 📜 prompt_loader.py (✅)
+┃ ┃ ┣ 📜 prompts.py (✅)
+┃ ┃ ┣ 📜 url_parser_service.py (✅)
+┃ ┃ ┣ 📜 README.md (❌)
+┃ ┃ ┗ 📜 __init__.py (🟡)
+┃ ┣ 📜 README.md (❌)
+┃ ┗ 📜 __init__.py (🟡)

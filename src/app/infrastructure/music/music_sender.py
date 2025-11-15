@@ -1,164 +1,154 @@
-""" 🎵 music_sender.py — клас для надсилання музики в Telegram.
+# 🎵 app/infrastructure/music/music_sender.py
+"""
+🎵 MusicSender — оркестратор відправлення треків у Telegram.
 
-🔹 Відповідає за:
-- Парсинг тексту з треками
-- Завантаження треків з YouTube (асинхронно)
-- Групування треків по розміру
-- Надсилання у Telegram: список + медіа-групи
-- Очищення кешу після надсилання
+🔹 Приймає доменні DTO (`RecommendedTrack`, `MusicRecommendationResult`).
+🔹 Спочатку відправляє список названь, потім асинхронно — самі mp3.
+🔹 Має легасі-шлях для масиву рядків.
 """
 
-# 🌐 Telegram
-from telegram import Update, InputMediaAudio
-from telegram.ext import CallbackContext
+from __future__ import annotations
+
+# 🔠 Системні імпорти
+import asyncio	# ⏱️ Асинхронні семафори/фонова робота
+import logging	# 🧾 Логування
+from typing import Dict, Iterable, Sequence	# 🧰 Типізація
+
+# 🌐 Зовнішні бібліотеки
+from telegram import Update
 from telegram.constants import ChatAction
+from telegram.error import RetryAfter
 
-# 🧱 Системні
-import asyncio
-import logging
-import os
-
-# 🎵 Музика
+# 🧩 Внутрішні модулі проєкту
+from app.bot.services.custom_context import CustomContext
+from app.config.config_service import ConfigService
+from app.domain.music.interfaces import IMusicDownloader, MusicRecommendationResult, RecommendedTrack
+from app.shared.utils.logger import LOG_NAME
 from .music_file_manager import MusicFileManager
 
-logger = logging.getLogger(__name__)
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logger = logging.getLogger(LOG_NAME)	# 🧾 Використовуємо базовий логер застосунку
 
 
 class MusicSender:
-    """
-    🎵 Відповідає за:
-    - Парсинг списку треків
-    - Завантаження mp3 з YouTube через MusicFileManager
-    - Групування треків за розміром
-    - Відправку в Telegram (як список і як групу аудіо)
-    - Очищення кешу
-    """
+    """🎵 UX: швидкий список треків, далі — аудіо у фоні."""
 
-    MAX_GROUP_SIZE_MB = 45
+    def __init__(self, downloader: IMusicDownloader, file_manager: MusicFileManager, config: ConfigService) -> None:
+        """⚙️ Зберігає залежності та створює семафори для обмеження паралельності."""
+        self._downloader = downloader	# ⬇️ Сервіс завантаження треків
+        self._file_manager = file_manager	# 💾 Кеш mp3
+        self._config = config	# ⚙️ Джерело параметрів
 
-    def __init__(self):
-        self.cache: list[tuple[str, str]] = []
-        self.manager = MusicFileManager()
+        dl_limit = int(config.get("music.download.concurrent_downloads", 3) or 3)	# 🔢 Ліміт завантажень
+        send_limit = int(config.get("music.send.concurrent_sends", 3) or 3)	# 📤 Ліміт відправлень
+        self._dl_semaphore = asyncio.Semaphore(dl_limit)	# 🛡️ Обмеження на скачування
+        self._send_semaphore = asyncio.Semaphore(send_limit)	# 🛡️ Обмеження на викладку
+        logger.debug("🎵 MusicSender семафори створено (dl=%s send=%s).", dl_limit, send_limit)
 
-    def parse_song_list(self, music_text: str) -> list[str]:
+        self._inflight: Dict[str, asyncio.Future] = {}	# 🔁 Захист від подвійної обробки
+
+    # ================================
+    # 📣 ПУБЛІЧНИЙ API
+    # ================================
+    async def send_recommendations(self, update: Update, context: CustomContext, result: MusicRecommendationResult) -> None:
         """
-        🎶 Парсить текст і повертає список назв треків.
+        📬 Сучасний шлях: приймає `MusicRecommendationResult` і відправляє список + аудіо.
         """
-        return self.manager.parse_song_list(music_text)
+        if not update.message or not result.tracks:	# 🚫 Немає куди/чого відправляти
+            return
 
-    def format_track_list(self, track_names: list[str]) -> str:
-        """
-        📝 Формує текстовий список треків з нумерацією.
-        """
-        lines = [f"{i + 1}. {name}" for i, name in enumerate(track_names)]
-        return "🎵 <b>Музика для поста:</b>\n" + "\n".join(lines)
-
-    async def preload_tracks_async(self, track_names: list[str]):
-        """
-        🚀 Фонова предзагрузка треків без відправки.
-        """
-        self.cache = await self.download_all_tracks(track_names)
-
-    async def download_all_tracks(self, track_names: list[str]) -> list[tuple[str, str]]:
-        """
-        📥 Завантажує всі треки з YouTube асинхронно (одночасно).
-        Повертає лише ті треки, які вдалося успішно завантажити.
-        """
-        tasks = [self.manager.async_find_or_download_track(name) for name in track_names]
-        results_raw = await asyncio.gather(*tasks, return_exceptions=True)
-
-        results: list[tuple[str, str]] = []
-        for name, path in zip(track_names, results_raw):
-            if isinstance(path, Exception):
-                logging.warning(f"⚠️ Трек пропущено через помилку: {name} — {path}")
-                results.append((name, None))
-            else:
-                results.append((name, path))
-
-        if not any(p for _, p in results):
-            logging.error("❌ Не вдалося завантажити жодного треку.")
-        else:
-            count = sum(1 for _, p in results if p)
-            logging.info(f"✅ Успішно завантажено {count} з {len(track_names)} треків.")
-
-        return results
-
-    def group_by_size(self, tracks: list[tuple[str, str]]) -> list[list[tuple[str, str]]]:
-        """
-        📦 Групує треки по ~45MB для надсилання в Telegram.
-        """
-        groups = []
-        current_group = []
-        current_size = 0
-
-        for name, path in tracks:
-            file_size_mb = os.path.getsize(path) / (1024 * 1024)
-            if (current_size + file_size_mb > self.MAX_GROUP_SIZE_MB) and current_group:
-                groups.append(current_group)
-                current_group = []
-                current_size = 0
-
-            current_group.append((name, path))
-            current_size += file_size_mb
-
-        if current_group:
-            groups.append(current_group)
-
-        return groups
-
-    async def send_all_tracks(self, update: Update, context: CallbackContext, track_names: list[str]):
-        """
-        📤 Повна відправка: список + медіа-групи з треками.
-        """
-        await update.message.chat.send_action(action="upload_audio")
+        track_names = [track.display_name for track in result.tracks]	# 🧾 Імена для списку
+        await update.message.reply_text(self._format_track_list(track_names), parse_mode="HTML")	# 📄 Список треків
 
         try:
-            # 1️⃣ Відправляємо список треків
-            await update.message.reply_text(self.format_track_list(track_names), parse_mode="HTML")
+            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)	# ⌛ Показуємо статус
+        except Exception:
+            logger.debug("ℹ️ Не вдалося показати ChatAction (UPLOAD_DOCUMENT).", exc_info=False)
 
-            # 2️⃣ Якщо preload не спрацював — завантажуємо вручну
-            if not self.cache:
-                self.cache = await self.download_all_tracks(track_names)
+        for track in result.tracks:	# 🎧 Стартуємо обробку кожного треку у фоні
+            asyncio.create_task(self._process_track_in_background(update, track))
 
-            successful = [(n, p) for n, p in self.cache if p]
-            failed = [n for n, p in self.cache if not p]
+        clear_delay = int(self._config.get("music.cache.clear_delay_sec", 600) or 600)	# 🕒 Затримка очищення
+        asyncio.create_task(self._delayed_cache_clear(clear_delay))	# 🧹 Відкладене очищення кешу
 
-            if failed:
-                failed_list = "\n".join(f"• {name}" for name in failed)
-                await update.message.reply_text(
-                    f"⚠️ Деякі треки не вдалося завантажити:\n{failed_list}",
-                    parse_mode="HTML"
-                )
+    async def send_recommendations_legacy(self, update: Update, context: CustomContext, track_names: Sequence[str]) -> None:
+        """♻️ Легасі: приймає список рядків, конвертує у DTO й делегує сучасному методу."""
+        tracks = [self._str_to_track(name) for name in track_names if (name or "").strip()]	# 🧾 Фільтруємо/нормалізуємо
+        result = MusicRecommendationResult(tracks=tuple(tracks), raw_text="", model="")	# 📦 Обгортка
+        await self.send_recommendations(update, context, result)	# 🔁 Делегуємо
 
-            if not successful:
-                await update.message.reply_text("❌ Не вдалося надіслати жодного треку.")
-                return
+    # ================================
+    # ⚙️ ВНУТРІШНЄ
+    # ================================
+    async def _process_track_in_background(self, update: Update, track: RecommendedTrack) -> None:
+        """🎧 Завантажує та надсилає один трек у фоні, з урахуванням семафорів/in-flight."""
+        if not update.message:	# 🚫 Немає повідомлення
+            return
 
-            # 3️⃣ Ділимо на групи та надсилаємо паралельно
-            tasks = []
-            for group in self.group_by_size(successful):
-                media = [
-                    InputMediaAudio(media=open(path, "rb"), caption=f"<b>{name}</b>", parse_mode="HTML")
-                    for name, path in group
-                ]
-                tasks.append(update.message.reply_media_group(media))
+        key = track.display_name	# 🏷️ Унікальний ідентифікатор треку
+        inflight_future = self._inflight.get(key)	# 🔁 Чи вже обробляємо цей трек?
+        if inflight_future:	# ♻️ Якщо так — просто чекаємо завершення
+            await inflight_future
+            return
 
-            await asyncio.gather(*tasks)
+        future = asyncio.get_running_loop().create_future()	# 🪧 Створюємо future
+        self._inflight[key] = future	# 🧾 Фіксуємо активне завантаження
 
-            await update.message.reply_text(
-                f"✅ Успішно надіслано {len(successful)} треків 🎧",
-                parse_mode="HTML"
-            )
+        try:
+            async with self._dl_semaphore:	# ⛔ Ліміт одночасних завантажень
+                track_info = await self._downloader.download(track)	# ⬇️ Завантажуємо mp3
 
-        except Exception as e:
-            logging.error(f"❌ Помилка при відправці треків: {e}")
-            await update.message.reply_text("⚠️ Помилка при завантаженні треків")
+            if track_info.file_path:	# ✅ Завантаження успішне
+                async with self._send_semaphore:	# ⛔ Ліміт одночасних відправлень
+                    try:
+                        with open(track_info.file_path, "rb") as audio_file:	# 📂 Відкриваємо файл
+                            await update.message.reply_audio(
+                                audio=audio_file,
+                                caption=f"🎧 {track_info.name}",
+                                parse_mode="HTML",
+                                disable_notification=True,
+                            )	# 📤 Відправляємо аудіо
+                    except FileNotFoundError:	# ⚠️ Файл зник
+                        logger.warning("⚠️ Файл зник до моменту відправки: %s", track_info.file_path)
+            else:
+                logger.warning("⚠️ Трек «%s» не надіслано: %s", key, track_info.error)	# ⚠️ Помилка завантаження
 
-        asyncio.create_task(asyncio.to_thread(self.clear_cache))
+        except RetryAfter as exc:	# ⏳ Ліміт Telegram
+            logger.warning("⏳ Вичерпано ліміт відправки. Чекаємо %s сек.", exc.retry_after)
+            await asyncio.sleep(exc.retry_after)
+            await self._process_track_in_background(update, track)	# 🔁 Повторюємо
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("💥 Критична помилка під час обробки треку «%s»: %s", key, exc)
+        finally:
+            future.set_result(True)	# ✅ Завершуємо future
+            self._inflight.pop(key, None)	# ♻️ Прибираємо з реєстру
 
+    async def _delayed_cache_clear(self, delay_seconds: int) -> None:
+        """🧹 Чекає delay_seconds і запускає очищення кешу."""
+        await asyncio.sleep(max(0, int(delay_seconds)))	# ⏱️ Затримка
+        logger.info("🧹 Очищення кешу музики після затримки %s сек.", delay_seconds)
+        await self._file_manager.clear_cache()	# 🧼 Видаляємо mp3
 
-    def clear_cache(self):
+    @staticmethod
+    def _format_track_list(track_names: Iterable[str]) -> str:
+        """📝 Формує HTML-список треків для повідомлення."""
+        lines = [f"{index + 1}. {name}" for index, name in enumerate(track_names)]	# 🔢 Нумерований список
+        return "🎵 <b>Музика для посту:</b>\n" + "\n".join(lines)	# 📄 Форматований текст
+
+    # ================================
+    # 🧰 УТИЛІТИ
+    # ================================
+    @staticmethod
+    def _str_to_track(s: str) -> RecommendedTrack:
         """
-        🧹 Очищає кеш mp3-файлів через менеджер.
+        🔁 Перетворює рядок «Artist — Title» у DTO. Якщо розділити не вдалося — лише title.
         """
-        self.manager.clear_cache()
+        normalized = (s or "").strip()	# 🧼 Нормалізуємо рядок
+        for separator in (" — ", " – ", " - ", "—", "–", "-"):	# 🔁 Перебираємо варіанти тире
+            if separator in normalized:
+                artist, title = (part.strip() for part in normalized.split(separator, 1))	# ✂️ Ділимо
+                if artist and title:	# ✅ Маємо обидві частини
+                    return RecommendedTrack(artist=artist, title=title)
+        return RecommendedTrack(artist="", title=normalized)	# 🎧 Лише назва треку

@@ -1,88 +1,182 @@
 # 📦 app/bot/handlers/product/product_handler.py
 """
-📦 product_handler.py — обробник для запуску процесу обробки товару.
+📦 product_handler.py — обробник запуску процесу обробки товару.
 
-🔹 Клас `ProductHandler`:
-- Отримує URL товару від користувача
-- Делегує обробку сервісу `ProductProcessingService`
-- Відправляє повідомлення через `ProductMessenger`
+🔹 Роль:
+    • Приймає URL товару від користувача (повідомлення або аргумент)
+    • Валідовує та нормалізує URL (через UrlParserService)
+    • За потреби оновлює курси валют (через CurrencyManager)
+    • Делегує парсинг/підготовку даних ProductProcessingService
+    • Відправляє підготовлені повідомлення через ProductMessenger
+
+✅ Принципи:
+    • SRP — клас відповідає тільки за “оркестрацію” обробки запиту користувача
+    • DIP — усі залежності інʼєктуються через конструктор (легко тестувати/змінювати)
+    • KISS — відсутня зайва логіка, тільки контрольний потік та виклики сервісів
+
+🆕 IMP-011:
+    • Використовує строгий результат ProductProcessingResult замість None.
+    • При невдачі показує користувачу зрозуміле повідомлення з error_message.
 """
 
 # 🌐 Зовнішні бібліотеки
-from telegram import Update									                                                    # 📩 Telegram-обʼєкт
-from telegram.ext import CallbackContext						                                                # 🔁 Контекст виконання
+from telegram import Update  # 🤖 Подія/оновлення Telegram
+from telegram.constants import ChatAction  # 🖋️ Статус "друкує"
 
 # 🔠 Системні імпорти
-import logging												                                                    # 📝 Логування
-from typing import Optional									                                                    # 🧠 Типізація
+import asyncio  # 🔄 Обробка асинхронних відмін
+import logging  # 🧾 Логування
+from typing import Optional, TYPE_CHECKING  # 🧰 Типізація
 
 # 🧩 Внутрішні модулі проєкту
-from app.bot.ui.product_messenger import ProductMessenger				                                        # 📬 Відправка повідомлень
-from app.errors.error_handler import error_handler					                                            # ❗️ Декоратор обробки помилок
-from app.infrastructure.currency.currency_manager import CurrencyManager		                                # 💱 Менеджер валют
-from app.infrastructure.product_processing.product_processing_service import ProductProcessingService	        # 🧠 Сервіс обробки товару
-from app.shared.utils.logger import LOG_NAME						                                            # 📝 Назва логгера
+from app.bot.services.custom_context import CustomContext  # 🧠 Розширений контекст застосунку
+from app.bot.ui import static_messages as msg  # 🗒️ Статичні UI-повідомлення
+from app.config.setup.constants import AppConstants  # ⚙️ Глобальні константи застосунку
+from app.errors.exception_handler_service import ExceptionHandlerService  # 🧯 Єдиний обробник винятків
+from app.infrastructure.currency.currency_manager import CurrencyManager  # 💱 Курси валют (оновлення з TTL)
+from app.infrastructure.services.product_processing_service import (  # 🛠️ Основний сервіс обробки
+    ProductProcessingService,
+)
+from app.shared.utils.logger import LOG_NAME  # 🏷️ Ім’я логера
+from app.shared.utils.url_parser_service import UrlParserService  # 🔗 Валідація/нормалізація URL
 
-logger = logging.getLogger(LOG_NAME)
+if TYPE_CHECKING:
+    from app.bot.ui.messengers.product_messenger import ProductMessenger  # ✉️ Відправник блоків про товар
 
 # ================================
-# 🏛️ КЛАС ОБРОБНИКА ТОВАРІВ
+# 🧾 НАЛАШТУВАННЯ ЛОГЕРА
+# ================================
+logger = logging.getLogger(LOG_NAME)  # 🧾 Єдиний логер застосунку
+
+
+# ================================
+# 🏛️ ОБРОБНИК ЗАПИТІВ ПРО ТОВАР
 # ================================
 class ProductHandler:
     """
-    📦 Приймає запит на обробку товару та делегує роботу сервісам.
+    📦 Приймає запит на обробку сторінки товару та делегує його профільним сервісам.
     """
 
+    # ================================
+    # ⚙️ ІНІЦІАЛІЗАЦІЯ
+    # ================================
     def __init__(
         self,
-        currency_manager: CurrencyManager,						                                                # 💱 Менеджер валют
-        processing_service: ProductProcessingService,				                                            # 🧠 Оркестратор обробки
-        messenger: ProductMessenger,							                                                # 📬 Відправник повідомлень
+        currency_manager: CurrencyManager,
+        processing_service: ProductProcessingService,
+        messenger: "ProductMessenger",
+        exception_handler: ExceptionHandlerService,
+        constants: AppConstants,
+        url_parser_service: UrlParserService,
     ):
-        self.currency_manager = currency_manager					                                            # 💱 Курси валют
-        self.processing_service = processing_service				                                            # 🧠 Логіка обробки
-        self.messenger = messenger							                                                    # 📬 Надсилання блоків
-        logger.info("🔧 ProductHandler успішно ініціалізовано.")
-
-    @error_handler
-    async def handle_url(
-        self,
-        update: Update,										                                                    # 📩 Обʼєкт Telegram Update
-        context: CallbackContext,									                                            # 🔁 Контекст Telegram
-        url: Optional[str] = None,									                                            # 🔗 Необовʼязковий URL товару
-        update_currency: bool = True,									                                        # 💱 Оновити курси валют перед обробкою
-    ):
-        """
-        📥 Отримує URL товару, запускає обробку та відправку результату.
+        """Ініціалізує залежності обробника.
 
         Args:
-            update (Update): 📩 Обʼєкт Telegram Update
-            context (CallbackContext): 🔁 Контекст Telegram
-            url (Optional[str]): 🔗 Необовʼязковий URL товару
-            update_currency (bool): 💱 Оновити курси валют перед обробкою
+            currency_manager: Менеджер курсів валют (оновлення/читання з кешу).
+            processing_service: Сервіс повного циклу обробки URL (парсинг, збагачення, агрегація).
+            messenger: Відправник готових блоків повідомлень у Telegram.
+            exception_handler: Централізований обробник винятків (логування + UX).
+            constants: Глобальні константи застосунку (UI/налаштування).
+            url_parser_service: Валідація та нормалізація посилань.
         """
-        if not update.message:								                                            # 🚫 Немає повідомлення — нічого не робимо
+        self.currency_manager = currency_manager  # 💱 Курси валют (оновлення/кеш)
+        self.processing_service = processing_service  # 🛠️ Повний процесинг товару
+        self.messenger = messenger  # ✉️ Надсилання підготовлених блоків
+        self.exception_handler = exception_handler  # 🧯 Єдиний обробник винятків
+        self.const = constants  # ⚙️ Константи застосунку/UI
+        self.url_parser = url_parser_service  # 🔗 Валідація/нормалізація URL
+
+        logger.info("🔧 ProductHandler ініціалізовано.")  # 🧾 Діагностичний лог
+
+    # ================================
+    # 🚀 ПУБЛІЧНИЙ API
+    # ================================
+    async def handle_url(
+        self,
+        update: Update,
+        context: CustomContext,
+        url: Optional[str] = None,
+        update_currency: bool = True,
+    ) -> None:
+        """Основний вхід: приймає URL, виконує процесинг і шле результат."""
+        user_id: str = "N/A"  # 🆔 Попереднє значення для логів (на випадок guard'ів)
+        final_url: str = ""  # 🔗 Нормалізований URL (може не бути, доки не отримаємо дані)
+
+        try:
+            if not update.message:
+                return  # 🛑 Немає текстового повідомлення — нічого обробляти
+
+            user_id = getattr(update.effective_user, "id", "N/A")  # 👤 Ідентифікатор користувача
+            upd_id = getattr(update, "update_id", "N/A")  # 🏷️ Ідентифікатор апдейта
+
+            # ✅ UX: індикація «друкує»
+            try:
+                await update.message.chat.send_action(action=ChatAction.TYPING)
+            except Exception:
+                pass  # 🙈 Не критично — ігноруємо
+
+            message_text = (update.message.text or "").strip()
+            final_url = (url or message_text).strip()  # 🔗 Пріоритет аргументу над текстом
+
+            # ✅ Валідація/нормалізація через UrlParserService (з фолбеком)
+            try:
+                is_valid = self.url_parser.is_valid_url(final_url)  # type: ignore[attr-defined]
+            except Exception:
+                is_valid = final_url.startswith(("http://", "https://"))
+
+            if not is_valid:
+                logger.warning(f"[product] некоректний URL '{final_url}' | user={user_id}")
+                await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
+                return
+
+            try:
+                final_url = self.url_parser.normalize(final_url)  # type: ignore[attr-defined]
+            except Exception:
+                pass  # 🪪 Якщо нормалізатор відсутній або впав — працюємо як є
+
+            # ✅ «Розумне» оновлення курсів з TTL
+            if update_currency:
+                await self.currency_manager.update_all_rates_if_needed()
+
+            logger.info(f"📩 product.handle_url | user={user_id} upd={upd_id} url={final_url}")
+
+            # 1) Процесинг з поверненням строгого Result
+            result = await self.processing_service.process_url(final_url)
+            if not result.ok:
+                # Показуємо користувачу зрозуміле повідомлення з Result
+                human_msg = (result.error_message or msg.PRODUCT_FETCH_ERROR)
+                await update.message.reply_text(human_msg)
+
+                # Лог: код помилки + первинна причина (не для користувача)
+                logger.warning(
+                    "product.handle_url fail | code=%s url=%s cause=%r",
+                    getattr(result.error_code, "name", "N/A"),
+                    final_url,
+                    getattr(result, "_cause", None),
+                )
+                return
+
+            # 2) Повідомлення про визначений регіон
+            # Pylance: result.data має тип ProcessedProductData | None.
+            # Гарантуємо, що при ok=True data не None, інакше — мʼяко фейлимось.
+            if result.data is None:
+                logger.error("Invariant violation: result.ok=True, але data=None | url=%s", final_url)
+                await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
+                return
+
+            processed_data = result.data  # тепер тип звужено до ProcessedProductData
+            region_display = getattr(processed_data, "region_display", "N/A")
+            parse_mode = getattr(getattr(self.const, "UI", object()), "DEFAULT_PARSE_MODE", "HTML")
+            await update.message.reply_text(
+                msg.PRODUCT_REGION_DETECTED.format(region=region_display),
+                parse_mode=parse_mode,
+            )
+
+            # 3) Надсилання підготовлених блоків через мессенджер
+            await self.messenger.send(update, context, processed_data)
+
+        except asyncio.CancelledError:
+            logger.info("🛑 ProductHandler cancelled")
             return
-
-        final_url = url or update.message.text.strip()				                                    # 🔗 Витягуємо URL
-
-        if update_currency:								                                                # 💱 Оновлюємо курси валют, якщо потрібно
-            self.currency_manager.update_all_rates()
-
-        logger.info(f"📩 Отримано запит на обробку товару: {final_url}")
-
-        # 1. Викликаємо сервіс для збору всіх даних
-        processed_data = await self.processing_service.process_url(final_url)
-
-        if not processed_data:								                                            # ❌ Помилка при обробці — повідомляємо
-            await update.message.reply_text("⚠️ Помилка при отриманні інформації про товар!")
-            return
-
-        # 2. Повідомляємо регіон
-        await update.message.reply_text(
-            f"🌍 Регіон сайту: <b>{processed_data.region_display}</b>",
-            parse_mode="HTML"
-        )
-
-        # 3. Викликаємо сервіс для відправки всіх повідомлень
-        await self.messenger.send(update, context, processed_data)
+        except Exception as e:
+            await self.exception_handler.handle(e, update)  # 🧯 Єдине місце обробки помилок

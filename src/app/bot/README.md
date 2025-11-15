@@ -1,85 +1,104 @@
-# 🤖 Пакет `bot` — Серце Telegram-бота YoungLA Ukraine
-
-Цей документ описує архітектуру та логіку пакета **`bot`**, який відповідає за всю взаємодію Telegram-бота з користувачем.
-
----
-
-## 🎯 Що вміє бот?
-
-**YoungLA Ukraine Bot** допомагає працювати з товарами YoungLA прямо у Telegram:
-
-- 🔗 **Парсить товари та колекції** за посиланнями
-- 💱 **Розраховує вартість** у гривнях за актуальним чи користувацьким курсом
-- 📦 **Перевіряє наявність** розмірів у різних регіонах
-- 📏 **Виводить таблиці розмірів**
-- ⌨️ **Дає зручне меню** для доступу до всіх функцій
+# 🤖 bot — ядро Telegram-бота YoungLA Ukraine
+Пакет **`app/bot`** містить усі шари Telegram-бота: фічі команд, обробники апдейтів, сервісний шар (`services`), UI та точку входу.
 
 ---
 
-## 🏛️ Архітектурні принципи
-
-- **Feature-Driven Design** — логіка розбита на самодостатні "фічі" (папка `commands`).
-- **Dependency Injection** — усі залежності створюються в контейнері та передаються в обробники.
-- **Separation of Concerns** — кожна папка відповідає за свій шар (UI, логіка обробників, фічі).
-
----
-
-## 🌳 Структура пакета
-
-📦 **bot**  
-┣ 📂 **commands** — самодостатні "фічі"  
-┃ ┣ 📜 **__init__.py** — збирає та експортує всі фічі  
-┃ ┣ 📜 **base.py** — абстрактний клас `BaseFeature` (контракт для всіх фіч)  
-┃ ┣ 📜 **core_commands_feature.py** — обробка базових команд (`/start`, `/help`)  
-┃ ┗ 📜 **main_menu_feature.py** — логіка кнопок головного меню  
-┣ 📂 **handlers** — складна логіка обробників  
-┃ ┣ 📂 **product** — все, що стосується товарів і колекцій  
-┃ ┃ ┣ 📜 **collection_handler.py** — обробка колекцій  
-┃ ┃ ┣ 📜 **image_sender.py** — надсилання фото товарів  
-┃ ┃ ┣ 📜 **product_handler.py** — обробка одного товару  
-┃ ┃ ┗ 📜 **product_message_builder.py** — збірка повідомлень  
-┃ ┣ 📜 **__init__.py** — збирає та експортує глобальні обробники  
-┃ ┣ 📜 **callback_handler.py** — обробка inline-кнопок  
-┃ ┣ 📜 **link_handler.py** — маршрутизація текстових повідомлень (визначає режим і передає у потрібний обробник)  
-┃ ┗ 📜 **size_chart_handler.py** — логіка таблиць розмірів  
-┣ 📂 **ui** — інтерфейс та клавіатури  
-┃ ┣ 📜 **__init__.py** — експорт компонентів UI  
-┃ ┗ 📜 **keyboards.py** — клас `Keyboard` для генерації всіх клавіатур  
-┣ 📜 **__init__.py** — ініціалізатор пакета  
-┗ 📜 **main.py** — точка входу: збірка й запуск бота
-
----
-
-## 📄 Що робить кожен компонент?
-
-### **`main.py`**  
-Точка входу.  
-- Створює `Application`  
-- Ініціалізує контейнер залежностей  
-- Реєструє всі хендлери  
-- Запускає бота з логікою перезапуску при помилках мережі
-
-### **Папка `commands` (фічі)**  
-Прості, незалежні модулі:
-- **`BaseFeature`** (base.py) — контракт для всіх фіч
-- **`CoreCommandsFeature`** — команди `/start` і `/help`
-- **`MainMenuFeature`** — кнопки головного меню (перемикає режими, наприклад, "📏 Таблиця розмірів")
-
-### **Папка `handlers` (складна логіка)**  
-- **`LinkHandler`** — ключовий маршрутизатор. Отримує будь-який текст, визначає режим (товар, колекція, таблиця розмірів) і передає в потрібний обробник.
-- **`CallbackHandler`** — обробляє inline-кнопки.
-- **`ProductHandler` / `CollectionHandler`** — обробка товарів та колекцій.
-- **`SizeChartHandlerBot`** — робота з таблицями розмірів.
-
-### **Папка `ui` (інтерфейс)**  
-- **`Keyboard`** — фабрика клавіатур (`main_menu`, `help_menu`, меню валют).
-
----
-
-## 🚀 Як запустити?
-
-1. Налаштуй середовище (дивись `README.md` у корені проєкту).  
-2. Запусти:  
-
+## 📂 Структура
 ```bash
-python app/bot/main.py
+bot/
+├── 📘 README.md
+├── 📄 __init__.py
+├── 📄 main.py
+├── 📂 commands
+│   ├── base.py
+│   ├── core_commands_feature.py
+│   ├── currency_feature.py
+│   ├── main_menu_feature.py
+│   └── README.md
+├── 📂 handlers
+│   ├── callback_handler.py
+│   ├── link_handler.py
+│   ├── price_calculator_handler.py
+│   ├── size_chart_handler_bot.py
+│   ├── 📂 product
+│   │   ├── collection_handler.py
+│   │   ├── collection_runner.py
+│   │   ├── image_sender.py
+│   │   └── product_handler.py
+│   └── README.md
+├── 📂 services
+│   ├── callback_data_factory.py
+│   ├── callback_registry.py
+│   ├── custom_context.py
+│   ├── types.py
+│   └── README.md
+└── 📂 ui
+    ├── static_messages.py
+    ├── error_presenter.py
+    ├── 📂 formatters
+    ├── 📂 keyboards
+    ├── 📂 messengers
+    └── README.md
+```
+
+---
+
+## 🧭 Призначення
+- Оркеструвати всі Telegram-потоки: `/commands`, callback-кнопки, текстові повідомлення.
+- Надавати DI-контейнер (`app.config.setup.container.Container`) і реєструвати хендлери через `BotRegistrar`.
+- Інкапсулювати UI (клавіатури, форматтери, мессенджери) та статичні повідомлення.
+- Визначати сервісний рівень (callback-data, CustomContext, registry), який використовують усі шари.
+
+---
+
+## 🧩 Компоненти
+- **`main.py`** — entry-point: парсить CLI-флаги → ENV, завантажує `.env`, витягує токен, будує `Application` із `CustomContext`, реєструє хендлери, запускає `run_polling`.
+- **`commands/`** — легкі фічі:
+  - `base.py` — контракт `BaseFeature`.
+  - `core_commands_feature.py` — `/start`, `/help`.
+  - `main_menu_feature.py` — головне меню/переключення режимів.
+  - `currency_feature.py` — (діючі README описують логику курсів).
+- **`handlers/`** — складні обробники:
+  - `link_handler.py` — маршрутизатор текстів (визначає режим, викликає обробники товару/колекцій/таблиць).
+  - `callback_handler.py` — працює з `CallbackRegistry`.
+  - `price_calculator_handler.py`, `size_chart_handler_bot.py` — окремі сценарії.
+  - `product/` — обробка товарів і колекцій: `ProductHandler`, `CollectionHandler`, `CollectionRunner`, `ImageSender`.
+- **`services/`** — сервісний шар UI:
+  - `callback_data_factory.py`, `callback_registry.py`, `custom_context.py`, `types.py`, фасад у `__init__.py`.
+- **`ui/`** — інтерфейс:
+  - `static_messages.py`, `error_presenter.py`.
+  - Підпакети `formatters`, `keyboards`, `messengers` із власними README.
+
+---
+
+## ⚙️ Конфігурація та контракти
+- **DI/Container** (`app.config.setup.container.Container`) — створює всі залежності й передає їх у хендлери та commands.
+- **ConfigService** — доступ до YAML-конфігів (`telegram.bot.token`, Playwright налаштування тощо).
+- **ENV**: `BOT_TOKEN` / `TELEGRAM_BOT_TOKEN` / `TELEGRAM_TOKEN` + CLI-флаги (`--headful`, `--devtools`, `--trace`, `--channel`).
+- **AppConstants** — UI тексти, callback билдєри (`CALLBACKS.*`), налаштування режимів.
+- **ReasonCode + static_messages** — формування повідомлень про помилки.
+
+---
+
+## 🚀 Приклад запуску
+```bash
+python -m app.bot.main --headful --devtools
+# або
+BOT_TOKEN=123 python app/bot/main.py --trace=retain
+```
+
+---
+
+## 🧪 Тестування
+- Команди: мокайте `CustomContext`, перевіряйте ефекти (`reply_text`, зміна режиму).
+- Хендлери: стверджуйте, що `LinkHandler`/`CallbackHandler` коректно маршрутизують, `ProductHandler` викликає потрібні сервіси.
+- Services: тестуйте `CallbackData.build/parse`, `CallbackRegistry.register`, `CustomContext` getters/setters.
+- UI: snapshot-тести форматтерів, перевірка клавіатур, поведінка `ImageSender` та мессенджерів.
+- Entry-point: за допомогою інтеграційних тестів перевіряйте, що `build_application` додає error-handler і зберігає контейнер.
+
+---
+
+## ✅ Примітки
+- Кожен підпакет має власний README з деталями — оновлюйте їх разом зі змінами.
+- Імпортуйте компоненти через `app.bot.(commands|handlers|services|ui)` — внутрішня структура може змінюватися.
+- Під час додавання нових сценаріїв не забувайте реєструвати їх у `BotRegistrar` та документувати в README.

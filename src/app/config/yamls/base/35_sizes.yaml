@@ -1,0 +1,37 @@
+# ⚙️ app/config/yamls/base/35_sizes.yaml
+# 📏 Аліаси розмірів (IMP-056)
+# Допомагає нормалізувати значення перед Availability/SizeChart.
+
+# ================================
+# 📚 СЛОВНИК АЛІАСІВ
+# ================================
+sizes:
+  aliases:                          # 🧾 Нормалізуємо найпоширеніші варіації
+    xs: "XS"
+    s: "S"
+    m: "M"
+    l: "L"
+    xl: "XL"
+    xxl: "XXL"
+    xxxl: "XXXL"
+    xxxxl: "XXXXL"
+
+    xsmall: "XS"                    # 🧼 Варіації написання
+    x-small: "XS"
+    extra small: "XS"
+    small: "S"
+    medium: "M"
+    large: "L"
+    xlarge: "XL"
+    extra large: "XL"
+
+    "one size": "ONE_SIZE"      # 🎯 Уніфікація записів «one size»
+    onesize: "ONE_SIZE"
+    os: "ONE_SIZE"
+
+    x sm: "XS"                    # ✍️ Часті опечатки
+    x l: "XL"
+
+
+    o/s: "ONE_SIZE"
+    one-size: "ONE_SIZE"

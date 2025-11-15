@@ -1,95 +1,82 @@
-""" 🛠️ error_handler.py — універсальний декоратор для обробки помилок у Telegram-боті YoungLA Ukraine.
+# 🛠️ app/errors/error_handler.py
+"""
+🛠️ Фабрика декораторів для безпечного виконання async-хендлерів Telegram-бота.
 
-🔹 Підтримує:
-- OpenAI API: RateLimitError, OpenAIError
-- Telegram API: BadRequest, TimedOut, NetworkError, TelegramError
-- Selenium WebDriver: TimeoutException, NoSuchElementException, WebDriverException
-- Інші неочікувані помилки
-
-Використовує:
-- logging — для логування
-- functools — для створення декоратора
+🔹 Не змінює сигнатуру функції, працює з будь-якими *args/**kwargs.  
+🔹 Коректно пропускає `asyncio.CancelledError`, щоб не ламати зупинку задач.  
+🔹 Шукає обʼєкт `Update` серед аргументів і делегує винятки `ExceptionHandlerService`.
 """
 
-# 🧱 Системні
-import logging
-import functools
+from __future__ import annotations
 
-# 🌐 Telegram API
-from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.error import BadRequest, TimedOut, NetworkError, TelegramError
+# 🌐 Зовнішні бібліотеки
+from telegram import Update											# 🤖 Telegram DTO
 
-# 🧠 OpenAI
-import openai
+# 🔠 Системні імпорти
+import asyncio														# ⏱️ CancelledError, event loop
+import functools													# 🧱 wraps для збереження метаданих
+import logging														# 🧾 Логи обробки помилок
+from typing import Any, Callable, Coroutine, Optional				# 📐 Типи для сигнатур
 
-# 🧪 Selenium WebDriver
-from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException,
-    WebDriverException
-)
+# 🧩 Внутрішні модулі проєкту
+from .exception_handler_service import ExceptionHandlerService		# 🛡️ Центральний сервіс обробки винятків
 
 
-def error_handler(func):
-    """ 🧰 Декоратор для обгортання асинхронних Telegram-обробників.
-    Автоматично перехоплює, логує та обробляє типові помилки.
-    
-    :param func: Асинхронна функція Telegram-бота
-    :return: Функція з додатковим захистом від помилок
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logger = logging.getLogger("app.errors.error_handler")				# 🧾 Локальний логер
+
+
+# ================================
+# 🔧 ТИПИ
+# ================================
+AsyncHandler = Callable[..., Coroutine[Any, Any, Any]]				# 🧾 Сумісний із Telegram/typedi
+
+
+# ================================
+# 🏭 ФАБРИКА ДЕКОРАТОРІВ
+# ================================
+def make_error_handler(service: ExceptionHandlerService) -> Callable[[AsyncHandler], AsyncHandler]:
     """
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        update: Update = args[0] if args else None
-        message = getattr(update, "message", None) or getattr(update, "effective_message", None)
+    Створює декоратор, замкнений на `ExceptionHandlerService`.
 
-        try:
-            return await func(*args, **kwargs)
+    Args:
+        service: Сервіс, який отримує винятки і `Update`.
 
-        # === 🔹 OpenAI помилки ===
-        except openai.RateLimitError:
-            logging.error("❌ Недостатньо квоти OpenAI!")
-            if message:
-                await message.reply_text("⚠️ Помилка: недостатньо квоти OpenAI.")
+    Returns:
+        Callable, що обгортає async-хендлери, додаючи централізовану обробку.
+    """
 
-        except openai.OpenAIError as e:
-            logging.error(f"🔥 OpenAI error: {str(e)}")
-            if message:
-                await message.reply_text(f"⚠️ OpenAI: {str(e)}")
+    def decorator(func: AsyncHandler) -> AsyncHandler:
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            logger.debug("🧱 error_handler.wrapper start", extra={"handler": func.__name__})
+            try:
+                result = await func(*args, **kwargs)					# 🧠 Виконуємо оригінальний хендлер
+                logger.debug("🟢 error_handler.wrapper success", extra={"handler": func.__name__})
+                return result
+            except asyncio.CancelledError:
+                logger.info("⏹️ error_handler.cancelled", extra={"handler": func.__name__})
+                raise													# ⚠️ Ніколи не глотаємо cancel
+            except Exception as exc:									# noqa: BLE001
+                update: Optional[Update] = kwargs.get("update")			# 🔍 Спочатку шукаємо в kwargs
+                if update is None:										# 🔁 Інакше переглядаємо позиційні
+                    for arg in args:
+                        if isinstance(arg, Update):
+                            update = arg
+                            break
+                logger.error(
+                    "🔥 error_handler.exception",
+                    extra={"handler": func.__name__, "has_update": update is not None},
+                    exc_info=True,
+                )
+                await service.handle(exc, update)						# 🛡️ Передаємо в сервіс
+                return None												# ↩️ Повертаємо None, як і раніше
 
-        # === 🔹 Selenium помилки ===
-        except TimeoutException:
-            logging.warning("⌛ WebDriver: час очікування вичерпано.")
-            if message:
-                await message.reply_text("⚠️ Сторінка завантажується занадто довго.")
+        return wrapper													# type: ignore[return-value]
 
-        except NoSuchElementException:
-            logging.warning("🔍 WebDriver: елемент не знайдено.")
-            if message:
-                await message.reply_text("⚠️ Елемент не знайдено на сторінці.")
+    return decorator													# 🧰 Сам декоратор для DI
 
-        except WebDriverException as e:
-            logging.error(f"❌ WebDriver error: {e}")
-            if message:
-                await message.reply_text("⚠️ Помилка WebDriver.")
 
-        # === 🔹 Telegram помилки ===
-        except BadRequest as e:
-            logging.warning(f"⚠️ Telegram BadRequest: {e}")
-
-        except TimedOut:
-            logging.warning("⌛ Telegram: тайм-аут запиту.")
-
-        except NetworkError:
-            logging.warning("🌐 Telegram: мережева помилка.")
-
-        except TelegramError as e:
-            logging.error(f"❌ Telegram API error: {e}")
-
-        # === 🔥 Критичні інші помилки ===
-        except Exception as e:
-            logging.exception(f"🔥 Невідома критична помилка: {e}")
-            if message:
-                await message.reply_text("❌ Критична помилка! Повідом адміністратора.")
-
-    return wrapper
+__all__ = ["make_error_handler"]										# 📤 Публічний API

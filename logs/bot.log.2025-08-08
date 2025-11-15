@@ -1,0 +1,1768 @@
+2025-08-08 16:51:49,342 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 16:51:49,344 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 16:51:49,378 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 16:51:49,379 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 16:51:49,379 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 16:51:49,382 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 16:51:49,382 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 16:51:49,382 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 16:51:49,383 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 16:51:49,383 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 16:51:49,383 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 16:51:49,421 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 16:51:49,421 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 16:51:49,422 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 16:51:49,422 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 16:51:49,424 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 16:51:50,237 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 4041
+2025-08-08 16:51:50,371 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 16:51:50,372 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 4041
+2025-08-08 16:52:17,107 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: None
+2025-08-08 16:52:39,614 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 4041
+2025-08-08 16:52:39,747 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 16:52:39,747 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 4041
+2025-08-08 16:52:59,811 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/4041?_pos=1&_psq=4041&_ss=e&_v=1.0
+2025-08-08 16:52:59,812 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: price_calculation
+2025-08-08 16:52:59,812 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_price_calculation
+2025-08-08 16:52:59,812 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/4041?_pos=1&_psq=4041&_ss=e&_v=1.0
+2025-08-08 16:52:59,812 [INFO] - (telebot_ukraine_v2)._handle_price_calculation(201) - 🧮 Запит розрахунку ціни для: https://www.youngla.com/products/4041?_pos=1&_psq=4041&_ss=e&_v=1.0
+2025-08-08 16:53:00,879 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 16:53:00,880 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 16:53:00,881 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 16:53:00,881 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.49
+2025-08-08 16:53:00,881 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 16:53:00,884 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.49, 'PLN': 11.93}
+2025-08-08 16:53:01,410 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 16:53:01,649 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 16:53:02,100 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/4041?_pos=1&_psq=4041&_ss=e&_v=1.0
+2025-08-08 16:53:12,735 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 16:55:47,117 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:55:47,326 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 16:55:47,327 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: price_calculation
+2025-08-08 16:55:47,327 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_price_calculation
+2025-08-08 16:55:47,327 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:55:47,327 [INFO] - (telebot_ukraine_v2)._handle_price_calculation(201) - 🧮 Запит розрахунку ціни для: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:55:47,711 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:55:53,186 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 16:58:48,449 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 16:58:48,450 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 16:58:48,477 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 16:58:48,477 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 16:58:48,478 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 16:58:48,479 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 16:58:48,480 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 16:58:48,480 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 16:58:48,480 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 16:58:48,481 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 16:58:48,481 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 16:58:48,519 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 16:58:48,520 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 16:58:48,520 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 16:58:48,520 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 16:58:48,523 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 16:58:50,842 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:58:50,946 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 16:58:50,947 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 16:58:50,947 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 16:58:50,947 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:58:51,218 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:58:51,219 [INFO] - (telebot_ukraine_v2).process_url(74) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:58:51,748 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 16:58:52,034 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 16:58:52,390 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:59:03,058 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 16:59:25,997 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:59:26,064 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 16:59:26,065 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: price_calculation
+2025-08-08 16:59:26,065 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_price_calculation
+2025-08-08 16:59:26,065 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:59:26,066 [INFO] - (telebot_ukraine_v2)._handle_price_calculation(201) - 🧮 Запит розрахунку ціни для: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:59:26,498 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 16:59:26,499 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 16:59:26,499 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 16:59:26,499 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.55
+2025-08-08 16:59:26,500 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 16:59:26,501 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.55, 'PLN': 11.93}
+2025-08-08 16:59:26,807 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 16:59:31,227 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:07:40,120 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 17:07:40,121 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 17:07:40,150 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 17:07:40,150 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 17:07:40,151 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 17:07:40,152 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 17:07:40,153 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 17:07:40,153 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 17:07:40,153 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 17:07:40,153 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 17:07:40,153 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 17:07:40,193 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 17:07:40,194 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 17:07:40,194 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 17:07:40,194 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 17:07:40,197 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 17:07:45,213 [INFO] - (telebot_ukraine_v2).main(68) - 🧹 Очищення ресурсів...
+2025-08-08 17:08:31,383 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 17:08:31,383 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 17:08:31,412 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 17:08:31,412 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 17:08:31,413 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 17:08:31,414 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 17:08:31,414 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 17:08:31,415 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 17:08:31,415 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 17:08:31,415 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 17:08:31,415 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 17:08:31,454 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 17:08:31,455 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 17:08:31,455 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 17:08:31,455 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 17:08:31,458 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 17:08:43,491 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:08:43,721 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 17:08:43,721 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: product
+2025-08-08 17:08:43,722 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 17:08:43,722 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:08:43,812 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:08:43,812 [INFO] - (telebot_ukraine_v2).process_url(75) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:08:44,342 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 17:08:44,632 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 17:08:44,984 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:09:14,998 [ERROR] - (telebot_ukraine_v2).fetch_page_source(147) - ❌ Помилка Playwright на спробі 1: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.youngla.com/products/2005?hcUrl=%2Fen-US", waiting until "networkidle"
+
+2025-08-08 17:09:17,321 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 2/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:09:26,648 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:09:27,422 [ERROR] - (telebot_ukraine_v2).process_url(104) - 🔥 Помилка при паралельному запиті наявності/музики: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 17:09:27,422 [INFO] - (telebot_ukraine_v2).build_product_content(79) - 🧠 Починаю побудову контенту для: 2005 - Hella Pocket Sweats
+2025-08-08 17:09:27,425 [INFO] - (telebot_ukraine_v2).classify(48) - 👨‍🦱 Використовується fallback — стандартні чоловічі хештеги.
+2025-08-08 17:09:27,445 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'clothing_type' з параметрами: ['title']
+2025-08-08 17:09:27,446 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (clothing_type):
+# 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts").
+
+Назва товару: 2005 - Hella Pocket Sweats...
+2025-08-08 17:09:27,446 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'clothing_type' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:09:27,446 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts...
+2025-08-08 17:09:27,446 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:09:27,478 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'hashtags' з параметрами: ['title', 'description']
+2025-08-08 17:09:27,478 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (hashtags):
+# #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and ...
+2025-08-08 17:09:27,479 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'hashtags' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:09:27,479 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a ...
+2025-08-08 17:09:27,479 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:09:27,750 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 17:09:27,751 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 17:09:27,751 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 17:09:27,751 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.49
+2025-08-08 17:09:27,751 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 17:09:27,753 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.49, 'PLN': 11.93}
+2025-08-08 17:09:28,027 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:09:31,585 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:09:32,327 [INFO] - (telebot_ukraine_v2).build_product_content(99) - ✅ Контент успішно збудовано для: 2005 - Hella Pocket Sweats
+2025-08-08 17:13:36,780 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 17:13:36,780 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 17:13:36,807 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 17:13:36,808 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 17:13:36,808 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 17:13:36,809 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 17:13:36,810 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 17:13:36,810 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 17:13:36,810 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 17:13:36,810 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 17:13:36,811 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 17:13:36,848 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 17:13:36,849 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 17:13:36,849 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 17:13:36,849 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 17:13:36,852 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 17:25:27,819 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 17:25:27,819 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 17:25:27,846 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 17:25:27,847 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 17:25:27,848 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 17:25:27,849 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 17:25:27,849 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 17:25:27,849 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 17:25:27,850 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 17:25:27,850 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 17:25:27,850 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 17:25:27,888 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 17:25:27,889 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 17:25:27,889 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 17:25:27,890 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 17:25:27,892 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 17:25:48,091 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:25:48,556 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 17:25:48,557 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 17:25:48,557 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 17:25:48,557 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:25:49,057 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 17:25:49,058 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 17:25:49,058 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 17:25:49,059 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.54
+2025-08-08 17:25:49,059 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 17:25:49,061 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.54, 'PLN': 11.93}
+2025-08-08 17:25:49,062 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:25:49,062 [INFO] - (telebot_ukraine_v2).process_url(75) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:25:49,596 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 17:25:49,882 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 17:25:50,232 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:26:04,879 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:26:05,645 [ERROR] - (telebot_ukraine_v2).process_url(104) - 🔥 Помилка при паралельному запиті наявності/музики: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 17:26:05,645 [INFO] - (telebot_ukraine_v2).build_product_content(79) - 🧠 Починаю побудову контенту для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:05,645 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(125) - 🎯 Генерація слогану для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:05,646 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'slogan' з параметрами: ['title', 'description']
+2025-08-08 17:26:05,646 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (slogan):
+# ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for...
+2025-08-08 17:26:05,646 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'slogan' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:05,647 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a bold statement ...
+2025-08-08 17:26:05,647 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:26:05,677 [INFO] - (telebot_ukraine_v2.ai).translate_text(85) - 🌍 Запит на переклад і структурування тексту...
+2025-08-08 17:26:05,677 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'translation' з параметрами: ['text']
+2025-08-08 17:26:05,678 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (translation):
+# 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі переклади в метричну систему.
+
+Початковий текст: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475...
+2025-08-08 17:26:05,678 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'translation' для: текст довжиною 605
+2025-08-08 17:26:05,678 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі пере...
+2025-08-08 17:26:05,678 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:26:05,689 [INFO] - (telebot_ukraine_v2).classify(48) - 👨‍🦱 Використовується fallback — стандартні чоловічі хештеги.
+2025-08-08 17:26:05,710 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'clothing_type' з параметрами: ['title']
+2025-08-08 17:26:05,711 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (clothing_type):
+# 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts").
+
+Назва товару: 2005 - Hella Pocket Sweats...
+2025-08-08 17:26:05,711 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'clothing_type' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:05,711 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts...
+2025-08-08 17:26:05,712 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:26:05,721 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'hashtags' з параметрами: ['title', 'description']
+2025-08-08 17:26:05,721 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (hashtags):
+# #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and ...
+2025-08-08 17:26:05,722 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'hashtags' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:05,722 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: MATERIAL: 100% Cotton. French Terry.
+FABRIC WEIGHT: 475 GSM.
+FIT: Baggy.
+DESIGN: Make a ...
+2025-08-08 17:26:05,722 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:26:05,956 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:26:07,894 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(133) - ✅ Слоган успішно згенеровано: Комфорт, що кидає виклик стилю. 🌟
+2025-08-08 17:26:09,968 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:26:17,096 [INFO] - (telebot_ukraine_v2.ai)._parse_translated_sections(115) - ✅ Переклад успішно розпарсено.
+2025-08-08 17:26:17,096 [INFO] - (telebot_ukraine_v2).build_product_content(99) - ✅ Контент успішно збудовано для: 2005 - Hella Pocket Sweats
+2025-08-08 17:26:17,664 [INFO] - (telebot_ukraine_v2).send(61) - 📨 Текстові блоки відправлено для: 2005 - HELLA POCKET SWEATS
+2025-08-08 17:26:17,665 [WARNING] - (telebot_ukraine_v2)._send_music_block(85) - 🎵 Музика не згенерована для: 2005 - HELLA POCKET SWEATS
+2025-08-08 17:26:17,784 [INFO] - (telebot_ukraine_v2).send(68) - 🖼️ Відправлено 1 зображень.
+2025-08-08 17:26:17,785 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(46) - 🔎 Пошук зображень таблиць розмірів у HTML...
+2025-08-08 17:26:18,222 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:26:18,224 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560
+2025-08-08 17:26:18,226 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:26:18,228 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:26:18,228 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(81) - 🔢 Знайдено 2 зображень таблиць розмірів.
+2025-08-08 17:26:18,229 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076...
+2025-08-08 17:26:18,792 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_0.png
+2025-08-08 17:26:18,793 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_0.png | Тип: unique
+2025-08-08 17:26:18,794 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 17:26:18,794 [DEBUG] - (telebot_ukraine_v2).load_ocr_asset(47) - Завантаження OCR ассету з файлу: /Users/key27/TELEBOTYLAUKRAINE/src/app/shared/prompts/ocr/example_unique.json
+2025-08-08 17:26:18,795 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 17:26:18,795 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 17:26:18,795 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 17:26:18,795 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 17:26:51,424 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+{
+    "Title": "Чоловічі Футболки | Таблиця Розмірів",
+    "Висота": [
+        "157.5 см і менше",
+        "157.5 см",
+        "160 см",
+        "162.5 см",
+        "165 см",
+        "167.5 см",
+        "170 см",
+        "172.5 см",
+        "175 см",
+        "177.5 см",
+        "180 см",
+        "182.5 см",
+        "185 см",
+        "187.5 см",
+        "190 см і більше"
+    ],
+    "Вага (кг)": [
+        "до 59",
+        "59-64",
+        "64-68",
+        "68-71",
+        "71-74",
+        "74-78",
+        "78-81",
+        "81-83",
+        "83-86",
+        "86-88",
+        "88-91",
+        "91-97",
+        "97-102",
+        "102-109",
+        "109 і більше"
+    ],
+    "Розмір S": [
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S"
+    ],
+    "Розмір M": [
+        "S",
+        "S",
+        "S",
+        "S",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M"
+    ],
+    "Розмір L": [
+        "S/M",
+        "S/M",
+        "M",
+        "M",
+        "M/L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+    ],
+    "Розмір XL": [
+        "M",
+        "M",
+        "M/L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL"
+    ],
+    "Розмір XXL": [
+        "L",
+        "L",
+        "L",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "XL",
+        "2XL",
+        "2XL",
+        "2XL"
+    ]
+}
+2025-08-08 17:26:51,432 [WARNING] - (telebot_ukraine_v2).__init__(46) - ⚠️ Поле 'Розмір' пусте! Використовуються стандартні розміри.
+2025-08-08 17:26:51,438 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 17:26:51,717 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_0.png
+2025-08-08 17:26:51,717 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560...
+2025-08-08 17:26:52,300 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_1.png
+2025-08-08 17:26:52,300 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_1.png | Тип: unique
+2025-08-08 17:26:52,301 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 17:26:52,301 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 17:26:52,301 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 17:26:52,302 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 17:26:52,302 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 17:27:04,518 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+```json
+{
+    "Title": "2005 Розмірна Сітка (сантиметри)",
+    "Розмір": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+    ],
+    "Талія": [
+        76.2,
+        81.3,
+        86.4,
+        91.4,
+        96.5
+    ],
+    "Внутрішній шов": [
+        71.1,
+        72.4,
+        73.7,
+        74.9,
+        76.2
+    ],
+    "Довжина": [
+        100.3,
+        102.9,
+        105.4,
+        107.9,
+        110.5
+    ]
+}
+```
+2025-08-08 17:27:04,526 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 17:27:04,712 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_1.png
+2025-08-08 17:27:04,712 [INFO] - (telebot_ukraine_v2).process_all_size_charts(121) - ✅ Оброблено 2 таблиць за 46.93 сек.
+2025-08-08 17:27:05,847 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_0.png
+2025-08-08 17:27:06,252 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_1.png
+2025-08-08 17:27:06,253 [INFO] - (telebot_ukraine_v2).send(72) - 📏 Таблиця розмірів надіслана для: 2005 - HELLA POCKET SWEATS
+2025-08-08 17:52:38,427 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 17:52:38,428 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 17:52:38,448 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 17:52:38,448 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 17:52:38,448 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 17:52:38,449 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 17:52:38,449 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 17:52:38,450 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 17:52:38,450 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 17:52:38,450 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 17:52:38,450 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 17:52:38,476 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 17:52:38,477 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 17:52:38,477 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 17:52:38,478 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 17:52:38,479 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 17:52:51,400 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:52:51,673 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 17:52:51,673 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 17:52:51,674 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 17:52:51,674 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:52:52,109 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 17:52:52,110 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 17:52:52,110 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 17:52:52,111 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.54
+2025-08-08 17:52:52,111 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 17:52:52,113 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.54, 'PLN': 11.93}
+2025-08-08 17:52:52,114 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:52:52,114 [INFO] - (telebot_ukraine_v2).process_url(75) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:52:52,490 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 17:52:52,705 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 17:52:52,976 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:53:00,805 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:53:01,054 [WARNING] - (telebot_ukraine_v2.ai).extract_price(72) - ⚠️ Неможливо розпізнати ціну: Sale price$68.00
+2025-08-08 17:53:01,281 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(91) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 17:53:01,344 [ERROR] - (telebot_ukraine_v2).process_url(104) - 🔥 Помилка при паралельному запиті наявності/музики: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 17:53:01,345 [INFO] - (telebot_ukraine_v2).build_product_content(79) - 🧠 Починаю побудову контенту для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:01,345 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(125) - 🎯 Генерація слогану для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:01,345 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'slogan' з параметрами: ['title', 'description']
+2025-08-08 17:53:01,345 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (slogan):
+# ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: .
+
+🔹 Максимум 10 слів.
+🔹 Не використовуй лапки взагалі — ні одинарні, ні подвійні.
+🔹 Підбери один доречний емодзі та додай його в кінець.
+...
+2025-08-08 17:53:01,346 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'slogan' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:01,346 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: .
+
+🔹 Максимум 10 слів.
+🔹 Не використовуй лапки взагалі — ні одинарні, ні подвійні.
+🔹 Підбери один дореч...
+2025-08-08 17:53:01,346 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:53:01,367 [INFO] - (telebot_ukraine_v2.ai).translate_text(85) - 🌍 Запит на переклад і структурування тексту...
+2025-08-08 17:53:01,368 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'translation' з параметрами: ['text']
+2025-08-08 17:53:01,368 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (translation):
+# 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі переклади в метричну систему.
+
+Початковий текст: 
+...
+2025-08-08 17:53:01,368 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'translation' для: текст довжиною 0
+2025-08-08 17:53:01,368 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі пере...
+2025-08-08 17:53:01,368 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:53:01,376 [INFO] - (telebot_ukraine_v2).classify(48) - 👨‍🦱 Використовується fallback — стандартні чоловічі хештеги.
+2025-08-08 17:53:01,392 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'clothing_type' з параметрами: ['title']
+2025-08-08 17:53:01,392 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (clothing_type):
+# 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts").
+
+Назва товару: 2005 - Hella Pocket Sweats...
+2025-08-08 17:53:01,392 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'clothing_type' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:01,392 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts...
+2025-08-08 17:53:01,393 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:53:01,399 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'hashtags' з параметрами: ['title', 'description']
+2025-08-08 17:53:01,399 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (hashtags):
+# #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: 
+
+Не дублюй стандартні хештеги, запропонуй нові.
+Пиши їх через пробіл.
+...
+2025-08-08 17:53:01,399 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'hashtags' для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:01,400 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: 
+
+Не дублюй стандартні хештеги, запропонуй нові.
+Пиши їх через пробіл.
+...
+2025-08-08 17:53:01,400 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 17:53:01,576 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 17:53:03,107 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(133) - ✅ Слоган успішно згенеровано: Комфорт, що кишенює увагу. 👖
+2025-08-08 17:53:04,021 [INFO] - (telebot_ukraine_v2.ai)._parse_translated_sections(115) - ✅ Переклад успішно розпарсено.
+2025-08-08 17:53:04,941 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 17:53:05,173 [WARNING] - (telebot_ukraine_v2.ai).extract_price(72) - ⚠️ Неможливо розпізнати ціну: Sale price$68.00
+2025-08-08 17:53:05,381 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(91) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 17:53:06,790 [INFO] - (telebot_ukraine_v2).build_product_content(99) - ✅ Контент успішно збудовано для: 2005 - Hella Pocket Sweats
+2025-08-08 17:53:07,548 [INFO] - (telebot_ukraine_v2).send(61) - 📨 Текстові блоки відправлено для: 2005 - HELLA POCKET SWEATS
+2025-08-08 17:53:07,548 [WARNING] - (telebot_ukraine_v2)._send_music_block(85) - 🎵 Музика не згенерована для: 2005 - HELLA POCKET SWEATS
+2025-08-08 17:53:07,712 [INFO] - (telebot_ukraine_v2).send(68) - 🖼️ Відправлено 1 зображень.
+2025-08-08 17:53:07,713 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(46) - 🔎 Пошук зображень таблиць розмірів у HTML...
+2025-08-08 17:53:08,013 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:53:08,014 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560
+2025-08-08 17:53:08,016 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:53:08,017 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 17:53:08,017 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(81) - 🔢 Знайдено 2 зображень таблиць розмірів.
+2025-08-08 17:53:08,017 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076...
+2025-08-08 17:53:08,329 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_0.png
+2025-08-08 17:53:08,329 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_0.png | Тип: unique
+2025-08-08 17:53:08,330 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 17:53:08,330 [DEBUG] - (telebot_ukraine_v2).load_ocr_asset(47) - Завантаження OCR ассету з файлу: /Users/key27/TELEBOTYLAUKRAINE/src/app/shared/prompts/ocr/example_unique.json
+2025-08-08 17:53:08,331 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 17:53:08,331 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 17:53:08,331 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 17:53:08,331 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 17:53:32,128 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+{
+    "Title": "Чоловічі верхи | Розмірна Сітка",
+    "Вага (кг)": [
+        "до 59.4",
+        "59.4-64",
+        "64.5-68.5",
+        "68.9-76.7",
+        "77.1-82.6",
+        "83-92.5",
+        "93-102.5",
+        "103-110.7",
+        "111.1-120.2",
+        "120.7+"
+    ],
+    "Зріст": [
+        "155 і нижче",
+        "157",
+        "160",
+        "163",
+        "165",
+        "168",
+        "170",
+        "173",
+        "175",
+        "178",
+        "180",
+        "183",
+        "188",
+        "191",
+        "196 і вище"
+    ],
+    "Розмір S": [
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S"
+    ],
+    "Розмір M": [
+        "",
+        "",
+        "",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M|L",
+        "M|L",
+        "M|L"
+    ],
+    "Розмір L": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "M|L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+    ],
+    "Розмір XL": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "XL",
+        "XL",
+        "XL",
+        "XL"
+    ],
+    "Розмір XXL": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "XL|XXL",
+        "XL|XXL",
+        "XL|XXL"
+    ]
+}
+2025-08-08 17:53:32,134 [WARNING] - (telebot_ukraine_v2).__init__(46) - ⚠️ Поле 'Розмір' пусте! Використовуються стандартні розміри.
+2025-08-08 17:53:32,135 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 17:53:32,305 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_0.png
+2025-08-08 17:53:32,305 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560...
+2025-08-08 17:53:32,494 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_1.png
+2025-08-08 17:53:32,494 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_1.png | Тип: unique
+2025-08-08 17:53:32,494 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 17:53:32,495 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 17:53:32,495 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 17:53:32,495 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 17:53:32,495 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 17:53:40,770 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+```json
+{
+    "Title": "2005 Розмірна Сітка (сантиметри)",
+    "Розмір": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+    ],
+    "Талія": [
+        76.2,
+        81.3,
+        86.4,
+        91.4,
+        96.5
+    ],
+    "Клин": [
+        71.1,
+        72.4,
+        73.7,
+        74.9,
+        76.2
+    ],
+    "Довжина": [
+        100.3,
+        102.9,
+        105.4,
+        107.7,
+        110.5
+    ]
+}
+```
+2025-08-08 17:53:40,776 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 17:53:40,906 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_1.png
+2025-08-08 17:53:40,907 [INFO] - (telebot_ukraine_v2).process_all_size_charts(121) - ✅ Оброблено 2 таблиць за 33.19 сек.
+2025-08-08 17:53:42,230 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_0.png
+2025-08-08 17:53:43,340 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_1.png
+2025-08-08 17:53:43,341 [INFO] - (telebot_ukraine_v2).send(72) - 📏 Таблиця розмірів надіслана для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:10:20,600 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 18:10:20,601 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 18:10:20,620 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 18:10:20,621 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 18:10:20,621 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 18:10:20,622 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 18:10:20,622 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 18:10:20,622 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 18:10:20,623 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 18:10:20,623 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 18:10:20,623 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 18:10:20,650 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 18:10:20,651 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 18:10:20,651 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 18:10:20,651 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 18:10:20,653 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 18:15:25,669 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 18:15:25,669 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 18:15:25,689 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 18:15:25,690 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 18:15:25,690 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 18:15:25,691 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 18:15:25,691 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 18:15:25,691 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 18:15:25,691 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 18:15:25,692 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 18:15:25,692 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 18:15:25,722 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 18:15:25,722 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 18:15:25,723 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 18:15:25,723 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 18:15:25,724 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 18:15:32,796 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:15:33,115 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 18:15:33,115 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 18:15:33,116 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 18:15:33,116 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:15:33,608 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 18:15:33,609 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 18:15:33,610 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 18:15:33,610 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.55
+2025-08-08 18:15:33,610 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 18:15:33,612 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.55, 'PLN': 11.93}
+2025-08-08 18:15:33,613 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:15:33,613 [INFO] - (telebot_ukraine_v2).process_url(75) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:15:33,978 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 18:15:34,187 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 18:15:34,467 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:16:04,479 [ERROR] - (telebot_ukraine_v2).fetch_page_source(147) - ❌ Помилка Playwright на спробі 1: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.youngla.com/products/2005?hcUrl=%2Fen-US", waiting until "networkidle"
+
+2025-08-08 18:16:06,687 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 2/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:16:14,166 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 18:16:14,388 [WARNING] - (telebot_ukraine_v2.ai).extract_price(72) - ⚠️ Неможливо розпізнати ціну: Sale price$68.00
+2025-08-08 18:16:14,411 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(105) - 🟢 [DEBUG] Знайдено контейнер з описом. Починаю пошук секцій...
+2025-08-08 18:16:14,412 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МАТЕРІАЛ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,413 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ЩІЛЬНІСТЬ ТКАНИНИ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,413 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ПОСАДКА' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,413 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ОПИС' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,413 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МОДЕЛЬ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,414 [WARNING] - (telebot_ukraine_v2.ai).extract_detailed_sections(136) - 🟡 [DEBUG] Не вдалося витягти жодної детальної секції з контейнера. Можливо, змінилась структура HTML всередині .prose.
+2025-08-08 18:16:14,414 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(138) - 🏁 [DEBUG] Завершено пошук секцій. Результат: {}
+2025-08-08 18:16:14,611 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(91) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 18:16:14,633 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(105) - 🟢 [DEBUG] Знайдено контейнер з описом. Починаю пошук секцій...
+2025-08-08 18:16:14,633 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МАТЕРІАЛ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,633 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ЩІЛЬНІСТЬ ТКАНИНИ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,634 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ПОСАДКА' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,634 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ОПИС' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,634 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МОДЕЛЬ' не знайдено текстового значення поруч.
+2025-08-08 18:16:14,634 [WARNING] - (telebot_ukraine_v2.ai).extract_detailed_sections(136) - 🟡 [DEBUG] Не вдалося витягти жодної детальної секції з контейнера. Можливо, змінилась структура HTML всередині .prose.
+2025-08-08 18:16:14,634 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(138) - 🏁 [DEBUG] Завершено пошук секцій. Результат: {}
+2025-08-08 18:16:14,673 [ERROR] - (telebot_ukraine_v2).process_url(104) - 🔥 Помилка при паралельному запиті наявності/музики: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 18:16:14,673 [INFO] - (telebot_ukraine_v2).build_product_content(79) - 🧠 Починаю побудову контенту для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:14,673 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(125) - 🎯 Генерація слогану для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:14,674 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'slogan' з параметрами: ['title', 'description']
+2025-08-08 18:16:14,674 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (slogan):
+# ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: .
+
+🔹 Максимум 10 слів.
+🔹 Не використовуй лапки взагалі — ні одинарні, ні подвійні.
+🔹 Підбери один доречний емодзі та додай його в кінець.
+...
+2025-08-08 18:16:14,674 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'slogan' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:14,674 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: .
+
+🔹 Максимум 10 слів.
+🔹 Не використовуй лапки взагалі — ні одинарні, ні подвійні.
+🔹 Підбери один дореч...
+2025-08-08 18:16:14,675 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:16:14,697 [INFO] - (telebot_ukraine_v2.ai).translate_text(85) - 🌍 Запит на переклад і структурування тексту...
+2025-08-08 18:16:14,698 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'translation' з параметрами: ['text']
+2025-08-08 18:16:14,698 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (translation):
+# 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі переклади в метричну систему.
+
+Початковий текст: 
+...
+2025-08-08 18:16:14,698 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'translation' для: текст довжиною 0
+2025-08-08 18:16:14,698 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі пере...
+2025-08-08 18:16:14,698 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:16:14,706 [INFO] - (telebot_ukraine_v2).classify(48) - 👨‍🦱 Використовується fallback — стандартні чоловічі хештеги.
+2025-08-08 18:16:14,722 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'clothing_type' з параметрами: ['title']
+2025-08-08 18:16:14,722 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (clothing_type):
+# 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts").
+
+Назва товару: 2005 - Hella Pocket Sweats...
+2025-08-08 18:16:14,722 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'clothing_type' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:14,722 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts...
+2025-08-08 18:16:14,723 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:16:14,729 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'hashtags' з параметрами: ['title', 'description']
+2025-08-08 18:16:14,730 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (hashtags):
+# #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: 
+
+Не дублюй стандартні хештеги, запропонуй нові.
+Пиши їх через пробіл.
+...
+2025-08-08 18:16:14,730 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'hashtags' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:14,730 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: 
+
+Не дублюй стандартні хештеги, запропонуй нові.
+Пиши їх через пробіл.
+...
+2025-08-08 18:16:14,730 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:16:14,891 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:16:17,903 [INFO] - (telebot_ukraine_v2.ai)._parse_translated_sections(115) - ✅ Переклад успішно розпарсено.
+2025-08-08 18:16:18,095 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 18:16:18,319 [WARNING] - (telebot_ukraine_v2.ai).extract_price(72) - ⚠️ Неможливо розпізнати ціну: Sale price$68.00
+2025-08-08 18:16:18,345 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(105) - 🟢 [DEBUG] Знайдено контейнер з описом. Починаю пошук секцій...
+2025-08-08 18:16:18,345 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МАТЕРІАЛ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,345 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ЩІЛЬНІСТЬ ТКАНИНИ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,345 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ПОСАДКА' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ОПИС' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МОДЕЛЬ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,346 [WARNING] - (telebot_ukraine_v2.ai).extract_detailed_sections(136) - 🟡 [DEBUG] Не вдалося витягти жодної детальної секції з контейнера. Можливо, змінилась структура HTML всередині .prose.
+2025-08-08 18:16:18,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(138) - 🏁 [DEBUG] Завершено пошук секцій. Результат: {}
+2025-08-08 18:16:18,561 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(91) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 18:16:18,584 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(105) - 🟢 [DEBUG] Знайдено контейнер з описом. Починаю пошук секцій...
+2025-08-08 18:16:18,584 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МАТЕРІАЛ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,584 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ЩІЛЬНІСТЬ ТКАНИНИ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,585 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ПОСАДКА' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,585 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'ОПИС' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,585 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(133) -     ⚠️ Для ключа 'МОДЕЛЬ' не знайдено текстового значення поруч.
+2025-08-08 18:16:18,585 [WARNING] - (telebot_ukraine_v2.ai).extract_detailed_sections(136) - 🟡 [DEBUG] Не вдалося витягти жодної детальної секції з контейнера. Можливо, змінилась структура HTML всередині .prose.
+2025-08-08 18:16:18,585 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(138) - 🏁 [DEBUG] Завершено пошук секцій. Результат: {}
+2025-08-08 18:16:18,620 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(133) - ✅ Слоган успішно згенеровано: Комфорт, що кишенює тренди 🌟
+2025-08-08 18:16:18,623 [INFO] - (telebot_ukraine_v2).build_product_content(99) - ✅ Контент успішно збудовано для: 2005 - Hella Pocket Sweats
+2025-08-08 18:16:19,306 [INFO] - (telebot_ukraine_v2).send(61) - 📨 Текстові блоки відправлено для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:16:19,307 [WARNING] - (telebot_ukraine_v2)._send_music_block(85) - 🎵 Музика не згенерована для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:16:19,411 [INFO] - (telebot_ukraine_v2).send(68) - 🖼️ Відправлено 1 зображень.
+2025-08-08 18:16:19,411 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(46) - 🔎 Пошук зображень таблиць розмірів у HTML...
+2025-08-08 18:16:19,672 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:16:19,673 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560
+2025-08-08 18:16:19,675 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:16:19,676 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:16:19,676 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(81) - 🔢 Знайдено 2 зображень таблиць розмірів.
+2025-08-08 18:16:19,677 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076...
+2025-08-08 18:16:19,978 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_0.png
+2025-08-08 18:16:19,978 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_0.png | Тип: unique
+2025-08-08 18:16:19,979 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 18:16:19,979 [DEBUG] - (telebot_ukraine_v2).load_ocr_asset(47) - Завантаження OCR ассету з файлу: /Users/key27/TELEBOTYLAUKRAINE/src/app/shared/prompts/ocr/example_unique.json
+2025-08-08 18:16:19,980 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 18:16:19,980 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 18:16:19,980 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 18:16:19,980 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 18:16:37,258 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+{
+    "Title": "Таблиця розмірів чоловічих верхів (сантиметри)",
+    "Вага (кг)": [
+        "59 та менше",
+        "59-64",
+        "64-68",
+        "68-72",
+        "72-76",
+        "76-80",
+        "80-83",
+        "83-87",
+        "87-91",
+        "91-97",
+        "97-102",
+        "102 та більше"
+    ],
+    "Зріст (см)": [
+        "155 та менше",
+        "157",
+        "160",
+        "163",
+        "165",
+        "168",
+        "170",
+        "173",
+        "175",
+        "178",
+        "180",
+        "183",
+        "185",
+        "188",
+        "191",
+        "193",
+        "196 та більше"
+    ],
+    "Розмір S": [
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S",
+        "S"
+    ],
+    "Розмір M": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M",
+        "M"
+    ],
+    "Розмір L": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+    ],
+    "Розмір XL": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "XL",
+        "XL",
+        "XL",
+        "XL"
+    ],
+    "Розмір XXL": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "XXL",
+        "XXL"
+    ]
+}
+2025-08-08 18:16:37,264 [WARNING] - (telebot_ukraine_v2).__init__(46) - ⚠️ Поле 'Розмір' пусте! Використовуються стандартні розміри.
+2025-08-08 18:16:37,265 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 18:16:37,444 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_0.png
+2025-08-08 18:16:37,444 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560...
+2025-08-08 18:16:37,600 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_1.png
+2025-08-08 18:16:37,600 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_1.png | Тип: unique
+2025-08-08 18:16:37,601 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 18:16:37,601 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 18:16:37,601 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 18:16:37,601 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 18:16:37,602 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 18:30:17,370 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 18:30:17,371 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 18:30:17,400 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 18:30:17,400 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 18:30:17,401 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 18:30:17,402 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 18:30:17,402 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 18:30:17,403 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 18:30:17,403 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 18:30:17,403 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 18:30:17,403 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 18:30:17,441 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 18:30:17,441 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 18:30:17,442 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 18:30:17,442 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 18:30:17,445 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 18:30:43,155 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:30:43,587 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: True
+2025-08-08 18:30:43,587 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 18:30:43,588 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 18:30:43,588 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:30:44,400 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 18:30:44,401 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 18:30:44,401 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 18:30:44,402 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.54
+2025-08-08 18:30:44,402 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 18:30:44,405 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.54, 'PLN': 11.93}
+2025-08-08 18:30:44,407 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:30:44,407 [INFO] - (telebot_ukraine_v2).process_url(75) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:30:44,990 [INFO] - (telebot_ukraine_v2)._init_browser(93) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 18:30:45,287 [INFO] - (telebot_ukraine_v2)._init_browser(97) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 18:30:45,676 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:31:15,692 [ERROR] - (telebot_ukraine_v2).fetch_page_source(147) - ❌ Помилка Playwright на спробі 1: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.youngla.com/products/2005?hcUrl=%2Fen-US", waiting until "networkidle"
+
+2025-08-08 18:31:18,005 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 2/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:31:26,824 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 18:31:27,232 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 18:31:27,233 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 18:31:27,233 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 18:31:27,234 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 18:31:27,234 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 18:31:27,234 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 18:31:27,544 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 18:31:27,581 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 18:31:27,582 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 18:31:27,582 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 18:31:27,582 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 18:31:27,582 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 18:31:27,583 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 18:31:27,640 [ERROR] - (telebot_ukraine_v2).process_url(104) - 🔥 Помилка при паралельному запиті наявності/музики: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 18:31:27,640 [INFO] - (telebot_ukraine_v2).build_product_content(79) - 🧠 Починаю побудову контенту для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:27,641 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(125) - 🎯 Генерація слогану для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:27,641 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'slogan' з параметрами: ['title', 'description']
+2025-08-08 18:31:27,641 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (slogan):
+# ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for ...
+2025-08-08 18:31:27,642 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'slogan' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:27,642 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # ✨ Промт для генерації слогану. Використовується в PromptType.SLOGAN
+
+Створи короткий, стильний слоган для товару 2005 - Hella Pocket Sweats українською мовою
+у стилі бренду YoungLA. Опис товару: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton ...
+2025-08-08 18:31:27,642 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:31:27,673 [INFO] - (telebot_ukraine_v2.ai).translate_text(85) - 🌍 Запит на переклад і структурування тексту...
+2025-08-08 18:31:27,674 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'translation' з параметрами: ['text']
+2025-08-08 18:31:27,674 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (translation):
+# 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі переклади в метричну систему.
+
+Початковий текст: Make a bold statement with the Hella Pocket Joggers by ...
+2025-08-08 18:31:27,674 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'translation' для: текст довжиною 433
+2025-08-08 18:31:27,674 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🇺🇦 Промт для перекладу опису товару. Використовується в PromptType.TRANSLATION
+
+Ти професійний перекладач. Переклади текст українською, щоб звучало природно.
+Розділи його на категорії: МАТЕРІАЛ, ПОСАДКА (якщо є), ОПИС, МОДЕЛЬ.
+Якщо розділ відсутній у тексті — не додавай його.
+Параметри моделі пере...
+2025-08-08 18:31:27,675 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:31:27,685 [INFO] - (telebot_ukraine_v2).classify(48) - 👨‍🦱 Використовується fallback — стандартні чоловічі хештеги.
+2025-08-08 18:31:27,707 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'clothing_type' з параметрами: ['title']
+2025-08-08 18:31:27,708 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (clothing_type):
+# 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts").
+
+Назва товару: 2005 - Hella Pocket Sweats...
+2025-08-08 18:31:27,708 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'clothing_type' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:27,708 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧥 Промт для визначення типу одягу. Використовується в PromptType.CLOTHING_TYPE
+
+Ти експерт у моді та одязі. У назві товару вказано його назву.
+Твоє завдання – визначити, до якого типу одягу він належить.
+Відповідай одним словом, що означає тип одягу (наприклад, "jeans", "hoodie", "jacket", "shorts...
+2025-08-08 18:31:27,708 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:31:27,718 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(93) - Запит промта типу: 'hashtags' з параметрами: ['title', 'description']
+2025-08-08 18:31:27,719 [DEBUG] - (telebot_ukraine_v2.ai).get_prompt(102) - 📤 Згенерований промт (hashtags):
+# #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple car...
+2025-08-08 18:31:27,719 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'hashtags' для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:27,719 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # #️⃣ Промт для генерації хештегів. Використовується в PromptType.HASHTAGS
+
+Ти експерт із SMM та Instagram-просування. 
+Створи 5-7 унікальних хештегів для товару.
+
+Опис:
+Назва: 2005 - Hella Pocket Sweats
+Деталі: Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty ...
+2025-08-08 18:31:27,720 [INFO] - (telebot_ukraine_v2.openai).chat_completion(63) - 📤 Надсилання запиту до GPT (модель: gpt-4-turbo)...
+2025-08-08 18:31:27,976 [INFO] - (telebot_ukraine_v2).fetch_page_source(125) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?hcUrl=%2Fen-US
+2025-08-08 18:31:29,201 [INFO] - (telebot_ukraine_v2.ai).generate_slogan(133) - ✅ Слоган успішно згенеровано: Живи сміливо, вдягайся зручно з YoungLA 🚀
+2025-08-08 18:31:31,958 [INFO] - (telebot_ukraine_v2).fetch_page_source(143) - ✅ Сторінка успішно завантажена.
+2025-08-08 18:31:32,345 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 18:31:32,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 18:31:32,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 18:31:32,346 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 18:31:32,347 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 18:31:32,347 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 18:31:32,643 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 18:31:32,679 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 18:31:32,679 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 18:31:32,680 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 18:31:32,680 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 18:31:32,680 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 18:31:32,680 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 18:31:40,119 [INFO] - (telebot_ukraine_v2.ai)._parse_translated_sections(115) - ✅ Переклад успішно розпарсено.
+2025-08-08 18:31:40,120 [INFO] - (telebot_ukraine_v2).build_product_content(99) - ✅ Контент успішно збудовано для: 2005 - Hella Pocket Sweats
+2025-08-08 18:31:40,949 [INFO] - (telebot_ukraine_v2).send(61) - 📨 Текстові блоки відправлено для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:31:40,950 [WARNING] - (telebot_ukraine_v2)._send_music_block(85) - 🎵 Музика не згенерована для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:31:41,086 [INFO] - (telebot_ukraine_v2).send(68) - 🖼️ Відправлено 1 зображень.
+2025-08-08 18:31:41,086 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(46) - 🔎 Пошук зображень таблиць розмірів у HTML...
+2025-08-08 18:31:41,512 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:31:41,513 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560
+2025-08-08 18:31:41,516 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:31:41,517 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(61) - 🔗 Знайдено <img>: https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076
+2025-08-08 18:31:41,518 [INFO] - (telebot_ukraine_v2)._find_size_chart_images(81) - 🔢 Знайдено 2 зображень таблиць розмірів.
+2025-08-08 18:31:41,518 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/Size_Chart_TOP_JOGGER_-_Shopify_fedc390c-3b31-435b-9e32-2bf7e5b06719.png?v=1611956076...
+2025-08-08 18:31:41,862 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_0.png
+2025-08-08 18:31:41,862 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_0.png | Тип: unique
+2025-08-08 18:31:41,863 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 18:31:41,863 [DEBUG] - (telebot_ukraine_v2).load_ocr_asset(47) - Завантаження OCR ассету з файлу: /Users/key27/TELEBOTYLAUKRAINE/src/app/shared/prompts/ocr/example_unique.json
+2025-08-08 18:31:41,864 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 18:31:41,864 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 18:31:41,864 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 18:31:41,865 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 18:31:58,549 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+{
+    "Title": "Чоловічі верхи | Таблиця розмірів",
+    "Розмір": [
+        "S",
+        "S",
+        "S",
+        "S",
+        "M",
+        "M",
+        "M",
+        "L",
+        "L",
+        "XL",
+        "XL",
+        "XL",
+        "XXL"
+    ],
+    "Зріст": [
+        "5'1\" і нижче",
+        "5'2\"",
+        "5'3\"",
+        "5'4\"",
+        "5'5\"",
+        "5'6\"",
+        "5'7\"",
+        "5'8\"",
+        "5'9\"",
+        "5'10\"",
+        "5'11\"",
+        "6'",
+        "6'1\" і вище"
+    ],
+    "Вага (кг)": [
+        "59 і менше",
+        "59-64",
+        "64-68",
+        "68-73",
+        "73-77",
+        "77-82",
+        "82-86",
+        "86-91",
+        "91-95",
+        "95-100",
+        "100-104",
+        "104-109",
+        "109 і більше"
+    ]
+}
+2025-08-08 18:31:58,557 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 18:31:58,768 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_0.png
+2025-08-08 18:31:58,768 [INFO] - (telebot_ukraine_v2).download(44) - 📥 Завантаження зображення з https://cdn.shopify.com/s/files/1/1775/6429/files/2005-Size-Chart_b659d8e9-868f-44de-bad1-13e145d54e26_600x600.png?v=1729876560...
+2025-08-08 18:31:58,964 [INFO] - (telebot_ukraine_v2).download(59) - ✅ Зображення успішно збережено: temp_size_charts/download_1.png
+2025-08-08 18:31:58,964 [INFO] - (telebot_ukraine_v2.ocr).recognize(64) - 🔍 OCR запущено для: temp_size_charts/download_1.png | Тип: unique
+2025-08-08 18:31:58,965 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(63) - Запит промта для таблиці розмірів типу: 'unique'
+2025-08-08 18:31:58,965 [DEBUG] - (telebot_ukraine_v2.ai).get_size_chart_prompt(82) - 📤 Згенерований OCR промт (unique):
+# 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 слова), та подати у вигляді таблиці розмірів.
+
+🔹 Уважно витягни всі дані із зображення.
+🔹 Переклади за...
+2025-08-08 18:31:58,965 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(51) - Створення промта 'size_chart' для: ChartType.UNIQUE
+2025-08-08 18:31:58,966 [DEBUG] - (telebot_ukraine_v2.ai)._log_prompt(52) - 📤 Згенерований промт (початок): # 🧠 Базовий шаблон для розпізнавання таблиць розмірів (OCR)
+
+Ти професійний OCR-фахівець, експерт із таблиць розмірів та професійний перекладач українською.
+Твоє завдання – розпізнати текст із зображення, одразу перекласти його українською так, щоб звучало максимально природно і дуже коротко (1-2 сл...
+2025-08-08 18:31:58,966 [DEBUG] - (telebot_ukraine_v2.openai).chat_completion_with_vision(99) - 📸 Відправка Vision-запиту до моделі gpt-4-turbo...
+2025-08-08 18:32:04,689 [INFO] - (telebot_ukraine_v2.ocr).recognize(80) - ✅ OCR-відповідь:
+```json
+{
+    "Title": "2005 Розмірна Сітка (сантиметри)",
+    "Розмір": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+    ],
+    "Талія": [
+        76.2,
+        81.3,
+        86.4,
+        91.4,
+        96.5
+    ],
+    "Внутрішній шов": [
+        71.1,
+        72.4,
+        73.7,
+        74.9,
+        76.2
+    ],
+    "Довжина": [
+        100.3,
+        102.9,
+        105.4,
+        108.0,
+        110.5
+    ]
+}
+```
+2025-08-08 18:32:04,696 [INFO] - (telebot_ukraine_v2).generate(79) - 🎨 Генерація адаптивної таблиці розмірів...
+2025-08-08 18:32:04,877 [INFO] - (telebot_ukraine_v2)._save_image(176) - ✅ Таблиця успішно збережена в temp_size_charts/generated_1.png
+2025-08-08 18:32:04,877 [INFO] - (telebot_ukraine_v2).process_all_size_charts(121) - ✅ Оброблено 2 таблиць за 23.79 сек.
+2025-08-08 18:32:05,567 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_0.png
+2025-08-08 18:32:05,940 [INFO] - (telebot_ukraine_v2).send(47) - ✅ Надіслано таблицю розмірів: temp_size_charts/generated_1.png
+2025-08-08 18:32:05,940 [INFO] - (telebot_ukraine_v2).send(72) - 📏 Таблиця розмірів надіслана для: 2005 - HELLA POCKET SWEATS
+2025-08-08 18:36:36,940 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 18:36:37,049 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 18:36:37,050 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 18:36:47,838 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 18:36:47,838 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: region_availability
+2025-08-08 18:36:47,838 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_region_availability
+2025-08-08 18:36:47,839 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 18:36:47,839 [INFO] - (telebot_ukraine_v2)._handle_region_availability(191) - 🌍 Запит перевірки наявності для: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 18:38:50,850 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 18:38:50,850 [INFO] - (telebot_ukraine_v2).__init__(71) - ✅ WebDriverService створено.
+2025-08-08 18:38:50,879 [INFO] - (telebot_ukraine_v2.openai).__init__(43) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 18:38:50,879 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 18:38:50,880 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 18:38:50,881 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 18:38:50,882 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 18:38:50,882 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 18:38:50,883 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 18:38:50,883 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 18:38:50,883 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 18:38:50,923 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 18:38:50,924 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 18:38:50,924 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 18:38:50,925 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 18:38:50,927 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 18:39:04,157 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 18:39:04,385 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 18:39:04,385 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 18:39:13,464 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 18:39:13,465 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: region_availability
+2025-08-08 18:39:13,465 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_region_availability
+2025-08-08 18:39:13,465 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 18:39:13,465 [INFO] - (telebot_ukraine_v2)._handle_region_availability(191) - 🌍 Запит перевірки наявності для: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:04,605 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 21:38:04,605 [INFO] - (telebot_ukraine_v2.ai).__init__(75) - ✅ WebDriverService створено.
+2025-08-08 21:38:04,632 [INFO] - (telebot_ukraine_v2.ai).__init__(46) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 21:38:04,632 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 21:38:04,633 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 21:38:04,653 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 21:38:04,653 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 21:38:04,653 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 21:38:04,654 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 21:38:04,654 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 21:38:04,654 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 21:38:04,680 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 21:38:04,681 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 21:38:04,681 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 21:38:04,681 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 21:38:04,683 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 21:38:29,884 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 21:38:30,047 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 21:38:30,047 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 21:38:37,120 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:37,120 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: None
+2025-08-08 21:38:37,120 [DEBUG] - (telebot_ukraine_v2)._route_by_url_type(167) - 🔎 is_collection=False, is_product=True
+2025-08-08 21:38:37,120 [INFO] - (telebot_ukraine_v2)._route_by_url_type(176) - 🛍️ Автоматично розпізнано товар: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:37,616 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 21:38:37,617 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 21:38:37,617 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 21:38:37,618 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.54
+2025-08-08 21:38:37,618 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.93
+2025-08-08 21:38:37,620 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.54, 'PLN': 11.93}
+2025-08-08 21:38:37,620 [INFO] - (telebot_ukraine_v2).handle_url(72) - 📩 Отримано запит на обробку товару: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:37,621 [INFO] - (telebot_ukraine_v2.ai).process_url(80) - ⚙️ Починаю повну обробку URL: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:37,621 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0...
+2025-08-08 21:38:37,956 [INFO] - (telebot_ukraine_v2.ai)._init_browser(97) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 21:38:38,125 [INFO] - (telebot_ukraine_v2.ai)._init_browser(101) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 21:38:38,410 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:38:54,212 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:38:54,464 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (789106 байт).
+2025-08-08 21:38:54,520 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:38:54,521 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:38:54,521 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:38:54,522 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:38:54,522 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:38:54,522 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:38:54,859 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 21:38:54,888 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:38:54,888 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:38:54,888 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:38:54,889 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:38:54,889 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:38:54,890 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:38:54,928 [INFO] - (telebot_ukraine_v2).create_header(60) - 🏷️ Створення заголовка для товару за URL: https://www.youngla.com2005
+2025-08-08 21:38:54,929 [ERROR] - (telebot_ukraine_v2).create_header(85) - 🔥 Помилка при створенні заголовка для 2005: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+Traceback (most recent call last):
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/content/product_header_service.py", line 63, in create_header
+    parser = self.parser_factory.create_product_parser(url, enable_progress=False)	# 🧠 Ініціалізація парсера без прогрес-бара
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/parsers/parser_factory.py", line 54, in create_product_parser
+    return BaseParser(
+           ^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/parsers/base_parser.py", line 73, in __init__
+    self._currency = self.url_parser_service.get_currency(url)					# 💱 Отримання валюти за URL (us/eu/uk)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/shared/utils/url_parser_service.py", line 60, in get_currency
+    raise ValueError(f"❌ Не вдалося визначити валюту для URL: {url}")              # ❌ Не знайдено регіон
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 21:38:54,932 [ERROR] - (telebot_ukraine_v2)._fetch_region_data(117) - ❌ Помилка отримання даних для регіону us: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 21:38:54,932 [ERROR] - (telebot_ukraine_v2)._fetch_region_data(117) - ❌ Помилка отримання даних для регіону eu: ❌ Не вдалося визначити валюту для URL: https://eu.youngla.com2005
+2025-08-08 21:38:54,933 [ERROR] - (telebot_ukraine_v2)._fetch_region_data(117) - ❌ Помилка отримання даних для регіону uk: ❌ Не вдалося визначити валюту для URL: https://uk.youngla.com2005
+2025-08-08 21:38:54,933 [INFO] - (telebot_ukraine_v2).build(90) - 📝 Згенеровано звіти про наявність.
+2025-08-08 21:39:12,861 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 21:39:12,914 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 21:39:12,914 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 21:39:18,944 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:39:18,945 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: region_availability
+2025-08-08 21:39:18,945 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_region_availability
+2025-08-08 21:39:18,945 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:39:18,945 [INFO] - (telebot_ukraine_v2)._handle_region_availability(191) - 🌍 Запит перевірки наявності для: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:39:19,179 [INFO] - (telebot_ukraine_v2).create_header(60) - 🏷️ Створення заголовка для товару за URL: https://www.youngla.com2005
+2025-08-08 21:39:19,180 [ERROR] - (telebot_ukraine_v2).create_header(85) - 🔥 Помилка при створенні заголовка для 2005: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+Traceback (most recent call last):
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/content/product_header_service.py", line 63, in create_header
+    parser = self.parser_factory.create_product_parser(url, enable_progress=False)	# 🧠 Ініціалізація парсера без прогрес-бара
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/parsers/parser_factory.py", line 54, in create_product_parser
+    return BaseParser(
+           ^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/infrastructure/parsers/base_parser.py", line 73, in __init__
+    self._currency = self.url_parser_service.get_currency(url)					# 💱 Отримання валюти за URL (us/eu/uk)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/key27/TELEBOTYLAUKRAINE/src/app/shared/utils/url_parser_service.py", line 60, in get_currency
+    raise ValueError(f"❌ Не вдалося визначити валюту для URL: {url}")              # ❌ Не знайдено регіон
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: ❌ Не вдалося визначити валюту для URL: https://www.youngla.com2005
+2025-08-08 21:39:19,181 [INFO] - (telebot_ukraine_v2).get_availability_report(73) - ✅ Звіт для '2005' взято з кешу.
+2025-08-08 21:39:19,504 [INFO] - (telebot_ukraine_v2).send(56) - ✅ Надіслано звіти про наявність для: 🔗 ТОВАР
+2025-08-08 21:47:37,031 [INFO] - (telebot_ukraine_v2).setup_logging(96) - ✅ Логування налаштовано. Рівень: DEBUG. Консоль: ON.
+2025-08-08 21:47:37,031 [INFO] - (telebot_ukraine_v2.ai).__init__(75) - ✅ WebDriverService створено.
+2025-08-08 21:47:37,051 [INFO] - (telebot_ukraine_v2.ai).__init__(46) - ✅ OpenAIService успішно ініціалізовано.
+2025-08-08 21:47:37,052 [INFO] - (telebot_ukraine_v2).__init__(35) - ⚖️ WeightDataService ініціалізовано (файл: weights.json)
+2025-08-08 21:47:37,052 [INFO] - (telebot_ukraine_v2.ai).__init__(52) - ✅ TranslatorService успішно ініціалізовано.
+2025-08-08 21:47:37,053 [INFO] - (telebot_ukraine_v2).__init__(45) - 🔧 ProductHandler успішно ініціалізовано.
+2025-08-08 21:47:37,054 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:faq' зареєстровано.
+2025-08-08 21:47:37,054 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:usage' зареєстровано.
+2025-08-08 21:47:37,054 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'help:support' зареєстровано.
+2025-08-08 21:47:37,054 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:show_rate' зареєстровано.
+2025-08-08 21:47:37,055 [INFO] - (telebot_ukraine_v2).register(54) - ✅ Обробник для callback 'currency:set_rate' зареєстровано.
+2025-08-08 21:47:37,081 [INFO] - (telebot_ukraine_v2).register_handlers(50) - --- Починаю автоматичну реєстрацію фіч ---
+2025-08-08 21:47:37,081 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CoreCommandsFeature' успішно зареєстрована.
+2025-08-08 21:47:37,082 [INFO] - (telebot_ukraine_v2).register_handlers(53) - ✅ Фіча 'CurrencyFeature' успішно зареєстрована.
+2025-08-08 21:47:37,082 [INFO] - (telebot_ukraine_v2).register_handlers(54) - --- Усі фічі зареєстровано ---
+2025-08-08 21:47:37,084 [INFO] - (telebot_ukraine_v2).main(56) - 🚀 Запускаю Telegram-бота...
+2025-08-08 21:48:00,412 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 21:48:00,464 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 21:48:00,464 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 21:48:06,650 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:48:06,651 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: region_availability
+2025-08-08 21:48:06,651 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_region_availability
+2025-08-08 21:48:06,651 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:48:06,651 [INFO] - (telebot_ukraine_v2)._handle_region_availability(191) - 🌍 Запит перевірки наявності для: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:48:06,807 [INFO] - (telebot_ukraine_v2).create_header(60) - 🏷️ Створення заголовка для товару за URL: https://www.youngla.com/products/2005
+2025-08-08 21:48:06,807 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://www.youngla.com/products/2005...
+2025-08-08 21:48:07,158 [INFO] - (telebot_ukraine_v2.ai)._init_browser(97) - 🚀 Запускаю браузер Chromium (Headless: True)...
+2025-08-08 21:48:07,324 [INFO] - (telebot_ukraine_v2.ai)._init_browser(101) - ✅ Playwright-браузер ініціалізовано.
+2025-08-08 21:48:07,628 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005
+2025-08-08 21:48:37,640 [ERROR] - (telebot_ukraine_v2.ai).fetch_page_source(151) - ❌ Помилка Playwright на спробі 1: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.youngla.com/products/2005", waiting until "networkidle"
+
+2025-08-08 21:48:39,867 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 2/5): https://www.youngla.com/products/2005
+2025-08-08 21:48:53,335 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:48:53,547 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (788974 байт).
+2025-08-08 21:48:53,562 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://www.youngla.com/products/2005...
+2025-08-08 21:48:53,567 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://eu.youngla.com/products/2005...
+2025-08-08 21:48:53,576 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://uk.youngla.com/products/2005...
+2025-08-08 21:48:53,945 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005
+2025-08-08 21:48:53,955 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://eu.youngla.com/products/2005
+2025-08-08 21:48:53,961 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://uk.youngla.com/products/2005
+2025-08-08 21:48:58,180 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:48:58,341 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (574153 байт).
+2025-08-08 21:48:58,390 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:48:58,391 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:48:58,391 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:48:58,391 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:48:58,391 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:48:58,391 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:48:58,468 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 21:48:58,494 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:48:58,494 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:48:58,494 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:48:58,495 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:48:58,495 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:48:58,495 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:48:58,559 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:48:58,735 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (572679 байт).
+2025-08-08 21:48:58,782 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:48:58,782 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:48:58,783 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:48:58,783 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:48:58,783 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:48:58,783 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:48:58,857 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 21:48:58,884 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:48:58,885 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:48:58,885 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:48:58,885 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:48:58,885 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:48:58,885 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:49:07,736 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:49:08,000 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (788974 байт).
+2025-08-08 21:49:08,051 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:49:08,051 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:49:08,052 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:49:08,052 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:49:08,052 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:49:08,052 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:49:08,252 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 21:49:08,277 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:49:08,278 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:49:08,278 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:49:08,279 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:49:08,279 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:49:08,280 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:49:08,313 [INFO] - (telebot_ukraine_v2).build(90) - 📝 Згенеровано звіти про наявність.
+2025-08-08 21:49:08,660 [INFO] - (telebot_ukraine_v2).send(56) - ✅ Надіслано звіти про наявність для: 2005 - HELLA POCKET SWEATS
+2025-08-08 21:50:17,332 [DEBUG] - (telebot_ukraine_v2).handle_link(108) - 📥 Отримано повідомлення: 2005
+2025-08-08 21:50:17,392 [DEBUG] - (telebot_ukraine_v2).handle_link(112) - 🔗 Це посилання: False
+2025-08-08 21:50:17,393 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(128) - 🔍 Пошуковий запит: 2005
+2025-08-08 21:50:23,474 [DEBUG] - (telebot_ukraine_v2)._handle_search_query(136) - 🔗 Результат пошуку: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:50:23,474 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(150) - 🎚️ Активний режим: price_calculation
+2025-08-08 21:50:23,474 [DEBUG] - (telebot_ukraine_v2)._route_by_mode(154) - ➡️ Викликаємо обробник режиму: _handle_price_calculation
+2025-08-08 21:50:23,474 [DEBUG] - (telebot_ukraine_v2).wrapper(56) - 🔒 Перевірка URL на відповідність товарному: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:50:23,475 [INFO] - (telebot_ukraine_v2)._handle_price_calculation(201) - 🧮 Запит розрахунку ціни для: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:50:23,906 [INFO] - (telebot_ukraine_v2)._fetch_api_data(92) - ✅ Дані з API валют успішно отримані
+2025-08-08 21:50:23,907 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс USD оновлено: 0 → 42.16
+2025-08-08 21:50:23,907 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс EUR оновлено: 0 → 49.27
+2025-08-08 21:50:23,908 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс GBP оновлено: 0 → 56.55
+2025-08-08 21:50:23,908 [INFO] - (telebot_ukraine_v2).update_all_rates(122) - 🔺 Курс PLN оновлено: 0 → 11.94
+2025-08-08 21:50:23,909 [INFO] - (telebot_ukraine_v2)._save_rates_to_file(74) - 💾 Кеш курсів оновлено: {'UAH': 1.0, 'USD': 42.16, 'EUR': 49.27, 'GBP': 56.55, 'PLN': 11.94}
+2025-08-08 21:50:23,910 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(110) - 🌍 Завантаження: https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0...
+2025-08-08 21:50:24,151 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(129) - 🌍 Завантаження (спроба 1/5): https://www.youngla.com/products/2005?_pos=1&_psq=2005&_ss=e&_v=1.0
+2025-08-08 21:50:37,857 [INFO] - (telebot_ukraine_v2.ai).fetch_page_source(147) - ✅ Сторінка успішно завантажена.
+2025-08-08 21:50:38,075 [INFO] - (telebot_ukraine_v2.ai)._fetch_and_prepare_soup(127) - ✅ Завантажено (789106 байт).
+2025-08-08 21:50:38,122 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:50:38,122 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:50:38,123 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:50:38,123 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:50:38,124 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:50:38,124 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'
+2025-08-08 21:50:38,324 [INFO] - (telebot_ukraine_v2.ai).extract_all_images(95) - 📸 Знайдено 12 унікальних зображень.
+2025-08-08 21:50:38,351 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(106) - 🟢 Знайдено контейнер опису. Починаю пошук секцій...
+2025-08-08 21:50:38,351 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МАТЕРІАЛ' = '100% Cotton. French Terry.'
+2025-08-08 21:50:38,351 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ЩІЛЬНІСТЬ ТКАНИНИ' = '475 GSM.'
+2025-08-08 21:50:38,352 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ПОСАДКА' = 'Baggy.'
+2025-08-08 21:50:38,352 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'ОПИС' = 'Make a bold statement with the Hella Pocket Joggers by YoungLA. Crafted from heavy-duty 475 GSM cotton and acid-washed for a vintage look, these baggy, no-cuff joggers feature multiple cargo pockets for both style and functionality. The YoungLA logo is embroidered on the pocket flap, and each button is embossed with the YLA branding for added detail. Perfect for a relaxed, edgy style that combines comfort with a distinctive look.'
+2025-08-08 21:50:38,352 [DEBUG] - (telebot_ukraine_v2.ai).extract_detailed_sections(130) -     ✅ Збережено секцію: 'МОДЕЛЬ' = 'The model in the first photo is wearing a size Medium. Weight: 175lb Height: 5'9.'

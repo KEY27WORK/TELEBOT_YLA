@@ -1,0 +1,22 @@
+# 📚 app/i18n/en.yml
+# 📖 English dictionary for parser key maps
+# 🔹 Maps raw section names to normalized headers
+# 🔹 Loaded via `importlib.resources.files("app.i18n")`
+# 🔹 Pure YAML data; consumer services add logging/validation
+
+# ================================
+# 🗂️ NORMALIZED KEY MAP
+# ================================
+key_map:
+  MATERIAL: "MATERIAL"                # 🧵 Main fabric info
+  MATERIALS: "MATERIAL"               # 🧵 Plural form
+  FABRIC: "MATERIAL"                  # 🧵 Synonym
+  FIT: "FIT"                          # 🧍 Fit description
+  DESIGN: "DESIGN"                    # 🖌️ Design highlights
+  DESCRIPTION: "DESCRIPTION"          # 🖌️ General description
+  MODEL: "MODEL"                      # 👟 Model details
+  MODELS: "MODEL"                     # 👟 Plural
+  FABRIC WEIGHT: "FABRIC WEIGHT"      # ⚖️ Fabric density
+  CARE: "CARE"                        # 🧼 Care instructions
+  FEATURES: "FEATURES"                # ✨ Product features
+  DETAILS: "DETAILS"                  # 🔍 Detailed notes

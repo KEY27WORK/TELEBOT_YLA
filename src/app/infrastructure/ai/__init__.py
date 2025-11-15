@@ -1,20 +1,32 @@
 # 🤖 app/infrastructure/ai/__init__.py
 """
-🤖 Пакет `ai`
+🤖 Інфраструктурний шар для AI-сервісів.
 
-Містить сервіси для взаємодії зі штучним інтелектом (OpenAI).
-
-- `OpenAIService` — базовий клієнт для роботи з API OpenAI.
-- `TranslatorService` — сервіс для перекладу тексту через AI.
-- `PromptService` — сервіс для генерації промтів для AI.
+🔹 DTO (`ChatPrompt`, `ChatMessage`, `Role`) — легкі структури без SDK-залежностей.
+🔹 `OpenAIService` — тонкий клієнт OpenAI, що працює з `ChatPrompt`.
+🔹 `PromptService` — будівник промтів на базі `shared`-сервісу.
+🔹 `AITaskService` — високорівневі задачі (вага, переклад, слогани).
 """
 
+from __future__ import annotations
+
+# 🧱 DTO
+from .dto import ChatMessage, ChatPrompt, Role
+
+# ☁️ OpenAI клієнт
 from .open_ai_serv import OpenAIService
-from .translator import TranslatorService
+
+# 🧾 Побудова промтів
 from .prompt_service import PromptService
 
+# 🧠 Високорівневі задачі
+from .ai_task_service import AITaskService
+
 __all__ = [
+    "ChatMessage",
+    "ChatPrompt",
+    "Role",
     "OpenAIService",
-    "TranslatorService",
     "PromptService",
+    "AITaskService",
 ]

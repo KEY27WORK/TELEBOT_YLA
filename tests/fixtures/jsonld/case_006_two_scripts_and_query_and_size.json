@@ -1,0 +1,15 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Yoga Mat",
+  "description": "Eco-friendly TPE mat.",
+  "image": [
+    "https://cdn.ex.com/mats/yoga_main_80x.jpg?cache=1",
+    "https://cdn.ex.com/mats/yoga_hd_1024x1024.png"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "59",
+    "availability": "https://schema.org/InStock"
+  }
+}

@@ -1,113 +1,251 @@
 # 🧾 app/bot/handlers/product/collection_handler.py
 """
-🧾 CollectionHandler — обробка колекцій товарів YoungLA.
+🧾 CollectionHandler — тонкий UI‑оркестратор обробки колекцій:
+- валідація посилання;
+- службові повідомлення (start/region/progress/done);
+- делегація в CollectionRunner;
+- безпечні (непадаючі) редагування повідомлень прогресу.
+
+Дотримано DI: зовнішні сервіси передаються через конструктор.
 """
 
-# 🌐 Telegram API
-from telegram import Update                                                                                         # 📩 Оновлення з чату
-from telegram.ext import CallbackContext                                                                            # 📥 Контекст виклику обробника
+# 🌐 Зовнішні бібліотеки
+from telegram import Message, Update                                       # 📲 Telegram типи для повідомлень
 
 # 🔠 Системні імпорти
-import asyncio                                                                                                      # ⏱️ Асинхронна затримка між товарами
-import logging                                                                                                      # 🧾 Логування
+import asyncio                                                             # ⏳ Асинхронні затримки/таски
+import contextlib                                                          # 🧯 Безпечне придушення винятків
+import logging                                                             # 🧾 Логування
+from typing import List, Optional                                          # 🧰 Типізація
 
 # 🧩 Внутрішні модулі проєкту
-from app.config.config_service import ConfigService                                                                             # ⚙️ Конфігурація
-from app.infrastructure.currency.currency_manager import CurrencyManager                                                        # 💱 Менеджер валют
-from app.errors.error_handler import error_handler                                                                              # ❌ Декоратор обробки помилок
-from app.shared.utils.url_parser_service import UrlParserService                                                                # 🌍 Визначення регіону сайту
-from .product_handler import ProductHandler                                                                                     # 🛍️ Обробка окремого товару
-from app.infrastructure.collection_processing.collection_processing_service import CollectionProcessingService                  # 📚 Парсинг колекцій
+from app.bot.handlers.product.product_handler import ProductHandler        # 🛍️ Обробник одиничного товару
+from app.bot.services.custom_context import CustomContext                  # 🧠 Розширений контекст бота
+from app.bot.ui import static_messages as msg                              # 📝 Статичні текстові повідомлення
+from app.config.setup.constants import AppConstants                        # ⚙️ Константи застосунку
+from app.errors.exception_handler_service import ExceptionHandlerService   # 🧯 Централізований хендлер винятків
+from app.infrastructure.collection_processing.collection_processing_service import (
+    CollectionProcessingService,
+)                                                                          # 🧵 Сервіс збору посилань з колекції
+from app.domain.products.entities import Url                               # 🔗 Value-object посилання продукту
+from app.shared.utils.logger import LOG_NAME                               # 🏷️ Ім'я логера
+from app.shared.utils.url_parser_service import UrlParserService           # 🔎 Парсер/валідація URL + регіон
+from .collection_runner import CollectionRunner                            # 🏃 Оркестратор багатопотокової обробки
 
-logger = logging.getLogger(__name__)
+
+# ==========================
+# 🧾 ЛОГЕР
+# ==========================
+logger = logging.getLogger(LOG_NAME)
 
 
-# ================================
-# 🏛️ КЛАС ОБРОБНИКА КОЛЕКЦІЙ
-# ================================
+# ==========================
+# 🏛️ КЛАС ОБРОБНИКА
+# ==========================
 class CollectionHandler:
-    """
-    📦 Обробляє колекції товарів для Telegram-бота YoungLA Ukraine.
-    """
+    """Оркестрація UI навколо обробки колекції."""
 
+    # --------------------------
+    # ⚙️ ІНІЦІАЛІЗАЦІЯ
+    # --------------------------
     def __init__(
         self,
         product_handler: ProductHandler,
-        currency_manager: CurrencyManager,
         url_parser_service: UrlParserService,
-        config_service: ConfigService,
         collection_processing_service: CollectionProcessingService,
-    ):
-        self.product_handler = product_handler								                                        # 🛍️ Обробник одного товару
-        self.currency_manager = currency_manager							                                        # 💱 Оновлення валют
-        self.url_parser_service = url_parser_service						                                        # 🌍 Регіон (us/eu/uk)
-        self.collection_processing_service = collection_processing_service			                                # 📚 Парсер колекції
+        exception_handler: ExceptionHandlerService,
+        constants: AppConstants,
+        *,
+        max_items: Optional[int] = 50,
+        concurrency: int = 4,
+        per_item_retries: int = 2,
+    ) -> None:
+        self._url_parser = url_parser_service									# 🔎 Сервіс валідації/розбору URL та визначення регіону
+        self._proc_service = collection_processing_service						# 🧵 Джерело посилань товарів із сторінки колекції
+        self._exception_handler = exception_handler							# 🧯 Єдина точка обробки винятків
+        self._const = constants											# ⚙️ Константи застосунку (UI/логіка/ліміти)
 
-        self._delay_sec = config_service.get("collection_processing_delay_sec", 2)                                  # ⏱️ Затримка між товарами
-        self._progress_interval = config_service.get("collection_progress_update_interval", 5)                      # 🕓 Інтервал для повідомлення про прогрес
+        # М'яке читання блоків із констант (не ламаємо старі конфіги)
+        coll_cfg = getattr(getattr(self._const, "COLLECTION", object()), "__dict__", {})	# 🧩 Опційний неймспейс COLLECTION
+        self._max_items = (
+            getattr(self._const, "COLLECTION_MAX_ITEMS", None)
+            or coll_cfg.get("MAX_ITEMS", max_items)
+        )															# 🔢 Глобальний ліміт на кількість елементів у запуску
+        eff_concurrency = coll_cfg.get("CONCURRENCY", concurrency)				# 🧵 Паралелізм обробки
+        eff_retries = coll_cfg.get("PER_ITEM_RETRIES", per_item_retries)			# ♻️ Ретрай на елемент
+        eff_progress_sec = coll_cfg.get("PROGRESS_INTERVAL_SEC", 2.5)			# ⏱️ Частота оновлень прогресу
 
-        logger.info("🔧 CollectionHandler ініціалізовано")
+        self._runner = CollectionRunner(
+            product_handler=product_handler,								# 🛍️ Делегуємо кожну картку товару в ProductHandler
+            concurrency=eff_concurrency,								# 🧵 Скільки одночасних воркерів
+            per_item_retries=eff_retries,								# ♻️ Скільки спроб для одного товару
+            progress_interval_sec=eff_progress_sec,						# ⏱️ Дельта між апдейтами прогресу
+        )
+        logger.info(
+            "🧾 CollectionHandler init max_items=%s concurrency=%s per_item_retries=%s progress_interval=%s",
+            self._max_items,
+            eff_concurrency,
+            eff_retries,
+            eff_progress_sec,
+        )                                                                 # 🧾 Фіксуємо конфіг DI
 
-    # ================================
-    # 📩 ОБРОБКА КОЛЕКЦІЇ
-    # ================================
-    @error_handler
-    async def handle_collection(self, update: Update, context: CallbackContext):
+    # ==========================
+    # ▶️ ПУБЛІЧНИЙ МЕТОД
+    # ==========================
+    async def handle_collection(self, update: Update, context: CustomContext) -> None:
         """
-        📩 Приймає посилання на колекцію та обробляє всі товари в ній.
+        Приймає посилання на колекцію, запускає обробку та показує прогрес.
         """
-        if not update.message or not context.user_data:
-            return
-
-        url = context.user_data.get("url") or update.message.text.strip()                                           # 🔗 Отримуємо URL
-        logger.info(f"📩 Отримано посилання на колекцію: {url}")
-
-        self.currency_manager.update_all_rates()                                                                    # 💱 Оновлюємо курси
+        progress_msg: Optional[Message] = None								# 💬 Повідомлення, яке оновлюємо під час прогресу
+        can_edit_progress = True										# 🛡️ Після першої помилки редагування — більше не пробуємо
+        user_id: str = "unknown"										# 🆔 Ініціалізація для логів (перед guard)
+        url: str = ""												# 🔗 Початковий URL (може не бути заданий)
 
         try:
-            region_display = self.url_parser_service.get_region(url)                                                # 🌍 Визначаємо регіон
-            await update.message.reply_text(
-                f"🌍 Регіон колекції: <b>{region_display}</b>", parse_mode="HTML"
-            )
-        except ValueError:
-            await update.message.reply_text("❌ Не вдалося розпізнати регіон сайту.")
+            if not update.message or not context.url:
+                logger.debug("📭 Skip collection handling (message=%s url=%s)", bool(update.message), bool(context.url))
+                return											# 🚪 Нема що обробляти (unsafe guard)
+
+            url = context.url.strip()										# ✂️ Нормалізуємо URL
+            user_id = getattr(update.effective_user, "id", "unknown")                     # 🆔 Ідентифікатор користувача
+            logger.info("🗂️ Collection requested user=%s url=%s", user_id, url)          # 🧾 Фіксуємо запит
+
+            # ==========================
+            # ✅ ВАЛІДАЦІЯ URL
+            # ==========================
+            try:
+                # Якщо в сервісі є is_valid_url — використовуємо його
+                is_valid = self._url_parser.is_valid_url(url)  # type: ignore[attr-defined]
+            except Exception:
+                # Фолбек — простий префікс
+                is_valid = url.startswith(("http://", "https://"))
+
+            if not is_valid:
+                logger.warning("⚠️ Invalid collection URL user=%s url=%s", user_id, url)
+                await update.message.reply_text(msg.COLL_INVALID_URL)
+                return											# 🧱 Зупиняємось — лінк невалідний
+
+            await update.message.reply_text(msg.COLL_START)						# ▶️ Запуск: службове повідомлення
+            logger.info("▶️ Collection processing started user=%s", user_id)
+
+            # ==========================
+            # 🌍 РЕГІОН + ПЕРШЕ ПОВІДОМЛЕННЯ ПРОГРЕСУ
+            # ==========================
+            region_display = self._url_parser.get_region_label(url)				# 🌍 Обчислюємо регіон для UI
+            parse_mode = getattr(
+                getattr(self._const, "UI", object()), "DEFAULT_PARSE_MODE", None
+            )												# 🧩 Опційний parse_mode (Markdown/HTML)
+            progress_msg = await update.message.reply_text(
+                msg.COLL_REGION.format(region=region_display),
+                parse_mode=parse_mode,
+            )											# 💬 Перше повідомлення прогресу (буде редагуватись далі)
+            logger.info("🌍 Collection region=%s user=%s", region_display, user_id)
+
+            # ==========================
+            # 🔗 ЗБІР ПОСИЛАНЬ (з ретраями)
+            # ==========================
+            urls = await self._get_links_with_retry(url)						# 🧵 Отримуємо всі посилання на товари
+            if not urls:
+                logger.info("📭 Collection empty user=%s url=%s", user_id, url)
+                if progress_msg and can_edit_progress:
+                    with contextlib.suppress(Exception):
+                        await progress_msg.edit_text(msg.COLL_EMPTY)			# 🔕 Нічого не знайшли — інформуємо
+                return
+
+            # Ліміт на кількість
+            if self._max_items and len(urls) > self._max_items:
+                logger.warning("✂️ Collection trimmed user=%s count=%s max=%s", user_id, len(urls), self._max_items)
+                await update.message.reply_text(
+                    msg.COLL_TOO_LARGE.format(max=self._max_items)
+                )
+                urls = urls[: self._max_items]								# ✂️ Обрізаємо зайві URL за лімітом
+
+            if progress_msg and can_edit_progress:
+                with contextlib.suppress(Exception):
+                    await progress_msg.edit_text(
+                        msg.COLL_FOUND.format(count=len(urls))
+                    )											# 🔢 Показуємо скільки посилань зібрали
+
+            # ==========================
+            # 🔗 КОЛБЕКИ ДЛЯ RUNNER
+            # ==========================
+            modes = getattr(getattr(self._const, "LOGIC", object()), "MODES", object())
+            collection_mode_value = getattr(modes, "COLLECTION", "collection")	# 🔖 Значення режиму "колекція" у контексті
+
+            def _is_cancelled() -> bool:
+                return getattr(context, "mode", None) != collection_mode_value	# 🛑 Якщо юзер змінив режим — зупиняємося
+
+            async def _on_progress(done: int, total: int) -> None:
+                nonlocal can_edit_progress
+                if progress_msg and can_edit_progress:
+                    try:
+                        await progress_msg.edit_text(
+                            msg.COLL_PROGRESS.format(processed=done, total=total)
+                        )										# 🔄 Актуалізуємо прогрес
+                    except Exception:
+                        can_edit_progress = False							# 🧷 Фіксуємо, що редагування більше не можна
+
+            # ==========================
+            # ▶️ ЗАПУСК RUNNER
+            # ==========================
+            logger.info("🚀 Collection runner start user=%s total_urls=%s", user_id, len(urls))
+            done_count = await self._runner.run(
+                update, context, urls, _on_progress, _is_cancelled
+            )												# 🚀 Паралельна обробка посилань з колекції
+
+            if progress_msg and can_edit_progress:
+                with contextlib.suppress(Exception):
+                    await progress_msg.edit_text(
+                        msg.COLL_DONE.format(total=done_count)
+                    )										# 🏁 Фінальний підсумок
+            logger.info("🏁 Collection finished user=%s processed=%s", user_id, done_count)
+
+        except asyncio.CancelledError:
+            logger.info("🛑 Collection handling cancelled user=%s", user_id)
+            if progress_msg:
+                with contextlib.suppress(Exception):
+                    await progress_msg.edit_text(msg.COLL_CANCELLED)			# 🪫 Повідомляємо про скасування
             return
+        except Exception as exc:
+            await self._exception_handler.handle(exc, update)				# 🧯 Центральна обробка помилок
+            logger.exception("🔥 Collection handling failed user=%s url=%s", user_id, url)
 
-        product_links = await self.collection_processing_service.get_product_links(url)                             # 📚 Отримуємо товари з колекції
-
-        if not product_links:
-            await update.message.reply_text("❌ Не вдалося знайти товари в цій колекції.")
-            return
-
-        await update.message.reply_text(f"🔍 Знайдено {len(product_links)} товарів. Починаю обробку...")
-        await self._process_each_product(update, context, product_links)                                            # 🔁 Обробка кожного товару
-        logger.info("✅ Завершено обробку всіх товарів з колекції.")
-
-    # ================================
-    # 🔄 ПОСЛІДОВНА ОБРОБКА ТОВАРІВ
-    # ================================
-    async def _process_each_product(
-        self,
-        update: Update,
-        context: CallbackContext,
-        product_links: list[str],
-    ):
+    # ==========================
+    # 🔧 ДОПОМІЖНІ
+    # ==========================
+    async def _get_links_with_retry(self, url: str, attempts: int = 3) -> List[str]:
         """
-        🔄 Послідовно обробляє кожен товар із колекції та інформує про прогрес.
+        Отримує посилання з колекції з повторними спробами та дедуплікацією.
         """
-        total_products = len(product_links)
-        for i, product_url in enumerate(product_links, start=1):
-            logger.info(f"📦 Обробляю товар {i}/{total_products}: {product_url}")
+        delay = 0.8											# ⏱️ Базова пауза між спробами
+        for attempt in range(attempts):
+            try:
+                links = await self._proc_service.get_product_links(url)			# 🌐 Запит усіх посилань із сторінки колекції
+                seen: set[str] = set()									# 🧺 Для дедуплікації
+                out: List[str] = []
+                for link_obj in links or []:
+                    link_value: str
+                    if isinstance(link_obj, Url):
+                        link_value = link_obj.value
+                    else:
+                        link_value = str(link_obj).strip()
 
-            await self.product_handler.handle_url(
-                update,
-                context,
-                product_url,
-                update_currency=False,
-            )
-
-            if i % self._progress_interval == 0 and i < total_products:
-                await update.message.reply_text(f"⏳ Оброблено {i}/{total_products} товарів...")                # 📢 Прогрес через кожні N товарів
-
-            if i < total_products:
-                await asyncio.sleep(self._delay_sec)                                                            # ⏱️ Затримка між товарами
+                    if not link_value or link_value in seen:
+                        continue									# 🧹 Пропускаємо пусті/дублікати
+                    seen.add(link_value)
+                    out.append(link_value)
+                logger.info("🔗 Collected %s links from %s", len(out), url)
+                return out										# ✅ Повертаємо чистий список
+            except Exception as exc:
+                logger.warning(
+                    "Спроба %s/%s отримати посилання з колекції невдала: %s",
+                    attempt + 1,
+                    attempts,
+                    exc,
+                )											# ⚠️ Лог попередження з номером спроби
+                if attempt == attempts - 1:
+                    logger.error("❌ Вичерпано спроби отримати посилання для %s", url)
+                    raise									# ❌ Вичерпали спроби — пробрасываемо виняток
+                await asyncio.sleep(delay)								# ⏳ Чекаємо перед наступною спробою
+                delay *= 2										# 📈 Експоненційний бекоф
+        return []												# 🕳️ На крайній випадок повертаємо пустий список

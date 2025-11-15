@@ -1,0 +1,14 @@
+# ⚙️ app/config/yamls/base/70_files.yaml
+# 🗂️ Шляхи до локальних файлів
+# Значення використовують WeightDataService, CurrencyManager, Playwright trace тощо.
+
+# ================================
+# 📁 ПОСИЛАННЯ
+# ================================
+files:
+  weights: "weights.json"               # ⚖️ База ваг товарів
+
+  currency_rates: "current_rate.txt"    # 💱 Кеш курсів валют
+
+  traces_dir: "./var/traces"            # 🧩 Playwright trace (IMP-035)
+  ocr_cache_dir: "./var/ocr_cache"      # 📸 Кеш Vision/OCR

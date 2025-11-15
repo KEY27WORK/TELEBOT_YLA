@@ -1,189 +1,160 @@
 # 📦 app/infrastructure/delivery/meest_delivery_service.py
 """
-📦 meest_delivery_service.py — Уніфікований сервіс розрахунку доставки Meest для мульти-регіональної системи.
+📦 MeestDeliveryService — інфраструктурна реалізація доменного IDeliveryService.
 
-🔹 Основна логіка:
-- Централізована конфігурація тарифів
-- Підтримка країн: США 🇺🇸, Британія 🇬🇧, Німеччина 🇩🇪, Польща 🇵🇱
-- Підтримка типу доставки: авіа ✈️
-- Стандартизована валідація параметрів
-
-🔧 Використовує:
-- Стандартний Python (без сторонніх залежностей)
-- Логування для моніторингу розрахунків
+Ключові рішення:
+- Вага: вхід/вихід у грамах (int). Усередині переводимо в кг лише для правил.
+- Гроші: Decimal (жодних float), квантовані до 2 знаків.
+- Логіка tiers збережена повністю:
+  • rate_per_kg (+ optional min_charge)
+  • base_rate + rate_per_kg
+  • only rate_per_kg
+  • fixed_rate
 """
 
-# 🔠 Системные импорты
+from __future__ import annotations
+
 import logging
-from typing import Tuple, Optional
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from typing import Any, Dict, Optional
 
-# ============================================
-# 🏛️ СЕРВІС РОЗРАХУНКУ ДОСТАВКИ MEEST
-# ============================================
-class MeestDeliveryService:
-    """🚚 Головний сервіс розрахунку вартості доставки Meest."""
+from app.config.config_service import ConfigService	# ⚙️ Сервіс конфігів
+from app.domain.delivery import DeliveryQuote, IDeliveryService	# 📦 Доменні контракти
 
-    # === 🏦 Конфігурація валют за країнами ===
-    CURRENCY = {
-        "us": "USD",       # 🇺🇸 США — долар
-        "uk": "GBP",       # 🇬🇧 Британія — фунт
-        "germany": "EUR",  # 🇩🇪 Німеччина — євро
-        "poland": "PLN"    # 🇵🇱 Польща — злотий
-    }
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logger = logging.getLogger(__name__)	# 🧾 Використовуємо модульний логер
 
-    @classmethod
-    def get_price(cls, country: str, method: str, type_: str,
-        weight_kg: float, volumetric_weight_kg: Optional[float] = None) -> float:
+
+class MeestDeliveryService(IDeliveryService):
+    """
+    🚚 Розрахунок вартості доставки Meest на основі tier‑правил з конфігурації.
+
+    Очікуваний формат конфіга:
+    delivery:
+      meest:
+        tariffs:
+          ua:
+            currency: "USD"
+            tiers:
+              - { max_kg: 0.5,  rate_per_kg: 12,  min_charge: 6 }
+              - { max_kg: 5,    base_rate: 8,   rate_per_kg: 10 }
+              - { max_kg: 20,   rate_per_kg: 9 }
+              - { max_kg: 1000, fixed_rate: 200 }
+    """
+
+    def __init__(self, config_service: ConfigService) -> None:
+        """⚙️ Завантажує тарифи Meest із конфігурації та валідуює їх."""
+        tariffs = config_service.get("delivery.meest.tariffs", {})	# 🧾 Читаємо секцію тарифів
+        if not isinstance(tariffs, dict) or not tariffs:
+            logger.error("❗ Тарифи для Meest не знайдені або мають некоректний формат у config.yaml")
+            raise ValueError("Тарифи для Meest не сконфігуровано.")
+        self._tariffs: Dict[str, Any] = tariffs	# 📦 Зберігаємо тарифну таблицю
+        logger.debug("📦 Завантажено тарифи Meest для країн: %s", list(tariffs.keys()))
+
+    # ================================
+    # 🧮 ПУБЛІЧНИЙ РОЗРАХУНОК ТАРИФУ
+    # ================================
+    def quote(
+        self,
+        *,
+        country: str,
+        method: str,
+        type_: str,
+        weight_g: int,
+        volumetric_weight_g: Optional[int] = None,
+    ) -> DeliveryQuote:
         """
-        💸 Основний метод розрахунку вартості доставки Meest.
+        💸 Розрахувати вартість доставки.
 
-        📥 Вхідні параметри:
-        - country: країна відправлення (us / uk / germany / poland)
-        - method: метод доставки (air)
-        - type_: тип отримання (courier)
-        - weight_kg: фактична вага у кілограмах
-        - volumetric_weight_kg: об'ємна вага (опціонально)
-
-        📤 Повертає:
-        - вартість доставки у локальній валюті країни
+        Returns:
+            DeliveryQuote з Decimal‑ціною та тарифікованою вагою (г).
         """
-        # 🔽 Нормалізація вхідних параметрів
-        country = country.lower()
-        method = method.lower()
-        type_ = type_.lower()
+        country_norm = (country or "").strip().lower()	# 🌍 Нормалізуємо країну
+        method_norm = (method or "").strip().lower()	# ✈️ Метод доставки
 
-        # 📝 Логування запиту
-        logging.info(
-            f"📦 Meest розрахунок: країна={country}, метод={method}, "
-            f"тип={type_}, вага={weight_kg} кг"
+        if method_norm != "air":
+            raise ValueError(f"Непідтримуваний метод доставки: {method}. Доступний лише 'air'.")
+
+        country_rules = self._tariffs.get(country_norm)	# 🔍 Витягуємо правила країни
+        if not country_rules:	# 🚫 Немає даних для країни
+            raise ValueError(f"Непідтримувана країна для доставки: {country_norm!r}")
+
+        wg = int(weight_g or 0)	# ⚖️ Фактична вага
+        vwg = int(volumetric_weight_g or 0)	# 🎈 Обʼємна вага
+        calculation_weight_g = max(wg, vwg)	# 🧮 Беремо більшу
+        if calculation_weight_g < 0:
+            calculation_weight_g = 0	# 🛡️ Захищаємося від негативів
+
+        weight_kg = self._to_decimal(calculation_weight_g) / Decimal("1000")	# 📏 Переводимо у кг
+
+        price = self._calculate_price_by_tiers_kg(weight_kg=weight_kg, tiers=country_rules.get("tiers", []))	# 💸 Розрахунок
+        price = price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)	# 💱 До копійок
+        currency = str(country_rules.get("currency", "USD"))	# 💵 Валюта
+        logger.info("💸 Meest quote: country=%s weight=%sg billed=%sg price=%s %s", country_norm, weight_g, calculation_weight_g, price, currency)
+
+        return DeliveryQuote(
+            price=price,
+            currency=currency,
+            service_code="meest",
+            billed_weight_g=calculation_weight_g,
         )
 
-        # 🔍 Перевірка підтримки конфігурації
-        if country not in cls.CURRENCY or method != "air":
-            logging.error(f"❌ Непідтримувана конфігурація: {country}, {method}")
-            raise ValueError(f"❌ Некоректна комбінація: {country}, {method}")
+    # ================================
+    # 🧠 ВНУТРІШНЯ ЛОГІКА РОЗРАХУНКУ
+    # ================================
+    def _calculate_price_by_tiers_kg(self, *, weight_kg: Decimal, tiers: list) -> Decimal:
+        """
+        Застосовує перший підхожий tier. Підтримувані ключі:
+        - max_kg (поріг, включно)
+        - rate_per_kg
+        - min_charge
+        - base_rate
+        - fixed_rate
+        """
+        for tier in tiers or []:	# 🔁 Перебираємо усі доступні пороги
+            try:
+                max_kg = self._to_decimal(tier.get("max_kg"))	# 📏 Максимальна вага для цього tier
+            except Exception:
+                logger.warning("⚠️ Пропущено tier через некоректний max_kg: %r", tier, exc_info=True)
+                continue
 
-        # 📊 Основний розрахунок
-        if country == "us":
-            price = cls._calc_us(weight_kg)
-        elif country == "uk":
-            price = cls._calc_uk(weight_kg)
-        elif country == "germany":
-            price = cls._calc_germany(weight_kg)
-        elif country == "poland":
-            price = cls._calc_poland(weight_kg)
-        else:
-            logging.error(f"❌ Непідтримувана країна: {country}")
-            raise ValueError(f"❌ Непідтримувана країна: {country}")
+            if weight_kg <= max_kg:
+                logger.debug("📐 Застосовується tier %r для ваги %s кг.", tier, weight_kg)
+                # 1) rate_per_kg + min_charge
+                if "rate_per_kg" in tier and "min_charge" in tier:
+                    rate = self._to_decimal(tier["rate_per_kg"])	# 💵 Тариф за кг
+                    min_charge = self._to_decimal(tier["min_charge"])	# 📦 Мінімальний платіж
+                    charge = rate * weight_kg	# 🧮 Розрахунок плати
+                    return charge if charge >= min_charge else min_charge
 
-        # 🧾 Логування фінального результату
-        logging.debug(
-            f"✅ Обраховано тариф: {country.upper()} ({method}) → {price:.2f} "
-            f"{cls.CURRENCY[country]}"
-        )
+                # 2) base_rate + rate_per_kg
+                if "base_rate" in tier and "rate_per_kg" in tier:
+                    base = self._to_decimal(tier["base_rate"])	# 💰 Базовий платіж
+                    rate = self._to_decimal(tier["rate_per_kg"])	# 💵 Тариф за кг
+                    return base + rate * weight_kg	# 🧮 База + змінна частина
 
-        return round(price, 2)
+                # 3) only rate_per_kg
+                if "rate_per_kg" in tier:
+                    rate = self._to_decimal(tier["rate_per_kg"])	# 💵 Єдина ставка
+                    return rate * weight_kg	# 🧮 Розрахунок
 
+                # 4) fixed_rate
+                if "fixed_rate" in tier:
+                    return self._to_decimal(tier["fixed_rate"])	# 💶 Фіксована ціна
 
-    # === ✈️ Приватні методи для кожної країни ===
+                logger.warning("⚠️ Tier не містить відомих ключів: %r", tier)
 
-    # ==========================
-    # 🇺🇸 США (USD) — доставка до дверей
-    # ==========================
+        logger.warning("⚠️ Не знайдено підходящого тарифу для ваги %s кг. Повертається 0.", weight_kg)
+        return Decimal("0")	# 🪣 Заглушка
+
     @staticmethod
-    def _calc_us(weight: float) -> float:
-        """
-        🇺🇸 США (door):
-        - до 0.5 кг: $5.90
-        - 0.5–1 кг: $8.19 (мінімальна ставка)
-        - понад 1 кг: $8.69/кг, але не менше $8.19 за всю посилку
-        """
-        if weight <= 0.5:
-            return 5.90                            # до 0.5 кг: фіксована ціна
-        if weight <= 1:
-            return 8.19                            # до 1 кг: мінімальна ставка
-        return max(8.69 * weight, 8.19)            # понад 1 кг: $8.69/кг, але мінімум $8.19
-
-    # ==========================
-    # 🇬🇧 Велика Британія (GBP)
-    # ==========================
-    @staticmethod
-    def _calc_uk(weight: float) -> float:
-        """
-        🇬🇧 Велика Британія (door):
-        - до 2 кг: £8.05 + £1.45/кг
-        - 2–10 кг: £5.15 + £2.55/кг
-        - понад 10 кг: £5.15 + £2.45/кг
-        """
-        if weight <= 2:
-            return 8.05 + 1.45 * weight  # до 2 кг: £8.05 + £1.45/кг
-        if weight <= 10:
-            return 5.15 + 2.55 * weight  # 2–10 кг: £5.15 + £2.55/кг
-        return 5.15 + 2.45 * weight      # понад 10 кг: £5.15 + £2.45/кг
-
-    # ==========================
-    # 🇩🇪 Німеччина (EUR)
-    # ==========================
-    @staticmethod
-    def _calc_germany(weight: float) -> float:
-        """
-        🇩🇪 Німеччина (door):
-        - до 0.5 кг: €5.00
-        - до 2.25 кг: €9.50
-        - до 5 кг: €4.50/кг
-        - до 10 кг: €3.75/кг
-        - до 20 кг: €3.50/кг
-        - понад 20 кг: €3.30/кг
-        """
-        if weight <= 0.5:
-            return 5.00                  # до 0.5 кг: €5.00
-        if weight <= 2.25:
-            return 9.50                  # до 2.25 кг: €9.50
-        if weight <= 5:
-            return 4.50 * weight         # до 5 кг: €4.50/кг
-        if weight <= 10:
-            return 3.75 * weight         # до 10 кг: €3.75/кг
-        if weight <= 20:
-            return 3.50 * weight         # до 20 кг: €3.50/кг
-        return 3.30 * weight             # понад 20 кг: €3.30/кг
-
-    # ==========================
-    # 🇵🇱 Польща (PLN)
-    # ==========================
-    @staticmethod
-    def _calc_poland(weight: float) -> float:
-        """
-        🇵🇱 Польща (door):
-        - до 0.5 кг: 5 PLN
-        - до 2.55 кг: 7.50 PLN
-        - до 5 кг: 3.25 PLN/кг
-        - до 10 кг: 2.60 PLN/кг
-        - до 20 кг: 2.25 PLN/кг
-        - понад 20 кг: 2.10 PLN/кг
-        """
-        if weight <= 0.5:
-            return 5.00                  # до 0.5 кг: 5 PLN
-        if weight <= 2.55:
-            return 7.50                  # до 2.55 кг: 7.50 PLN
-        if weight <= 5:
-            return 3.25 * weight         # до 5 кг: 3.25 PLN/кг
-        if weight <= 10:
-            return 2.60 * weight         # до 10 кг: 2.60 PLN/кг
-        if weight <= 20:
-            return 2.25 * weight         # до 20 кг: 2.25 PLN/кг
-        return 2.10 * weight             # понад 20 кг: 2.10 PLN/кг
-
-    @classmethod 
-    def calculate_meest_delivery(cls, weight: float) -> float:
-        """✈️ Доставка Meest залежно від ваги.
-
-        🔹 Логіка тарифу Meest для США:
-        - до 1 фунта (приблизно 0.45 кг): фіксована ставка $5.90
-        - за кожен додатковий фунт понад 1 додається $3.50
-
-        🔸 Формула після 1 фунта:
-        full_price = $5.90 + ($3.50 * (вага - 1 фунт))
-        """
-        if weight <= 1:
-            return 5.90  # 📦 Мінімальна доставка для легких посилок
-        return 5.90 + (weight - 1) * 3.5  # 📦 Збільшення ціни за додаткову вагу
+    def _to_decimal(value: Any) -> Decimal:
+        """Надійна конвертація (int|float|str|Decimal) → Decimal."""
+        if isinstance(value, Decimal):
+            return value
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError) as e:
+            raise ValueError(f"Некоректне числове значення в тарифах: {value!r}") from e	# 🛑 Вказуємо на проблему

@@ -1,0 +1,22 @@
+# ⚙️ app/config/yamls/features/90_image_generation.yaml
+# 🎨 Генерація таблиць/шрифтів
+# Задає fallback-шрифти для FontService та генератора size-chart.
+
+# ================================
+# ✍️ ШРИФТИ
+# ================================
+image_generation:
+  font_paths:
+    bold:                                   # 🔠 Варіанти жирного шрифту
+      - "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+      - "/System/Library/Fonts/Roboto-Bold.ttf"
+      - "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+      - "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+      - "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+      - "C:\\Windows\\Fonts\\arialbd.ttf"
+      - "C:\\Windows\\Fonts\\Roboto-Bold.ttf"
+    mono:                                   # 🧮 Моноширинні шрифти (таблиці)
+      - "/System/Library/Fonts/Supplemental/Arial.ttf"
+      - "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+      - "/System/Library/Fonts/Supplemental/Courier New Bold.ttf"
+      - "C:\\Windows\\Fonts\\courbd.ttf"

@@ -1,176 +1,235 @@
 # 🖌️ app/infrastructure/size_chart/generators/unique_table_generator.py
-
 """
-🖌️ unique_table_generator.py — Генератор адаптивних таблиць розмірів.
+🖌️ `UniqueTableGenerator` — адаптивний рендер таблиці розмірів.
 
-🔹 Клас `UniqueTableGenerator`:
-- Масштабує шрифти залежно від вмісту
-- Центрує таблицю на полотні
-- Автоматично підлаштовується під кількість параметрів і ширину
-- Використовує TableGeometryService для геометрії й FontService для стилю
+🔹 Використовує `TableGeometryService` для підбору ширини колонок і масштабів шрифтів.
+🔹 Центрує таблицю на полотні та малює заголовок з відокремлювальною лінією.
+🔹 Автоматично додає дефолтні розміри, якщо список `headers` порожній.
 """
+
+from __future__ import annotations
 
 # 🔠 Системні імпорти
-import logging                                                                  # 🧾 Логування
+import logging															# 🧾 Логування генерації
+from typing import Dict, List											# 📚 Типи для карт і списків
 
 # 🧩 Внутрішні модулі проєкту
-from app.shared.utils.logger import LOG_NAME                                    # 📓 Назва логгера
-from app.infrastructure.size_chart.services import TableGeometryService         # 📐 Сервіс геометрії
-from app.infrastructure.image_generation.font_service import FontService        # 🔤 Сервіс шрифтів для генератора
-from .base_generator import BaseTableGenerator                                  # 🧱 Базовий клас генератора
+from app.domain.image_generation.interfaces import FontLike, FontType	# 🔤 Типи шрифтів
+from app.infrastructure.image_generation.font_service import FontService	# 🖋️ Сервіс шрифтів
+from app.infrastructure.size_chart.services import TableGeometryService	# 📐 Геометрія таблиці
+from app.shared.utils.logger import LOG_NAME								# 🏷️ Базовий логер
 
-logger = logging.getLogger(LOG_NAME)
+from .base_generator import BaseTableGenerator							# 📐 Базовий клас генераторів
+
+logger = logging.getLogger(f"{LOG_NAME}.unique")							# 🧾 Іменований логер
 
 
-# =============================
-# 🖌️ КЛАС: ГЕНЕРАТОР АДАПТИВНИХ ТАБЛИЦЬ
-# =============================
+# ================================
+# 🖌️ ГЕНЕРАТОР АДАПТИВНИХ ТАБЛИЦЬ
+# ================================
 class UniqueTableGenerator(BaseTableGenerator):
     """
-    🖌️ Генератор адаптивних таблиць розмірів з автоматичним масштабуванням і центрованим виводом.
-    Підлаштовується під кількість параметрів і ширину тексту.
+    🖌️ Генерує адаптивну таблицю розмірів, що підлаштовується під дані.
+
+    Застосовує `TableGeometryService` для розрахунку ширини колонок, відступів
+    та масштабів тексту, аби великі таблиці вміщалися на канві.
     """
 
-    def __init__(self, size_chart: dict, output_path: str, font_service: FontService):
-        """
-        🔧 Ініціалізує генератор з адаптивною розміткою.
+    def __init__(
+        self,
+        size_chart: dict,
+        output_path: str,
+        font_service: FontService,
+        **kwargs: object,
+    ) -> None:
+        """🔧 Готує дані та дефолтні значення перед рендером."""
+        super().__init__(size_chart, output_path, font_service, **kwargs)	# 🧱 Параметри базового генератора
 
-        Args:
-            size_chart (dict): 📊 Таблиця (параметр → [значення])
-            output_path (str): 💾 Шлях до фінального PNG-файлу
-            font_service (FontService): 🔤 Сервіс, який надає шрифти
-        """
-        super().__init__(size_chart, output_path, font_service)
-
-        if not self.headers:
-            logger.warning("⚠️ Поле 'Розмір' пусте! Використовуються стандартні розміри.")
-            self.headers = ["S", "M", "L", "XL", "XXL"]
-
-        self.base_font_size = 38									# 🔤 Базовий розмір шрифту
-        self.param_cell_font = self.font_service.get_font("bold", self.base_font_size)	# 🔤 Шрифт параметрів (ліва колонка)
-
-    def get_max_param_width(self, extra_padding=50):
-        """
-        📏 Визначає максимальну ширину першої колонки — для найширшого тексту.
-        """
-        max_width = max(
-            self.draw.textlength(param, font=self.param_cell_font) for param in self.size_chart.keys()
-        )
-        return max_width + extra_padding						# ➕ Додаємо відступ
-
-    def adjust_column_spacing(self, num_sizes, first_col_width, min_width=60, min_spacing=10):
-        """
-        📐 Розраховує ширину колонок і проміжки між ними.
-        """
-        total_width = self.IMG_WIDTH - (2 * self.PADDING)					# 🧱 Повна ширина таблиці
-        remaining_width = total_width - first_col_width					# 📦 Частина після першої колонки
-        num_gaps = num_sizes - 1								# 🔢 Проміжки між колонками
-
-        column_width = (remaining_width - num_gaps * min_spacing) // num_sizes
-        spacing = min_spacing if column_width >= min_width else (remaining_width - num_sizes * min_width) // num_gaps
-        column_width = max(column_width, min_width)						# 🛡 Гарантуємо мінімальну ширину
-
-        return column_width, spacing								# 🔁 Повертаємо ширину і відступ
-
-    async def generate(self):
-        """
-        🚀 Генерує таблицю, малює всі елементи й зберігає зображення.
-        """
-        logger.info("🎨 Генерація адаптивної таблиці розмірів...")
-
-        await self._calculate_layout(len(self.size_chart))		    # 📐 Розрахунок геометрії
-        await self._draw_title()								    # 📝 Заголовок
-        await self._draw_separator_line()							# 📏 Роздільна лінія
-        await self._draw_headers()								    # 🔠 Заголовки розмірів
-        await self._draw_rows(self.size_chart)						# 📊 Рядки параметрів і значень
-        await self._save_image()								    # 💾 Збереження PNG
-
-        return self.output_path								        # 📎 Повертаємо шлях
-
-    async def _calculate_layout(self, num_parameters):
-        """
-        📐 Розраховує позиції, розміри та масштабування для усіх елементів таблиці.
-        """
-        service = TableGeometryService(self.IMG_WIDTH, self.IMG_HEIGHT, self.PADDING)		# 📐 Ініціалізація сервісу геометрії
-
-        layout = service.calculate_layout(
-            headers=self.headers,								# 🏷️ Список заголовків
-            parameters=self.size_chart,							# 📋 Дані таблиці
-            base_font_size=self.base_font_size,						# 🔤 Базовий шрифт
-            font_service=self.font_service							# 🧩 Сервіс шрифтів
+        if not self.headers:											# 🧮 Якщо розміри не передали — беремо дефолт
+            logger.warning("⚠️ Поле 'Розмір' порожнє, використаємо стандартні значення.")
+            self.headers = ["S", "M", "L", "XL", "XXL"]					# 📋 Дефолтний набір розмірів
+        logger.debug(
+            "🖌️ Ініціалізація UniqueTableGenerator: headers=%d, params=%d, output=%s",
+            len(self.headers),
+            len(self.parameters_map),
+            self.output_path,
         )
 
-        self.first_col_width = layout["first_col_width"]					# 📏 Ширина першої колонки
-        self.other_col_width = layout["column_width"]						# 📐 Ширина колонок розмірів
-        self.column_spacing = layout["column_spacing"]						# ↔️ Відступ між колонками
-        self.cell_height = layout["cell_height"]							# 🔳 Висота комірки
-        self.title_font_size = layout["title_font_size"]					# 🔠 Розмір заголовку
-        self.padding = layout["padding_inside"]							# 📦 Padding всередині клітинки
+        self.base_font_size: int = 38									# 🔢 Базовий кегль для параметрів
+        self.param_cell_font: FontLike = self.font_service.get_font(	# 🔤 Початковий шрифт для параметрів
+            FontType.BOLD,
+            self.base_font_size,
+        )
 
-        scale = layout["scale_factor"]								# 📏 Масштаб для шрифтів
-        self.param_cell_font = self.font_service.get_font("bold", int(self.base_font_size * scale))	# 🔤 Масштабований шрифт параметрів
-        self.header_font = self.font_service.get_font("bold", int(44 * scale))			# 🏷️ Заголовки
-        self.value_cell_font = self.font_service.get_font("mono", int(32 * scale))			# 🔢 Значення
-        self.title_font = self.font_service.get_font("bold", int(self.title_font_size))		# 🧠 Заголовок таблиці
+        # 🏗️ Геометрія таблиці (заповнюється під час `_calculate_layout`)
+        self.first_col_width: int = 0									# 📏 Ширина першої колонки (параметри)
+        self.other_col_width: int = 0									# 📏 Ширина колонок із розмірами
+        self.column_spacing: int = 0									# ↔️ Відстань між колонками
+        self.cell_height: int = 0										# ↕️ Висота комірки
+        self.title_font_size: int = 0									# 🅰️ Розмір шрифту заголовка
+        self.padding_inside: int = 0									# 🔲 Внутрішні відступи всередині клітинок
 
-        self.table_height = (num_parameters + 1) * self.cell_height + self.title_font_size + self.padding * 3	# 📏 Загальна висота таблиці
-        self.table_y = (self.IMG_HEIGHT - self.table_height) // 2					# 📍 Центрування по Y
-        self.table_start_x = max((self.IMG_WIDTH - self.IMG_WIDTH) // 2, self.PADDING)		# ◀️ Центрування по X або padding
+        # 🔤 Кешуємо використовувані шрифти (перераховуються після геометрії)
+        self.header_font: FontLike = self.param_cell_font				# 🅱️ Шрифт для назв колонок
+        self.value_cell_font: FontLike = self.param_cell_font			# 🅲 Шрифт для значень у клітинках
+        self.title_font: FontLike = self.param_cell_font					# 🅰️ Шрифт заголовка
 
-    async def _draw_title(self):
-        """
-        🏷️ Виводить заголовок таблиці по центру.
-        """
-        title_x = (self.IMG_WIDTH - self.draw.textlength(self.title, font=self.title_font)) // 2	# 🔠 Центр по ширині
-        self.draw.text((title_x, self.table_y - 10), self.title, font=self.title_font, fill="black")	# 🖋️ Малюємо заголовок
+        # 📐 Координати та розміри для малювання
+        self.table_height: int = 0										# 📏 Повна висота таблиці
+        self.table_y: int = 0											# 📍 Горизонтальне зміщення таблиці
+        self.table_start_x: int = self.PADDING							# 📍 Старт X з урахуванням зовнішнього відступу
+        self.line_y: int = 0											# ➖ Y-координата роздільної лінії
+        self.rows_start_y: int = 0										# 📍 Точка старту рядків даних
 
-    async def _draw_separator_line(self):
-        """
-        ➖ Малює горизонтальну лінію після заголовка таблиці.
-        """
-        self.line_y = self.table_y + self.title_font_size + 10					# 🔽 Позиція нижче заголовка
-        self.draw.line(
+    async def generate(self) -> str:
+        """🎨 Повний сценарій відмальовки таблиці та збереження PNG."""
+        logger.info("🎨 Генерація адаптивної таблиці розмірів…")			# 🪵 Старт логу
+        self._calculate_layout(len(self.parameters_map))				# 📐 Підготовка геометрії та шрифтів
+        self._draw_title()												# 🖌️ Малюємо заголовок
+        self._draw_separator_line()										# ➖ Відокремлюємо шапку від тіла
+        self._draw_headers()											# 📋 Підписуємо колонки
+        self._draw_rows(self.parameters_map)							# 📦 Виводимо параметри та значення
+        logger.info("✅ Таблицю успішно збережено: %s", self.output_path)	# 🪵 Фіксуємо завершення
+        return self.save_png()											# 💾 Зберігаємо та повертаємо шлях
+
+    # ================================
+    # 📐 ГЕОМЕТРІЯ ТА ПІДГОТОВКА ШРИФТІВ
+    # ================================
+    def _calculate_layout(self, num_parameters: int) -> None:
+        """📐 Вираховуємо геометрію таблиці та оновлюємо шрифти."""
+        service = TableGeometryService(self.IMG_WIDTH, self.IMG_HEIGHT, self.PADDING)	# 🛠️ Сервіс геометрії
+        layout: Dict[str, int | float] = service.calculate_layout(		# 📦 Розрахунок параметрів таблиці
+            headers=self.headers,
+            parameters=self.parameters_map,
+            base_font_size=self.base_font_size,
+            font_service=self.font_service,
+        )
+        logger.debug("📐 Layout raw data: %s", layout)
+
+        self.first_col_width = int(layout["first_col_width"])			# 📏 Ширина колонки параметрів
+        self.other_col_width = int(layout["column_width"])				# 📏 Ширина колонок із розмірами
+        self.column_spacing = int(layout["column_spacing"])				# ↔️ Проміжок між колонками
+        self.cell_height = int(layout["cell_height"])					# ↕️ Висота рядка
+        self.title_font_size = int(layout["title_font_size"])			# 🅰️ Розмір шрифту заголовка
+        self.padding_inside = int(layout["padding_inside"])				# 🔲 Внутрішній відступ клітинок
+
+        scale_factor = float(layout["scale_factor"])					# 📈 Коефіцієнт масштабування шрифтів
+        self.param_cell_font = self.font_service.get_font(				# 🔤 Оновлений шрифт параметрів
+            FontType.BOLD,
+            int(self.base_font_size * scale_factor),
+        )
+        self.header_font = self.font_service.get_font(					# 🔤 Шрифт шапки
+            FontType.BOLD,
+            int(44 * scale_factor),
+        )
+        self.value_cell_font = self.font_service.get_font(				# 🔤 Шрифт значень у клітинках
+            FontType.MONO,
+            int(32 * scale_factor),
+        )
+        self.title_font = self.font_service.get_font(					# 🅰️ Шрифт заголовка таблиці
+            FontType.BOLD,
+            self.title_font_size,
+        )
+
+        self.table_height = (											# 📏 Розраховуємо висоту таблиці
+            (num_parameters + 1) * self.cell_height
+            + self.title_font_size
+            + self.padding_inside * 3
+        )
+        self.table_y = (self.IMG_HEIGHT - self.table_height) // 2		# 🎯 Центруємо по вертикалі
+        self.table_start_x = self.PADDING								# 📍 Лівий відступ таблиці незмінний
+        logger.debug(
+            "📐 Layout normalized: first_col=%d, other_col=%d, spacing=%d, cell_h=%d, title_font=%d, padding=%d, table_h=%d, table_y=%d",
+            self.first_col_width,
+            self.other_col_width,
+            self.column_spacing,
+            self.cell_height,
+            self.title_font_size,
+            self.padding_inside,
+            self.table_height,
+            self.table_y,
+        )
+
+    # ================================
+    # 🖼️ МАЛЮВАННЯ КОМПОНЕНТІВ
+    # ================================
+    def _draw_title(self) -> None:
+        """🖌️ Малює заголовок таблиці по центру."""
+        title_width = int(self.draw.textlength(self.title, font=self.title_font))	# 📏 Ширина заголовка
+        title_x = (self.IMG_WIDTH - title_width) // 2					# 🎯 Центр по осі X
+        logger.debug("🖌️ Малюємо заголовок '%s' @ x=%d (width=%d).", self.title, title_x, title_width)
+        self.draw.text(													# 🖊️ Виводимо заголовок
+            (title_x, self.table_y - 10),
+            self.title,
+            font=self.title_font,
+            fill="black",
+        )
+
+    def _draw_separator_line(self) -> None:
+        """➖ Малює горизонтальну лінію між заголовком і таблицею."""
+        self.line_y = self.table_y + self.title_font_size + 10			# 📍 Позиція лінії
+        logger.debug("➖ Рисуємо лінію при y=%d.", self.line_y)
+        self.draw.line(													# ➖ Рисуємо розділову лінію
             [(self.PADDING, self.line_y), (self.IMG_WIDTH - self.PADDING, self.line_y)],
             fill="black",
-            width=4
+            width=4,
         )
 
-    async def _draw_headers(self):
-        """
-        🔠 Виводить заголовки розмірів по центру стовпців.
-        """
-        y_position = self.line_y + (self.cell_height - self.header_font.size) // 3			# 🧭 Y-позиція
-        x_position = self.table_start_x + self.first_col_width - self.column_spacing * 2		# ⬅️ Початок по X
+    def _draw_headers(self) -> None:
+        """📋 Відображає заголовки колонок."""
+        _, header_height = self._text_size("Hg", self.header_font)		# 📏 Висота тексту шапки
+        header_y = self.line_y + (self.cell_height - header_height) // 2	# 📍 Центруємо по вертикалі
 
+        x_cursor = self.table_start_x + self.first_col_width - self.column_spacing * 2	# ▶️ Старт для колонок
         for header in self.headers:
-            text_x = x_position + (self.other_col_width - self.draw.textlength(header, font=self.header_font)) // 2	# 🧮 Центрування
-            self.draw.text((text_x, y_position), header, font=self.header_font, fill="black")		# 🖋️ Заголовок
-            x_position += self.other_col_width + self.column_spacing				# 🔜 До наступного стовпця
+            header_width = int(self.draw.textlength(header, font=self.header_font))	# 📏 Ширина тексту
+            header_x = x_cursor + (self.other_col_width - header_width) // 2			# 🎯 Центр колонки
+            logger.debug("📋 Шапка '%s' @ x=%d (width=%d).", header, header_x, header_width)
+            self.draw.text(												# 🖊️ Малюємо назву розміру
+                (header_x, header_y),
+                header,
+                font=self.header_font,
+                fill="black",
+            )
+            x_cursor += self.other_col_width + self.column_spacing		# ➡️ Рухаємось до наступної колонки
 
-        self.rows_start_y = self.line_y + self.cell_height - 10					# 🔽 Початок рядків
+        self.rows_start_y = self.line_y + self.cell_height				# 📍 Старт Y-координати для рядків
+        logger.debug("📍 rows_start_y=%d.", self.rows_start_y)
 
-    async def _draw_rows(self, adjusted_parameters):
-        """
-        📋 Малює рядки таблиці з параметрами та значеннями для кожного розміру.
-        """
-        y_position = self.rows_start_y								# ⬇️ Стартова Y-позиція
+    def _draw_rows(self, parameters: Dict[str, List[str]]) -> None:
+        """📦 Малює рядки параметрів та їх значень."""
+        _, param_height = self._text_size("Hg", self.param_cell_font)	# 📏 Висота тексту параметра
+        _, value_height = self._text_size("Hg", self.value_cell_font)	# 📏 Висота тексту значення
 
-        for param, values in adjusted_parameters.items():
-            x_param = self.table_start_x + self.column_spacing * 2					# ➡️ X параметра (ліва колонка)
-            self.draw.text((x_param, y_position), param, font=self.param_cell_font, fill="black")	# 🖊️ Назва параметра
+        row_y = self.rows_start_y										# 📍 Поточний рядок
+        for param, values in parameters.items():
+            param_x = self.table_start_x + self.column_spacing * 2		# ▶️ Ліва колонка (назва параметра)
+            logger.debug("📦 Рядок параметра '%s' @ y=%d.", param, row_y)
+            self.draw.text(												# 🖊️ Виводимо назву параметра
+                (param_x, row_y + (self.cell_height - param_height) // 2),
+                str(param),
+                font=self.param_cell_font,
+                fill="black",
+            )
 
-            x_value = self.table_start_x + self.first_col_width - self.column_spacing * 2		# ➡️ Початок значень
-
+            value_x = self.table_start_x + self.first_col_width - self.column_spacing * 2	# ▶️ Початок колонок значень
             for value in values:
-                text_x = x_value + (self.other_col_width - self.draw.textlength(str(value), font=self.value_cell_font)) // 2	# 🧮 Центрування
-                self.draw.text((text_x, y_position + 5), str(value), font=self.value_cell_font, fill="black")	# 🖋️ Значення
-                x_value += self.other_col_width + self.column_spacing				# ➡️ Наступна колонка
+                rendered_value = str(value)								# 🔤 Значення, приведене до рядка
+                value_width = int(self.draw.textlength(rendered_value, font=self.value_cell_font))	# 📏 Ширина тексту
+                text_x = value_x + (self.other_col_width - value_width) // 2		# 🎯 Центр клітинки
+                logger.debug(
+                    "🔢 Значення '%s' @ x=%d (width=%d).",
+                    rendered_value,
+                    text_x,
+                    value_width,
+                )
+                self.draw.text(											# 🖊️ Відображаємо значення розміру
+                    (text_x, row_y + (self.cell_height - value_height) // 2),
+                    rendered_value,
+                    font=self.value_cell_font,
+                    fill="black",
+                )
+                value_x += self.other_col_width + self.column_spacing	# ➡️ Наступна колонка значень
 
-            y_position += self.cell_height - 5								# 🔽 Перехід до наступного рядка
-
-    async def _save_image(self):
-        """
-        💾 Зберігає зображення з таблицею у PNG-файл.
-        """
-        self.image.save(self.output_path, "PNG")							# 💾 Збереження PNG
-        logger.info(f"✅ Таблиця успішно збережена в {self.output_path}")	# 🧾 Лог про успіх
+            row_y += self.cell_height									# ⬇️ Переходимо до наступного параметра
+        logger.debug("✅ Малювання рядків завершено, фінальний y=%d.", row_y)

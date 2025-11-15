@@ -1,308 +1,387 @@
-# 🔍 search_resolver.py
+# 🔍 app/infrastructure/parsers/product_search/search_resolver.py
 """
-🔍 search_resolver.py — Асинхронний UI-пошук товару на сайті YoungLA через Playwright.
+🔍 ProductSearchResolver — асинхронний UI-пошук товарів YoungLA через Playwright.
 
-🔹 Переходить на головну сторінку
-🔹 Імітує клік по кнопці пошуку (через JS)
-🔹 Вводить запит у поле пошуку
-🔹 Якщо є підказки — повертає перше посилання
-🔹 Інакше сабмітить форму, чекає та парсить перший результат
-🔹 Повертає URL товару або None
+🔹 Відкриває сайт, ініціює діалог пошуку та збирає посилання з predictive/повної видачі.
+🔹 Підтримує конфігурацію через overrides → ParserInfraOptions → ConfigService → дефолти.
+🔹 Логує всі значущі кроки українською, спрощуючи діагностику headless-пошуку.
 """
+
+from __future__ import annotations
 
 # 🌐 Зовнішні бібліотеки
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError  # 🧪 Playwright для headless-пошуку
+from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError, async_playwright	# 🕹️ Playwright API
 
 # 🔠 Системні імпорти
-import logging  # 🧾 Логування
+import asyncio	# ⏱️ Retry-бекофф
+import logging	# 🧾 Логування сценаріїв
+from typing import Final, List, Optional, Sequence, Tuple, cast	# 🧰 Типізація
 
 # 🧩 Внутрішні модулі проєкту
-from app.domain.products.interfaces import IProductSearchProvider
+from app.config.config_service import ConfigService	# ⚙️ Конфіги
+from app.domain.products.entities import Url	# 📦 Доменний URL
+from app.domain.products.interfaces import (	# 🤝 Контракти провайдера пошуку
+    IProductSearchProvider,
+    SEARCH_DEFAULT_LIMIT,
+    SEARCH_MAX_LIMIT,
+    SearchResult,
+)
+from app.infrastructure.parsers._infra_options import ParserInfraOptions	# 🧱 Інфра-налаштування
+from app.shared.utils.logger import LOG_NAME	# 🏷️ Базове імʼя логера
 
 # ================================
-# 🏛️ КЛАС РЕЗОЛВЕРА ПОШУКУ
+# 🧾 ЛОГЕР
 # ================================
+logger = logging.getLogger(f"{LOG_NAME}.parsers.search_resolver")	# 🧾 Іменований логер модуля
 
-logger = logging.getLogger(__name__)
 
-
+# ================================
+# 🏛️ ПОШУКОВИЙ РЕЗОЛВЕР
+# ================================
 class ProductSearchResolver(IProductSearchProvider):
-    """
-    🔍 Виконує пошук товару за запитом, імітуючи дії користувача на сайті.
-    """
+    """🏛️ Надійний UI-пошук товарів youngla.com із керованими таймаутами."""
 
-    BASE_URL = "https://www.youngla.com"  # 🌍 Базова адреса сайту YoungLA
+    BASE_URL: Final[str] = "https://www.youngla.com"	# 🌍 Базовий домен
 
-    # 🧭 Селектори DOM-елементів, з якими працюємо
-    SEARCH_ICON_SELECTOR = 'a[href="/search"]'  # 🔍 Кнопка/іконка відкриття пошуку
-    SEARCH_INPUT_SELECTOR = 'input[type="search"]'  # 📝 Поле введення запиту
-    PREDICTIVE_LINK_SELECTOR = 'predictive-search a[href*="/products/"]'  # ⚡ Підказки з дропдауна
-    RESULT_LINK_SELECTOR = 'a[href*="/products/"]'  # 📄 Результати пошуку на сторінці
-    SEARCH_FORM_SELECTOR = 'form.header-search__form'  # 📤 HTML-форма пошуку
+    DEFAULT_GOTO_TIMEOUT_MS: Final[int] = 30_000	# ⏱️ DOM завантаження
+    DEFAULT_IDLE_TIMEOUT_MS: Final[int] = 15_000	# ⏱️ Очікування networkidle
+    DEFAULT_PREDICTIVE_TIMEOUT_MS: Final[int] = 7_000	# ⚡ Predictive-підказки
+    DEFAULT_MAX_RESULTS: Final[int] = 10	# 📄 Дефолт кількості результатів
+    DEFAULT_MAX_RESULTS_HARDCAP: Final[int] = 30	# 📄 Жорсткий верхній ліміт
+    DEFAULT_RETRY_ATTEMPTS: Final[int] = 2	# 🔁 Спроби пошуку
+    DEFAULT_RETRY_BACKOFF_MS: Final[int] = 600	# ⏱️ Початковий бекофф
 
+    OPEN_SEARCH_CANDIDATES: Final[Tuple[str, ...]] = (
+        'a[href="/search"]',
+        'a[aria-controls^="header-search"]',
+        'button[aria-controls^="header-search"]',
+        'button[aria-label*="Open search" i]',
+    )	# 🖱️ Потенційні тригери відкриття діалогу
 
-    @classmethod
-    async def resolve(cls, query: str) -> str | None:
-        """
-        📥 Пошук товару за назвою або артикулом.
+    SEARCH_DIALOG: Final[str] = "header-search[open]"	# 🪟 Відкритий діалог
+    SEARCH_FORM: Final[str] = "form#predictive-search-form.header-search__form"	# 🧾 Форма пошуку
+    SEARCH_INPUT: Final[str] = 'input[type="search"][name="q"].header-search__input'	# ⌨️ Поле введення
 
-        :param query: Наприклад: "W173 Nova Skirt"
-        :return: URL товару або None
-        """
-        logger.info(f"🔍 Старт пошуку за запитом: {query}")
-        try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)  # Запускаємо Chromium у headless-режимі
-                page = await browser.new_page()  # Створюємо нову сторінку
+    PREDICTIVE_ROOT: Final[str] = "predictive-search#header-predictive-search"	# ⚡ Контейнер підказок
+    PREDICTIVE_FIRST_PRODUCT_LINKS: Final[Tuple[str, ...]] = (
+        f"{PREDICTIVE_ROOT} .predictive-search__products a.product-card__media",
+        f"{PREDICTIVE_ROOT} .predictive-search__products a.product-title",
+        f"{PREDICTIVE_ROOT} .horizontal-product-card a.horizontal-product-card__figure",
+        f"{PREDICTIVE_ROOT} .horizontal-product-card a.product-title",
+        f"{PREDICTIVE_ROOT} a[href*='/products/']",
+    )	# ⚡ Селектори перших результатів
 
-                # Виконуємо основні кроки UI-пошуку
-                await cls._go_to_homepage(page)
-                await cls._click_search_icon(page)
-                await cls._fill_search_input(page, query)
+    VIEW_ALL_RESULTS_BTN: Final[str] = 'button[form="predictive-search-form"]'	# 📎 Кнопка переходу на повну видачу
 
-                # Перевіряємо, чи є швидкі підказки
-                result = await cls._check_predictive_suggestions(page)
-                if result:
-                    await browser.close()
-                    return result
+    RESULTS_FIRST_LINKS: Final[Tuple[str, ...]] = (
+        "main a.product-card__media",
+        "main a.product-title",
+        "main .horizontal-product-card a.horizontal-product-card__figure",
+        "main .horizontal-product-card a.product-title",
+        "main a[href*='/products/']",
+        "a[href*='/products/']",
+    )	# 📄 Селектори для повної сторінки
 
-                # Якщо ні — сабмітимо форму пошуку і перевіряємо результат
-                result = await cls._submit_search_form(page)
-                await browser.close()
-                return result
+    def __init__(
+        self,
+        webdriver_service=None,	# 🧩 Зарезервовано для майбутньої інтеграції
+        url_parser_service=None,
+        config_service: Optional[ConfigService] = None,
+        *,
+        goto_timeout_ms: Optional[int] = None,	# ⏱️ Локальні override-и
+        idle_timeout_ms: Optional[int] = None,
+        predictive_timeout_ms: Optional[int] = None,
+        max_results_default: Optional[int] = None,
+        max_results_hardcap: Optional[int] = None,
+        retry_attempts: Optional[int] = None,
+        retry_backoff_ms: Optional[int] = None,
+        infra_options: Optional[ParserInfraOptions] = None,	# 🧾 Єдині опції інфри
+    ) -> None:
+        self._webdriver_service = webdriver_service	# 🕹️ Зберігаємо сервіс браузера
+        self._url_parser_service = url_parser_service	# 🔗 Сервіс нормалізації URL
+        self._cfg = config_service	# ⚙️ Джерело конфігів
+        self._opts = infra_options	# 🧱 Інфра-опції (може бути None)
 
-        except PlaywrightTimeoutError:
-            logger.exception("❌ Таймаут при пошуку")
-        except Exception as e:
-            logger.exception(f"❌ Помилка пошуку: {e}")
+        def _cfg_int(key: str, default_val: int) -> int:
+            """🗂️ Безпечно зчитує int із ConfigService."""
+            if not self._cfg:	# 🪣 Конфіг відсутній
+                return default_val
+            try:
+                value = self._cfg.get(key, default_val, cast=int) or default_val	# 🧾 Зчитуємо значення
+                return int(value)	# 🔢 Повертаємо int
+            except Exception as exc:	# ⚠️ Некоректне значення
+                logger.debug("⚠️ ConfigService key '%s' недоступний: %s", key, exc)	# 🪵 Повідомляємо
+                return default_val	# 🪣 Віддаємо дефолт
 
-        return None
+        def _pick(name_in_opts: str, cfg_key: str, default_val: int, override_val: Optional[int]) -> int:
+            """🧮 Визначає фінальне значення з пріоритетом overrides → opts → config → default."""
+            if override_val is not None:	# ✅ Прямий override
+                return int(override_val)
+            if self._opts is not None and hasattr(self._opts, name_in_opts):	# 🧾 Перевіряємо опції
+                candidate = getattr(self._opts, name_in_opts)	# 🔍 Дістаємо значення
+                if isinstance(candidate, int) and candidate > 0:	# ✅ Валідний int
+                    return int(candidate)
+            return int(_cfg_int(cfg_key, default_val))	# 📥 Падаємо у конфіг/дефолт
+
+        self._goto_timeout_ms = _pick("search_goto_timeout_ms", "search.goto_timeout_ms", self.DEFAULT_GOTO_TIMEOUT_MS, goto_timeout_ms)	# ⏱️ Таймаут goto
+        self._idle_timeout_ms = _pick("search_idle_timeout_ms", "search.idle_timeout_ms", self.DEFAULT_IDLE_TIMEOUT_MS, idle_timeout_ms)	# ⏱️ Idle
+        self._predictive_timeout_ms = _pick("search_predictive_timeout_ms", "search.predictive_timeout_ms", self.DEFAULT_PREDICTIVE_TIMEOUT_MS, predictive_timeout_ms)	# ⚡ Predictive
+        self._max_results_default = _pick("search_max_results_default", "search.max_results_default", self.DEFAULT_MAX_RESULTS, max_results_default)	# 📄 Дефолт ліміту
+        self._max_results_hardcap = _pick("search_max_results_hardcap", "search.max_results_hardcap", self.DEFAULT_MAX_RESULTS_HARDCAP, max_results_hardcap)	# 📄 Hardcap
+        self._retry_attempts = _pick("search_retry_attempts", "search.retry_attempts", self.DEFAULT_RETRY_ATTEMPTS, retry_attempts)	# 🔁 Ретраї
+        self._retry_backoff_ms = _pick("search_retry_backoff_ms", "search.retry_backoff_ms", self.DEFAULT_RETRY_BACKOFF_MS, retry_backoff_ms)	# ⏱️ Бекофф
+
+        self._ua_override = getattr(self._opts, "user_agent", None) if self._opts else None	# 🕵️ Кастомний UA
+        self._locale_override = getattr(self._opts, "locale", None) if self._opts else None	# 🌍 Кастомна локаль
+        logger.debug(
+            "🔍 ProductSearchResolver ініціалізовано (goto=%s idle=%s predictive=%s max_def=%s max_cap=%s)",
+            self._goto_timeout_ms,
+            self._idle_timeout_ms,
+            self._predictive_timeout_ms,
+            self._max_results_default,
+            self._max_results_hardcap,
+        )	# 🪵 Параметри інстансу
 
     # ================================
-    # 🔧 ДОПОМІЖНІ МЕТОДИ ДІЙ
+    # 🤝 ІНТЕРФЕЙС ДОМЕННОГО ПРОВАЙДЕРА
     # ================================
+    async def resolve_one(self, query: str) -> Optional[Url]:
+        """🔍 Повертає перший знайдений товар як `Url` або `None`."""
+        href = await self._search_first_href(query)	# 🔗 Шукаємо одиночне посилання
+        result_url = Url(self._canonicalize(href)) if href else None	# 🏷️ Канонізуємо URL
+        logger.info("🔍 resolve_one завершено (query='%s' found=%s)", query, bool(result_url))	# 🪵 Статистика
+        return result_url	# 🔁 Повертаємо результат
+
+    async def resolve_many(self, query: str, limit: int = SEARCH_DEFAULT_LIMIT) -> List[SearchResult]:
+        """📚 Повертає до `limit` результатів у форматі `SearchResult`."""
+        if not limit or limit <= 0:	# 🧮 Невалідний ліміт
+            limit = self._max_results_default	# 📄 Фіксуємо дефолт
+        safe_limit = min(max(1, int(limit)), int(min(SEARCH_MAX_LIMIT, self._max_results_hardcap)))	# 🛡️ Обмежуємо
+        links = await self._search_many_with_retries(query, safe_limit)	# 🔁 Виконуємо пошук із ретраями
+        results = [SearchResult(url=Url(self._canonicalize(href)), title=None, score=1.0) for href in links]	# 📦 Будуємо DTO
+        logger.info("📚 resolve_many: query='%s' requested=%s returned=%s", query, limit, len(results))	# 🪵 Статистика
+        return results	# 🔁 Повертаємо список
 
     @classmethod
-    async def _go_to_homepage(cls, page):
-        """🌐 Переходить на головну сторінку сайту"""
-        logger.info(f"🌐 Переходимо на головну: {cls.BASE_URL}")
-        await page.goto(cls.BASE_URL, timeout=25000)
+    async def resolve(cls, query: str) -> Optional[str]:
+        """♻️ Back-compat: повертає лише перший URL як рядок, використовуючи дефолтні таймінги."""
+        temp_instance = cls()	# 🧱 Тимчасовий екземпляр
+        links = await temp_instance._search_many_impl(query, 1)	# 🔍 Шукаємо один результат
+        return links[0] if links else None	# 🔁 Повертаємо рядок або None
 
-    @classmethod
-    async def _click_search_icon(cls, page):
-        """🖱️ Клікає по іконці пошуку (через JS для стабільності)"""
+    # ================================
+    # 🔁 RETRY-КОНТУР
+    # ================================
+    async def _search_many_with_retries(self, query: str, limit: int) -> List[str]:
+        """🔁 Виконує пошук із експоненційним бекоффом і повторними спробами."""
+        attempts = max(0, int(self._retry_attempts))	# 🔢 Кількість спроб
+        backoff = max(1, int(self._retry_backoff_ms))	# ⏱️ Початковий бекофф, мс
+        for attempt in range(attempts + 1):	# 🔁 Спробуємо N+1 разів
+            try:
+                return await self._search_many_impl(query, limit)	# ✅ Успішний пошук
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:	# ⚠️ Спроба не вдалася
+                logger.warning(
+                    "⚠️ Пошук '%s' спроба %s/%s завершилася збоєм: %s",
+                    query,
+                    attempt + 1,
+                    attempts + 1,
+                    exc,
+                )	# 🪵 Лог помилки
+                if attempt >= attempts:	# 🚫 Вичерпали спроби
+                    break
+                await asyncio.sleep(backoff / 1000.0)	# 💤 Чекаємо перед наступною спробою
+                backoff *= 2	# 📈 Експоненційно збільшуємо бекофф
+        logger.error("❌ Пошук '%s' провалено після %s спроб.", query, attempts + 1)	# 🧨 Кінцевий збій
+        return []	# 🪣 Немає результатів
+
+    # ================================
+    # 🧠 ОСНОВНА ЛОГІКА ПОШУКУ
+    # ================================
+    async def _search_first_href(self, query: str) -> Optional[str]:
+        """🔗 Повертає перший посилання-результат (або None)."""
+        links = await self._search_many_impl(query, 1)	# 🔍 Шукаємо один результат
+        return links[0] if links else None	# 🔁 Віддаємо рядок
+
+    async def _search_many_impl(self, raw_query: str, limit: int) -> List[str]:
+        """🧠 Основний сценарій Playwright-пошуку з predictive та повною видачею."""
+        query = self._sanitize_query(raw_query)	# 🧼 Очищаємо запит
+        logger.info("🔍 YLA search стартував: query='%s' limit=%s", query, limit)	# 🪵 Стартовий лог
+
+        async with async_playwright() as playwright:	# 🕹️ Створюємо Playwright-контекст
+            browser = await playwright.chromium.launch(headless=True)	# 🧠 Запускаємо браузер
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 800},	# 🖥️ Розмір вікна
+                user_agent=self._ua_override
+                or (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+                ),	# 🕵️ UA по замовчуванню
+                locale=self._locale_override or "en-US",	# 🌍 Локаль браузера
+            )
+            page = await context.new_page()	# 📄 Нова вкладка
+            try:
+                await self._goto(page, self.BASE_URL)	# 🌐 Відкриваємо головну
+                await self._open_search(page)	# 🖱️ Відкриваємо діалог пошуку
+                await page.fill(self.SEARCH_INPUT, "")	# 🧼 Очищаємо поле вводу
+                await page.fill(self.SEARCH_INPUT, query)	# ⌨️ Вводимо запит
+
+                predictive_links = await self._collect_first_hrefs(
+                    page,
+                    self.PREDICTIVE_FIRST_PRODUCT_LINKS,
+                    limit,
+                    self._predictive_timeout_ms,
+                )	# ⚡ Збираємо predictive
+                if predictive_links:	# ✅ Знайшли в підказках
+                    logger.info("⚡ Predictive-пошук повернув %s результатів.", len(predictive_links))	# 🪵 Лог
+                    return predictive_links	# 🔁 Повертаємо список
+
+                await self._open_full_results(page)	# 📄 Переходимо на повну видачу
+                return await self._collect_first_hrefs(
+                    page,
+                    self.RESULTS_FIRST_LINKS,
+                    limit,
+                    self._idle_timeout_ms,
+                )	# 📄 Повертаємо результати зі сторінки
+
+            except asyncio.CancelledError:
+                raise
+            except PlaywrightTimeoutError:	# ⏱️ Таймаут Playwright
+                logger.exception("⏱️ YoungLA search timeout (query='%s').", query)	# 🪵 Лог
+                return []	# 🪣 Без результатів
+            except Exception as exc:	# ⚠️ Інші збої
+                logger.exception("💥 YoungLA search fatal error: %s", exc)	# 🪵 Повний traceback
+                return []	# 🪣 Порожній список
+            finally:
+                for closer in (page.close, context.close, browser.close):	# 🧹 Закриваємо ресурси
+                    try:
+                        await closer()	# 🧼 Закриття
+                    except Exception:
+                        continue
+
+    # ================================
+    # 🧰 ДОПОМІЖНІ МЕТОДИ
+    # ================================
+    async def _goto(self, page: Page, url: str) -> None:
+        """🌐 Навігація з fallback на `wait_until="commit"` при затримках."""
         try:
-            await page.wait_for_selector(cls.SEARCH_ICON_SELECTOR, timeout=15000, state="attached")
-            # Використовуємо evaluate для симуляції реального кліку через JS (безпечніше ніж click())
-            await page.evaluate('selector => document.querySelector(selector)?.click()', cls.SEARCH_ICON_SELECTOR)
-            logger.info("✅ Кнопка пошуку натиснута (через JS)")
-        except PlaywrightTimeoutError:
-            logger.exception("❌ Кнопка пошуку не знайдена")
-            raise
+            await page.goto(url, timeout=self._goto_timeout_ms, wait_until="domcontentloaded")	# 🌐 DOM event
+        except PlaywrightTimeoutError:	# ⚠️ DOM не настав
+            logger.warning("⚠️ DOM не дочекався, fallback на 'commit'.")	# 🪵 Попереджаємо
+            await page.goto(url, timeout=self._goto_timeout_ms, wait_until="commit")	# 🌐 Мінімальний лоад
 
-    @classmethod
-    async def _fill_search_input(cls, page, query: str):
-        """⌨️ Вводить текстовий запит у поле пошуку"""
+        for state in ("domcontentloaded", "networkidle"):	# 🔁 Дочікуємо стани
+            try:
+                await page.wait_for_load_state(state, timeout=self._idle_timeout_ms)	# ⏱️ Чекаємо
+            except PlaywrightTimeoutError:	# ⚠️ Стейт не настав
+                logger.debug("⏱️ Очікування стану %s перевищило таймаут.", state)	# 🪵 Повідомляємо
+                continue
+
+    async def _open_search(self, page: Page) -> None:
+        """🖱️ Клікає перший доступний тригер пошуку та очікує діалог."""
+        for selector in self.OPEN_SEARCH_CANDIDATES:	# 🔁 Перебираємо тригери
+            try:
+                await page.wait_for_selector(selector, timeout=8_000, state="attached")	# ⏱️ Чекаємо появи
+                await page.evaluate("sel => document.querySelector(sel)?.click()", selector)	# 🖱️ Клікаємо JS
+                break	# ✅ Відкрито
+            except PlaywrightTimeoutError:	# ⚠️ Тригер не знайдено
+                continue
+        await page.wait_for_selector(self.SEARCH_DIALOG, timeout=8_000, state="visible")	# 🪟 Чекаємо діалог
+        await page.wait_for_selector(self.SEARCH_INPUT, timeout=8_000)	# ⌨️ Чекаємо input
+
+    async def _collect_first_hrefs(
+        self,
+        page: Page,
+        selectors: Sequence[str],
+        limit: int,
+        wait_timeout_ms: int,
+    ) -> List[str]:
+        """🔗 Повертає до `limit` унікальних абсолютних посилань за набором селекторів."""
+        if not selectors:	# 🪣 Порожній набір
+            return []
         try:
-            await page.wait_for_selector(cls.SEARCH_INPUT_SELECTOR, timeout=5000)
-            await page.fill(cls.SEARCH_INPUT_SELECTOR, query)
-            logger.info(f"⌨️ Введено запит: {query}")
-        except PlaywrightTimeoutError:
-            logger.exception("❌ Поле пошуку не знайдено")
-            raise
+            if self.PREDICTIVE_ROOT in selectors[0]:
+                await page.wait_for_selector(self.PREDICTIVE_ROOT, timeout=wait_timeout_ms)	# ⚡ Чекаємо підказки
+        except PlaywrightTimeoutError:	# ⚠️ Підказки не зʼявилися
+            return []
 
-    @classmethod
-    async def _check_predictive_suggestions(cls, page) -> str | None:
-        """🔍 Перевіряє дропдаун з підказками і повертає перше посилання, якщо знайдено"""
+        links: List[str] = []	# 📦 Результати
+        seen: set[str] = set()	# ♻️ Запобігаємо дублям
+        for selector in selectors:	# 🔁 Перебираємо селектори
+            if len(links) >= limit:	# ✅ Досягли ліміту
+                break
+            try:
+                for element in await page.query_selector_all(selector):	# 🔍 Усі збіги
+                    href = (await element.get_attribute("href")) or ""	# 🔗 Читаємо href
+                    if not href:
+                        continue
+                    absolute = self._abs(href)	# 🌐 Робимо абсолютним
+                    if absolute and absolute not in seen:
+                        seen.add(absolute)	# ♻️ Запамʼятовуємо
+                        links.append(absolute)	# 📦 Додаємо до результатів
+                        if len(links) >= limit:
+                            break
+            except PlaywrightTimeoutError:
+                continue
+        return links
+
+    async def _open_full_results(self, page: Page) -> None:
+        """📄 Переходить на повну сторінку результатів (кнопка або submit)."""
         try:
-            await page.wait_for_selector(cls.PREDICTIVE_LINK_SELECTOR, timeout=7000)
-            el = await page.query_selector(cls.PREDICTIVE_LINK_SELECTOR)
-            if el:
-                href = await el.get_attribute("href")
-                if href:
-                    full_url = cls.BASE_URL + href if href.startswith("/") else href
-                    logger.info(f"✅ Знайдено через підказки: {full_url}")
-                    return full_url
-        except PlaywrightTimeoutError:
-            logger.warning("⚠️ Підказки не зʼявились — fallback на повну сторінку")
-        return None
-
-    @classmethod
-    async def _submit_search_form(cls, page) -> str | None:
-        """📤 Сабмітить форму пошуку і парсить перший результат зі сторінки результатів"""
-        await page.locator(cls.SEARCH_FORM_SELECTOR).evaluate("form => form.submit()")
-        await page.wait_for_load_state("networkidle", timeout=20000)
-
-        # Перевірка на CAPTCHA (часто зустрічається в headless-режимі)
-        html = await page.content()
-        if "captcha" in html.lower():
-            logger.error("🛑 CAPTCHA — headless режим заблоковано")
-            return None
+            if await page.locator(self.VIEW_ALL_RESULTS_BTN).count():	# 🖱️ Є кнопка «View All»
+                try:
+                    await page.click(self.VIEW_ALL_RESULTS_BTN)	# 🖱️ Клікаємо
+                except Exception:
+                    await page.locator(self.SEARCH_FORM).evaluate("form => form.submit()")	# 📤 Submit форми
+            else:
+                if await page.locator(self.SEARCH_FORM).count():	# 🧾 Форма на місці
+                    await page.locator(self.SEARCH_FORM).evaluate("form => form.submit()")	# 📤 Submit
+                else:
+                    await page.press(self.SEARCH_INPUT, "Enter")	# ⌨️ Enter
+        except Exception as exc:
+            logger.debug("⚠️ Неможливо відкрити повні результати: %s", exc)	# 🪵 Нефатально
 
         try:
-            # Чекаємо наявності хоча б одного результату товару на сторінці
-            await page.wait_for_selector(cls.RESULT_LINK_SELECTOR, timeout=10000)
-
-            # Вибираємо перше посилання з результатів
-            result_el = await page.query_selector(cls.RESULT_LINK_SELECTOR)
-
-            # Якщо знайдено елемент з посиланням
-            if result_el:
-                # Отримуємо значення атрибута href
-                href = await result_el.get_attribute("href")
-
-                # Перевіряємо, чи воно непорожнє
-                if href:
-                    # Додаємо базову адресу, якщо посилання починається з '/'
-                    full_url = cls.BASE_URL + href if href.startswith("/") else href
-
-                    # Логування успішного пошуку
-                    logger.info(f"✅ Знайдено на сторінці результатів: {full_url}")
-
-                    # Повертаємо повну URL-адресу товару
-                    return full_url
+            await page.wait_for_load_state("domcontentloaded", timeout=self._idle_timeout_ms)	# ⏱️ DOM
+            await page.wait_for_load_state("networkidle", timeout=self._idle_timeout_ms)	# ⏱️ Network idle
         except PlaywrightTimeoutError:
-            logger.warning("❌ Не знайдено жодного результату на сторінці")
+            logger.debug("⚠️ Стани завантаження повної сторінки пошуку не дочекались.")	# 🪵 Попередження
 
-        return None
+        html = (await page.content()).lower()	# 🧼 Отримуємо HTML
+        if "captcha" in html or "are you human" in html:	# 🛑 Блокування
+            raise PlaywrightTimeoutError("blocked by captcha")	# ❌ Генеруємо таймаут
 
+    # ================================
+    # ♻️ КАНОНІЗАЦІЯ URL ТА ЗАПИТУ
+    # ================================
+    @staticmethod
+    def _sanitize_query(raw: str) -> str:
+        """🧼 Обрізає пробіли та обмежує довжину запиту 120 символами."""
+        query = (raw or "").strip()	# 🧼 Тримінг
+        return query[:120] if len(query) > 120 else query	# ✂️ Обмеження
 
-## 🔎 app/infrastructure/parsers/product_search/search_resolver.py
-#"""
-#🔎 search_resolver.py — пошук товару на сайті YoungLA за текстовим запитом.
-#
-#🔹 Клас `ProductSearchResolver`:
-#- Імітує поведінку користувача для пошуку товару.
-#- Використовує спільний `WebDriverService` для роботи з браузером.
-#- Реалізує логіку з фолбеком: спочатку швидкий пошук, потім повний.
-#"""
-#
-## 🌐 Внешние библиотеки
-#from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
-#
-## 🔠 Системные импорты
-#import logging
-#from typing import Optional
-#
-## 🧩 Внутренние модули проекта
-#from app.infrastructure.web.webdriver_service import WebDriverService
-#from app.domain.products.interfaces import IProductSearchProvider
-#
-## ================================
-## 🏛️ КЛАС ПОШУКОВОГО РЕЗОЛВЕРА
-## ================================
-#class ProductSearchResolver(IProductSearchProvider):
-#    """
-#    🔍 Виконує пошук товару за запитом, імітуючи дії користувача на сайті.
-#    """
-#    BASE_URL = "https://www.youngla.com"
-#    # ✅ ВИРІШЕННЯ: Додаємо селектор для всього діалогового вікна пошуку
-#    SEARCH_DIALOG_SELECTOR = 'header-search'
-#    SEARCH_INPUT_SELECTOR = 'input[type="search"]'
-#    PREDICTIVE_LINK_SELECTOR = 'predictive-search a[href*="/products/"]'
-#    RESULT_LINK_SELECTOR = 'a[href*="/products/"]'
-#    SEARCH_FORM_SELECTOR = 'form.header-search__form'
-#
-#    def __init__(self, webdriver_service: WebDriverService):
-#        """
-#        ⚙️ Ініціалізація з впровадженням залежності WebDriverService.
-#        """ 
-#        self.webdriver_service = webdriver_service
-#
-#    # ================================
-#    # 🔄 ГОЛОВНИЙ ПУБЛІЧНИЙ МЕТОД
-#    # ================================
-#    async def resolve(self, query: str) -> Optional[str]:
-#        """
-#        📥 Виконує повний цикл пошуку товару за назвою або артикулом.
-#        """
-#        logging.info(f"🔍 Виконуємо пошук за запитом: '{query}'")
-#        page = None
-#        try:
-#            page = await self.webdriver_service.get_new_page()
-#            
-#            await self._perform_search_interaction(page, query)
-#
-#            predictive_url = await self._try_predictive_search(page)
-#            if predictive_url:
-#                logging.info(f"✅ Знайдено URL через швидкий пошук: {predictive_url}")
-#                return predictive_url
-#
-#            logging.warning("⚠️ Підказки не з'явились, переходимо до повного пошуку.")
-#            return await self._try_full_search(page)
-#
-#        except Exception as e:
-#            logging.exception(f"❌ Критична помилка під час пошуку товару: {e}")
-#            return None
-#        finally:
-#            if page and not page.is_closed():
-#                await page.close()
-#
-#    # ================================
-#    # 🕵️‍♂️ ПРИВАТНІ ДОПОМІЖНІ МЕТОДИ
-#    # ================================
-#    async def _perform_search_interaction(self, page: Page, query: str):
-#        """
-#        Виконує повну послідовність дій: переходить на сайт,
-#        клікає на пошук і вводить запит, надійно чекаючи на кожен крок.
-#        """
-#        await page.goto(self.BASE_URL, timeout=25000)
-#        logging.info(f"🌐 Перехід на головну сторінку: {self.BASE_URL}")
-#
-#        # Крок 1: Клікаємо на іконку пошуку, щоб викликати діалогове вікно
-#        logging.info("⌛ Очікуємо та клікаємо на іконку пошуку...")
-#        await page.get_by_role("link", name="Open search").click(timeout=15000)
-#        logging.info("✅ Іконка пошуку знайдена та натиснута.")
-#
-#        # ✅ КРОК 2 (НАЙВАЖЛИВІШИЙ): Чекаємо, доки з'явиться ВСЕ ВІКНО ПОШУКУ.
-#        # Це гарантує, що всі анімації завершилися.
-#        search_dialog = page.locator(self.SEARCH_DIALOG_SELECTOR)
-#        await search_dialog.wait_for(state="visible", timeout=15000)
-#        logging.info("✅ Діалогове вікно пошуку стало видимим.")
-#
-#        # Крок 3: Тільки тепер, коли вікно гарантовано видиме,
-#        # шукаємо поле вводу всередині нього і заповнюємо.
-#        logging.info("⌛ Заповнюємо поле вводу...")
-#        await search_dialog.locator(self.SEARCH_INPUT_SELECTOR).fill(query)
-#        logging.info(f"⌨️ Введено запит у поле пошуку: '{query}'")
-#
-#    async def _try_predictive_search(self, page: Page) -> Optional[str]:
-#        """
-#        Спроба знайти посилання у випадаючому списку швидких результатів.
-#        """
-#        try:
-#            await page.wait_for_selector(self.PREDICTIVE_LINK_SELECTOR, timeout=7000)
-#            first_link_element = await page.query_selector(self.PREDICTIVE_LINK_SELECTOR)
-#            if first_link_element:
-#                href = await first_link_element.get_attribute("href")
-#                if href:
-#                    return self.BASE_URL + href if href.startswith("/") else href
-#        except PlaywrightTimeoutError:
-#            return None
-#        return None
-#
-#    async def _try_full_search(self, page: Page) -> Optional[str]:
-#        """
-#        Виконує повний пошук, відправляючи форму та аналізуючи сторінку результатів.
-#        """
-#        await page.locator(self.SEARCH_FORM_SELECTOR).evaluate("form => form.submit()")
-#        logging.info("📤 Форму пошуку відправлено.")
-#
-#        await page.wait_for_load_state("networkidle", timeout=20000)
-#        
-#        content = await page.content()
-#        if "captcha" in content.lower():
-#            logging.error("🛑 Виявлено CAPTCHA на сторінці. Пошук неможливий.")
-#            return None
-#
-#        first_result = await page.query_selector(self.RESULT_LINK_SELECTOR)
-#        if first_result:
-#            href = await first_result.get_attribute("href")
-#            if href:
-#                full_url = self.BASE_URL + href if href.startswith("/") else href
-#                logging.info(f"✅ Знайдено URL на сторінці результатів: {full_url}")
-#                return full_url
-#        
-#        logging.warning("⚠️ Посилань на товари не знайдено на сторінці результатів.")
-#        return None
-#
+    def _canonicalize(self, href: str) -> str:
+        """🔗 Нормалізує href через `_url_parser_service` (якщо доступний)."""
+        absolute = self._abs(href)	# 🌐 Робимо абсолютним
+        try:
+            normalize = getattr(self._url_parser_service, "normalize", None)	# 🔍 Шукаємо метод
+            if callable(normalize):
+                normalized = normalize(absolute)	# 🧮 Нормалізація
+                if normalized:
+                    absolute = str(normalized)	# 🔁 Оновлюємо
+        except Exception as exc:
+            logger.debug("⚠️ Неможливо канонізувати URL '%s': %s", href, exc)	# 🪵 Уточнюємо
+        return absolute	# 🔁 Повертаємо
+
+    @staticmethod
+    def _abs(href: str) -> str:
+        """🌐 Перетворює відносний href у абсолютний URL сайту."""
+        if not href:	# 🪣 Порожнє значення
+            return ""
+        trimmed = href.strip()	# 🧼 Прибираємо пробіли
+        if trimmed.startswith("//"):	# 🌐 Протокол-агностичні посилання
+            return f"https:{trimmed}"
+        if trimmed.startswith("/"):	# 🏠 Відносний шлях
+            return ProductSearchResolver.BASE_URL.rstrip("/") + trimmed
+        return trimmed	# 🔁 Уже абсолютний

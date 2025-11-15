@@ -1,0 +1,10 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Thermal Top",
+  "image": "https://i.ex/t/thermal.png",
+  "offers": [
+    {"@type": "Offer","price":"55","availability":"InStock","sku":"Olive / XS"},
+    {"@type": "Offer","price":"55","availability":"InStock","sku":"Olive / S+"}
+  ]
+}

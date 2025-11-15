@@ -1,0 +1,10 @@
+title: "Basic Tee"
+price: "49.00"
+description: ""
+main_image: "https://img.example.com/t/tee.jpg"
+all_images:
+  - "https://img.example.com/t/tee.jpg"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: false
+stock_legacy: null

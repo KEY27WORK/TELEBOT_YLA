@@ -1,0 +1,43 @@
+# ⚙️ app/config/yamls/base/60_playwright.yaml
+# 🌐 Налаштування WebDriver/Playwright
+# Використовується `WebDriverService` для обходу Cloudflare й управління браузером.
+
+# ================================
+# 🧭 БАЗОВІ ПАРАМЕТРИ
+# ================================
+playwright:
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"  # 🕸️ Маскуємося під Chrome
+  headless: true                           # 👻 true = без GUI, зручно для прод
+  devtools:
+    enabled: false                         # 🛠️ Вмикай під час локального дебагу
+    mode: "playwright"                     # 🧪 "playwright" | "cdp"
+    remote_debugging_port: 0               # 🔌 Для CDP: 0 = авто, >0 = ручний порт
+
+  launch_channel: "chrome"                 # 🌐 Канал браузера ("chrome"|"msedge"|...)
+
+  # ================================
+  # 🔄 РЕТРАЇ ТА ANTI-BOT
+  # ================================
+  retry_attempts: 5                        # 🔁 Скільки разів повторюємо відкриття сторінки
+  retry_delay_sec: 2                       # ⏱️ Пауза між повторами
+  enable_stealth: true                     # 🕵️ Увімкнути playwright-stealth
+
+  navigation_timeout_ms: 30000             # ⏳ Таймаут навігації, мс
+  network_idle_wait_ms: 1500               # 💤 Очікування після networkidle, мс
+
+  cloudflare_phrases:                      # ✅ Патерни блокування Cloudflare
+    - "your connection needs to be verified"    # 🔐 Типовий банер перевірки
+    - "please complete the security check"      # 🔍 Запит reCAPTCHA/Turnstile
+    - "verifying you are human"                 # 🤖 Перевірка людяності
+    - "checking your browser before accessing"  # 🔄 Cloudflare перевіряє браузер
+    - "just a moment..."                        # 📝 Часто в <body>
+    - "cf-challenge"                            # 🧱 Токен виклику CF
+    - "attention required! cloudflare"          # 🚨 Повідомлення про блокування
+
+  # ================================
+  # ✨ ТРАСУВАННЯ (IMP-035)
+  # ================================
+  trace:
+    enabled: false                        # 📼 Ввімкни перед відлагодженням
+    mode: "retain-on-failure"             # "on" | "retain-on-failure"
+    # dir: "./var/traces"                 # 🔁 Якщо не задано, використовується files.traces_dir

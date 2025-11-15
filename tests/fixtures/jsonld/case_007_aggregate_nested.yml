@@ -1,0 +1,10 @@
+title: "Pack Socks"
+price: "9.99"
+description: ""
+main_image: "https://cdn.shop.test/socks.jpg"
+all_images:
+  - "https://cdn.shop.test/socks.jpg"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: true
+stock_legacy: null

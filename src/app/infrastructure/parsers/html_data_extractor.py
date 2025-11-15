@@ -1,155 +1,270 @@
-# 📦 app/infrastructure/parsers/html_data_extractor.py
+# 🧾 app/infrastructure/parsers/html_data_extractor.py
 """
-📦 html_data_extractor.py — Низькорівневий екстрактор даних з HTML.
+🧾 HtmlDataExtractor — композиція JSON-LD, зображень та описів для сторінки товару.
 
-🔹 Використовує централізовані селектори для легкого оновлення.
-🔹 Застосовує DRY-принцип через допоміжні методи.
-🔹 Не містить бізнес-логіки, лише витягує "сирі" дані.
+🔹 Забезпечує єдиний API витягування (title/price/description/images/stock).
+🔹 Перемикає джерела даних між JSON-LD, метаданими та DOM-селекторами.
+🔹 Пропонує діагностику завдяки детальному логуванню на кожному кроці.
 """
+
+from __future__ import annotations
 
 # 🌐 Зовнішні бібліотеки
-from bs4 import BeautifulSoup, Tag										        # 🧽 BeautifulSoup для парсингу HTML, Tag — для типізації тегів (використовується для анотацій або розширення)
+from bs4 import BeautifulSoup	# 🥣 DOM-дерево сторінки
+from bs4.element import Tag	# 🧱 Тип елементів BeautifulSoup
 
 # 🔠 Системні імпорти
-import json																		# 📦 JSON-десеріалізація для скриптів
-import logging																	# 🧾 Логування подій
-from typing import Dict, List, Optional, Union									# 🧰 Типи даних для анотацій
-from dataclasses import dataclass												# 🧱 Зручна структура для селекторів
+import logging	# 🧾 Логування сценаріїв
+import re	# 🧪 Пошук числових патернів
+from typing import Any, Dict, List, Optional, Tuple, Union, cast	# 🧰 Типізація
+
+# 🧩 Внутрішні модулі проєкту
+from app.shared.utils.logger import LOG_NAME	# 🏷️ Імʼя базового логера
+from .extractors.base import _ConfigSnapshot, Selectors, _norm_ws, _try_json_loads	# 🧱 Спільні утиліти
+from .extractors.description import DescriptionMixin	# 📜 Побудова описів
+from .extractors.images import ImagesMixin	# 🖼️ Витяг зображень
+from .extractors.json_ld import JsonLdMixin	# 📄 Робота з JSON-LD
+
+# ================================
+# 🧾 ЛОГЕР ТА КОНСТАНТИ
+# ================================
+logger = logging.getLogger(f"{LOG_NAME}.parser.extractor")	# 🧾 Модульний логер
+_TITLE_FALLBACK = "Без назви"	# 🏷️ Стандартна назва за відсутності заголовка
 
 
 # ================================
-# 🏛️ ГОЛОВНИЙ КЛАС ПАРСЕРА
+# 🏛️ ОСНОВНИЙ ЕКСТРАКТОР
 # ================================
-class HtmlDataExtractor:
-    """
-    🛠️ Витягує структуровану інформацію з HTML-документа товару.
-    Працює з готовим об'єктом BeautifulSoup.
-    """
+class HtmlDataExtractor(JsonLdMixin, ImagesMixin, DescriptionMixin):
+    """🏛️ Оркеструє роботу mixin-класів для витягування даних товару."""
 
-    @dataclass(frozen=True)
-    class Selectors:
-        TITLE = "h1"																	                            # 🏷️ Заголовок товару
-        PRICE = 'meta[property="product:price:amount"]'								                                # 💰 Ціна
-        DESCRIPTION = 'meta[name="twitter:description"]'								                            # 📝 Короткий опис
-        MAIN_IMAGE = 'meta[property="og:image"]'										                            # 🖼️ Головне зображення
-        ALL_IMAGES = ".product-gallery__thumbnail img[src], .product-gallery__thumbnail-list img[src]"	            # 🖼️ Усі превʼю
-        DETAILED_SECTIONS = "#ProductAccordion details"								                                # 📄 Детальні секції (опис, fit, care)
-        JSON_LD_SCRIPT = 'script[type="application/ld+json"]'						                                # 📦 JSON-LD для наявності
-        LEGACY_STOCK_SCRIPT = "script#ProductJson"									                                # 📦 Legacy JSON про наявність
-
-    def __init__(self, soup: BeautifulSoup):
-        self.soup = soup																                            # 🥣 Об'єкт BeautifulSoup
+    def __init__(self, soup: BeautifulSoup, *, locale: Optional[str] = None) -> None:
+        """⚙️ Зберігає `BeautifulSoup` та кешує селектори/мапи ключів."""
+        self.soup = soup	# 🥣 DOM-дерево для подальшого використання
+        self._S: Selectors = _ConfigSnapshot.selectors()	# 🧱 Кешовані селектори з конфігу
+        locale_code = locale or "uk"	# 🗺️ Локаль за замовчуванням
+        self._KEY_MAP = _ConfigSnapshot.key_map_for_locale(locale_code)	# 🗺️ Відповідність ключів секцій
+        logger.debug("🧾 HtmlDataExtractor ініціалізовано (locale=%s).", locale_code)	# 🪵 Фіксуємо контекст
 
     # ================================
-    # 🧩 ПУБЛІЧНІ МЕТОДИ ВИТЯГАННЯ
+    # 🏷️ ЗАГОЛОВОК / ЦІНА
     # ================================
-
     def extract_title(self) -> str:
-        """🏷️ Витягує заголовок H1."""
-        return self._find_and_get_text(self.Selectors.TITLE, default="Без назви")
+        """🏷️ Повертає назву товару з JSON-LD, meta або DOM."""
+        json_title = self._title_from_json_ld()	# 📄 Перший кандидат — JSON-LD
+        if json_title:	# ✅ Якщо JSON-LD містив заголовок
+            logger.debug("🏷️ Заголовок знайдено у JSON-LD: %s", json_title)	# 🪵 Фіксуємо джерело
+            return json_title	# 🔁 Повертаємо результат
 
-    def extract_price(self) -> float:
-        """💰 Витягує ціну з мета-тегу."""
-        price_str = self._find_and_get_attribute(self.Selectors.PRICE, "content")				       # 🔎 Отримуємо атрибут content
-        try:
-            return float(price_str.replace(",", ".")) if price_str else 0.0					           # ✅ Приводимо до float
-        except (ValueError, TypeError):
-            logging.warning(f"⚠️ Неможливо розпізнати ціну: {price_str}")				                # 🚨 Невалідна ціна
-            return 0.0
+        for selector in self._S.TITLE_LIST:	# 🔁 Перебираємо селектори з конфігу
+            tag = self.soup.select_one(selector)	# 🔍 Пробуємо знайти елемент
+            if not tag:	# ⛔️ Нічого не знайшли
+                continue	# 🔁 Переходимо до наступного селектора
+            if isinstance(tag, Tag) and tag.name == "meta":	# 🏷️ Meta-тег потребує content
+                text = str(tag.get("content") or "")	# 🧾 Отримуємо значення content
+            else:	# 📄 Інші теги
+                try:
+                    text = cast(Tag, tag).get_text(strip=True)	# 🧾 Збираємо текст без пробілів
+                except Exception:	# ⚠️ Помилка отримання тексту
+                    text = str(tag)	# 🔁 Використовуємо сире представлення
+            normalized = _norm_ws(text)	# 🧼 Нормалізуємо пробіли
+            if normalized:	# ✅ Маємо контент
+                logger.debug("🏷️ Заголовок знайдено селектором '%s'.", selector)	# 🪵 Джерело даних
+                return normalized	# 🔁 Повертаємо заголовок
+        logger.warning("⚠️ Заголовок не знайдено — повертаємо fallback.")	# ⚠️ Попереджаємо про дефолт
+        return _TITLE_FALLBACK	# 🏷️ Повертаємо стандартне значення
 
-    def extract_description(self) -> str:
-        """📝 Витягує опис з мета-тегу."""
-        return self._find_and_get_attribute(self.Selectors.DESCRIPTION, "content")			           # 📥 Повертає атрибут content
+    def extract_price(self) -> Union[str, float]:
+        """💰 Повертає ціну як рядок або float (fallback)."""
+        json_price = self._price_from_json_ld()	# 💾 Перевіряємо JSON-LD
+        if json_price:	# ✅ Є значення у JSON-LD
+            logger.debug("💰 Ціна знайдена у JSON-LD: %s", json_price)	# 🪵 Джерело
+            return json_price	# 🔁 Повертаємо значення
 
-    def extract_main_image(self) -> str:
-        """🖼️ Витягує головне зображення."""
-        return self._find_and_get_attribute(self.Selectors.MAIN_IMAGE, "content")				       # 📥 URL зображення
+        meta_price = self.soup.select_one("meta[itemprop='price']")	# 🔍 Meta price
+        if isinstance(meta_price, Tag) and meta_price.has_attr("content"):	# ✅ Валідний meta
+            content = _norm_ws(str(meta_price.get("content") or ""))	# 🧼 Нормалізуємо
+            if content:	# ✅ Контент існує
+                logger.debug("💰 Ціна знайдена у meta[itemprop=price].")	# 🪵 Фіксуємо
+                return content	# 🔁 Повертаємо значення
 
-    def extract_all_images(self) -> List[str]:
-        """🖼️ Витягує всі унікальні зображення товару."""
-        unique_urls = set()																	           # 🔁 Множина для унікальних URL
-        for img_tag in self.soup.select(self.Selectors.ALL_IMAGES):							           # 🔎 Всі теги img
-            if src := img_tag.get("src"):														       # 🧲 Якщо є src
-                full_url = self._normalize_image_url(src)										       # 🔗 Нормалізуємо
-                unique_urls.add(full_url)														       # ➕ Додаємо до множини
-        logging.info(f"📸 Знайдено {len(unique_urls)} унікальних зображень.")					       # 🧾 Лог про кількість
-        return list(unique_urls)
-
-    def extract_detailed_sections(self) -> Dict[str, str]:
-        """📄 Витягує секції 'Description', 'Fit', 'Materials & Care'."""
-        sections = {}																			       # 📁 Порожній словник
-        for detail in self.soup.select(self.Selectors.DETAILED_SECTIONS):						       # 🔍 Шукаємо всі details
-            summary = detail.find("summary")													       # 🧾 Назва секції
-            body = detail.find("div")															       # 📄 Контент секції
-            if summary and body:
-                title = summary.get_text(strip=True).upper()									       # 🔠 Назва секції
-                content = body.get_text(separator="\n", strip=True)							           # 📦 Вміст
-                sections[title] = content														       # ➕ Додаємо до словника
-        return sections
-
-    def extract_stock_from_json_ld(self) -> Optional[Dict[str, Dict[str, bool]]]:
-        """📦 Парсить дані про наявність з JSON-LD."""
-        for script in self.soup.select(self.Selectors.JSON_LD_SCRIPT):							       # 🔍 Ітеруємо всі скрипти
+        for selector in self._S.PRICE_LIST:	# 🔁 Перебір DOM-селекторів
+            price_el = self.soup.select_one(selector)	# 🔍 Шукаємо ціну
+            if not price_el:	# ⛔️ Нема елементу
+                continue	# 🔁 Далі
             try:
-                if script.string:																       # 🧠 Якщо є JSON-рядок
-                    data = json.loads(script.string)											       # 📥 Завантажуємо JSON
-                    if data.get("@type") == "Product" and "offers" in data:					           # ✅ Перевіряємо тип
-                        return self._parse_json_ld_offers(data["offers"])						       # 🧩 Розбираємо
-            except (json.JSONDecodeError, AttributeError):										       # ❌ Некоректний JSON
-                continue
-        return None																			           # 🔚 Не знайдено
+                text = cast(Tag, price_el).get_text(" ", strip=True)	# 🧾 Текст із елемента
+            except Exception:	# ⚠️ Невдалий get_text
+                text = str(price_el)	# 🔁 fallback
+            normalized = _norm_ws(text)	# 🧼 Очищаємо
+            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", normalized)	# 🔍 Шукаємо числовий патерн
+            if match:	# ✅ Знайшли число
+                logger.debug("💰 Ціна знайдена селектором '%s'.", selector)	# 🪵 Фіксуємо джерело
+                return match.group(0)	# 🔁 Повертаємо значення
+            if normalized:	# ♻️ Віддаємо як є
+                logger.debug("💰 Ціна повернена як текст для '%s'.", selector)	# 🪵 Повідомляємо
+                return normalized	# 🔁 Текстовий fallback
+        logger.warning("⚠️ Ціна не знайдена — повертаємо 0.0.")	# ⚠️ Інформація про fallback
+        return 0.0	# 💰 Fallback значення
+
+    # ================================
+    # 🧾 ЗАЛИШКИ НА СКЛАДІ
+    # ================================
+    def extract_stock_from_json_ld(self) -> Optional[Dict[str, Dict[str, bool]]]:
+        """📦 Повертає доступність варіантів з JSON-LD (offers)."""
+        logger.debug("📦 Починаємо пошук наявності в JSON-LD.")	# 🪵 cтатус старту
+        for idx, product in enumerate(self._json_ld_products(), start=1):	# 🔁 Всі товари з JSON-LD
+            offers = product.get("offers")	# 📄 Блок offer(s)
+            if not offers:	# ⛔️ Немає пропозицій
+                logger.debug("📦 JSON-LD продукт #%d не містить offers.", idx)	# 🪵 Діагностика
+                continue	# 🔁 Наступний товар
+            stock_map = self._offers_to_stock_map(offers)	# 🗺️ Перетворення у карту наявності
+            if stock_map:	# ✅ Успішна мапа
+                logger.debug("📦 JSON-LD stock зібрано (%d товарів).", len(stock_map))	# 🪵 Статистика
+                return stock_map	# 🔁 Повертаємо результат
+        logger.info("ℹ️ JSON-LD не містить даних про наявність.")	# 📋 Інформуємо
+        return None	# ⛔️ Дані відсутні
 
     def extract_stock_from_legacy(self) -> Optional[Dict[str, Dict[str, bool]]]:
-        """📦 Парсить дані про наявність із вбудованого JSON (ProductJson)."""
-        script_tag = self.soup.select_one(self.Selectors.LEGACY_STOCK_SCRIPT)					       # 🔍 Шукаємо скрипт
-        if script_tag and script_tag.string:
-            try:
-                product_data = json.loads(script_tag.string)									       # 📥 Завантажуємо JSON
-                return self._parse_legacy_variants(product_data.get("variants", []))			       # 🧩 Розбираємо варіанти
-            except json.JSONDecodeError as e:
-                logging.warning(f"⚠️ Помилка JSON-десеріалізації ProductJson: {e}")			            # 🚨 Помилка розбору
-        return None																			           # 🔚 Не знайдено
+        """📦 fallback-прохід по legacy-скриптах Shopify."""
+        logger.debug("📦 Запускаємо legacy-прохід по Shopify скриптах.")	# 🪵 Старт діагностики
+        scanned_scripts = 0	# 🔢 Лічильник опрацьованих скриптів
+        payload = self.soup.select_one("script#ProductJson")	# 🧾 Класичний ProductJson
+        if isinstance(payload, Tag):	# ✅ Маємо тег
+            raw = (payload.string or payload.text or "").strip()	# 🧼 Сирі дані JSON
+            obj = _try_json_loads(raw)	# 🧮 Парсимо JSON
+            stock = self._shopify_variants_to_stock(obj)	# 🗺️ Мапа наявності
+            if stock:	# ✅ Дані знайдено
+                logger.debug("📦 Stock зчитано із script#ProductJson (%d варіантів).", len(stock))	# 🪵 Метрика
+                return stock	# 🔁 Результат
+
+        data_tag = self.soup.select_one('script[data-product-json="true"]')	# 🧾 Альтернативний тег
+        if isinstance(data_tag, Tag):	# ✅ Є тег
+            raw = (data_tag.string or data_tag.text or "").strip()	# 🧼 Сирий JSON
+            obj = _try_json_loads(raw)	# 🧮 Парсимо
+            stock = self._shopify_variants_to_stock(obj)	# 🗺️ Перетворюємо
+            if stock:	# ✅ Є результат
+                logger.debug("📦 Stock зчитано з data-product-json (%d варіантів).", len(stock))	# 🪵 Метрика
+                return stock	# 🔁 Повертаємо
+
+        for script in self.soup.find_all("script"):	# 🔁 Перебір усіх скриптів сторінки
+            if not isinstance(script, Tag):	# ⛔️ Не тег
+                continue	# 🔁 Пропускаємо
+            text = (script.string or script.text or "").strip()	# 🧼 Зміст скрипта
+            if not text:	# ⛔️ Порожній скрипт
+                continue	# 🔁 Далі
+            scanned_scripts += 1	# ➕ Збільшуємо лічильник
+            mntn_obj = self._json_from_named_assignment(text, "mntn_product_data")	# 🏔️ Додаткове джерело Shopify
+            if isinstance(mntn_obj, dict):	# ✅ Є JSON із Mountain тегу
+                stock = self._shopify_variants_to_stock(mntn_obj)	# 🗺️ Перетворення в мапу
+                if stock:	# ✅ Дані знайдено
+                    logger.debug("📦 Stock витягнуто з mntn_product_data (%d варіантів).", len(stock))	# 🪵 Метрика
+                    return stock	# 🔁 Повертаємо результат
+            product_match = re.search(r"window\.Product\s*=\s*(\{.*?\});", text, re.S) or re.search(r"var\s+Product\s*=\s*(\{.*?\});", text, re.S)	# 🧪 Пошук визначення Product
+            if product_match:	# ✅ Є payload
+                stock = self._shopify_variants_to_stock(_try_json_loads(product_match.group(1)))	# 🗺️ Перетворення
+                if stock:	# ✅ Вдалося зчитати
+                    logger.debug("📦 Stock витягнуто з window.Product (%d варіантів).", len(stock))	# 🪵 Метрика
+                    return stock	# 🔁 Повертаємо
+            variants_match = re.search(r"var\s+Variants\s*=\s*(\[[\s\S]*?\])\s*;", text, re.S)	# 🧪 Масив варіантів
+            if variants_match:	# ✅ Знайдено масив
+                stock = self._variants_json_to_stock(variants_match.group(1))	# 🗺️ Перетворення
+                if stock:	# ✅ Є результати
+                    logger.debug("📦 Stock витягнуто з var Variants (%d варіантів).", len(stock))	# 🪵 Метрика
+                    return stock	# 🔁 Повертаємо
+        logger.info("ℹ️ Legacy-джерела Shopify не містять наявності (перевірено %d скриптів).", scanned_scripts)	# 📋 Інформаційне повідомлення
+        return None	# ⛔️ Дані відсутні
 
     # ================================
-    # 🕵️‍♂️ ПРИВАТНІ ДОПОМІЖНІ МЕТОДИ
+    # 🛠️ ДОПОМІЖНІ МЕТОДИ
     # ================================
+    def _shopify_variants_to_stock(self, product_obj: Any) -> Optional[Dict[str, Dict[str, bool]]]:
+        """🛠️ Будує мапу наявності з Shopify ProductJson."""
+        if not isinstance(product_obj, dict):	# 🚫 Некоректний формат
+            logger.debug("🛠️ Shopify JSON має неочікуваний тип: %s", type(product_obj).__name__)	# 🪵 Діагностика
+            return None	# ⛔️ Дані відсутні
+        variants = product_obj.get("variants")	# 🧾 Масив варіантів
+        if not isinstance(variants, list):	# 🚫 Немає списку варіантів
+            logger.debug("🛠️ Shopify JSON не містить списку variants.")	# 🪵 Пояснення
+            return None	# ⛔️ Нічого повертати
+        stock: Dict[str, Dict[str, bool]] = {}	# 📦 Результуюча мапа
+        for variant in variants:	# 🔁 Обходимо кожен варіант
+            if not isinstance(variant, dict):	# ⛔️ Некоректний запис
+                continue	# 🔁 Пропускаємо
+            color = str(variant.get("option1") or "DEFAULT").strip()	# 🟥 Варіація кольору
+            size = str(variant.get("option2") or "DEFAULT").strip()	# 📏 Варіація розміру
+            available = bool(variant.get("available", False))	# ✅ Флаг доступності
+            stock.setdefault(color, {})[size] = available	# 🗂️ Оновлюємо мапу (nested dict)
+        logger.debug("🛠️ Зібрано stock через Shopify-модель (%d кольорів).", len(stock))	# 🪵 Статистика
+        return stock or None	# 🔁 Повертаємо результат або None
 
-    def _find_and_get_text(self, selector: str, default: str = "") -> str:
-        """Знаходить тег за селектором і повертає його текст."""
-        tag = self.soup.select_one(selector)													        # 🔍 Один тег
-        return tag.get_text(strip=True) if tag else default									            # 📤 Текст або дефолт
+    def _variants_json_to_stock(self, payload: str) -> Optional[Dict[str, Dict[str, bool]]]:
+        """🛠️ Будує мапу наявності з сирого JSON масиву варіантів."""
+        obj = _try_json_loads(payload)	# 🧮 Парсимо JSON
+        if not isinstance(obj, list):	# 🚫 Очікуємо список
+            logger.debug("🛠️ Variants JSON має неочікуваний тип: %s", type(obj).__name__)	# 🪵 Попередження
+            return None	# ⛔️ Некоректний формат
+        stock: Dict[str, Dict[str, bool]] = {}	# 📦 Порожня мапа
+        for variant in obj:	# 🔁 Кожен обʼєкт масиву
+            if not isinstance(variant, dict):	# 🚫 Пропускаємо не-словники
+                continue	# 🔁 Далі
+            color = str(variant.get("option1") or "DEFAULT").strip()	# 🟥 Колір
+            size = str(variant.get("option2") or "DEFAULT").strip()	# 📏 Розмір
+            if not color or not size:	# ⚠️ Обовʼязкові поля
+                continue	# ⛔️ Пропускаємо порожні значення
+            available = bool(variant.get("available", False))	# ✅ Статус доступності
+            stock.setdefault(color, {})[size] = available	# 🗂️ Оновлюємо мапу
+        logger.debug("🛠️ Зібрано stock з масиву Variants (%d кольорів).", len(stock))	# 🪵 Діагностика
+        return stock or None	# 🔁 Повертаємо результат
 
-    def _find_and_get_attribute(self, selector: str, attr: str, default: str = "") -> str:
-        """Знаходить тег і повертає значення його атрибута."""
-        tag = self.soup.select_one(selector)													        # 🔍 Один тег
-        return tag.get(attr, default) if tag and tag.has_attr(attr) else default				        # 📤 Атрибут або дефолт
-
-    def _normalize_image_url(self, src: str) -> str:
-        """
-        🔗 Приводить URL зображення до повного формату (додає 'https:').
-        """
-        return f"https:{src}" if src.startswith("//") else src									        # 🧹 Додаємо https: якщо треба
-
-    def _parse_json_ld_offers(self, offers: Union[Dict, List[Dict]]) -> Dict:
-        """
-        Парсить секцію 'offers' з JSON-LD, яка може бути об'єктом або списком.
-        """
-        offers_list = [offers] if isinstance(offers, dict) else offers							        # 🔁 Один або список
-
-        stock = {}																				        # 📦 Ініціалізація
-        for offer in offers_list:
-            name = offer.get("name", "")														        # 🏷️ Назва (color / size)
-            available = "InStock" in offer.get("availability", "")								        # ✅ Статус наявності
-            if " / " in name:
-                color, size = name.split(" / ", 1)												        # 🎨 / 📏
-                stock.setdefault(color.strip(), {})[size.strip()] = available					        # ➕ Додаємо до словника
-        return stock
-
-    def _parse_legacy_variants(self, variants: List[Dict]) -> Dict:
-        """Парсить секцію 'variants' з legacy JSON."""
-        stock = {}																				                    # 📦 Ініціалізація
-        for var in variants:
-            color, size = var.get("option1"), var.get("option2")								                    # 🎨 / 📏 Витягуємо параметри
-            if color and size:
-                stock.setdefault(str(color).strip(), {})[str(size).strip()] = var.get("available", False)	        # ➕ Додаємо
-        return stock
+    @staticmethod
+    def _json_from_named_assignment(script_text: str, identifier: str) -> Optional[Any]:
+        """🧰 Вирізає JSON-обʼєкт із присвоєння `identifier = {...}`."""
+        if identifier not in script_text:
+            logger.debug("🧰 Ідентифікатор '%s' у скрипті не знайдено.", identifier)	# 🪵 Діагностика
+            return None	# 🚫 Цільова змінна відсутня
+        start_idx = script_text.find(identifier)
+        assign_idx = script_text.find("=", start_idx)
+        if assign_idx == -1:
+            logger.debug("🧰 Ідентифікатор '%s' без оператора '='.", identifier)	# 🪵 Відсутній assignment
+            return None	# 🚫 Немає оператору =
+        brace_idx = None
+        closer = ""
+        for candidate, closing in (("{", "}"), ("[", "]")):
+            pos = script_text.find(candidate, assign_idx)
+            if pos != -1 and (brace_idx is None or pos < brace_idx):
+                brace_idx = pos
+                closer = closing
+        if brace_idx is None:
+            logger.debug("🧰 Не знайдено початок JSON для '%s'.", identifier)	# 🪵 Невдача пошуку
+            return None	# 🚫 Не знайшли початок JSON
+        stack: List[str] = [closer]	# 🧳 Стек очікуваних закриттів
+        in_string = False
+        escape = False
+        for idx in range(brace_idx + 1, len(script_text)):
+            ch = script_text[idx]
+            if in_string:
+                if escape:
+                    escape = False
+                    continue
+                if ch == "\\":
+                    escape = True
+                    continue
+                if ch == "\"":
+                    in_string = False
+                continue
+            if ch == "\"":
+                in_string = True
+                continue
+            if ch in "{[":
+                stack.append("}" if ch == "{" else "]")
+            elif ch in "}]" and stack and ch == stack[-1]:
+                stack.pop()
+                if not stack:
+                    raw_json = script_text[brace_idx : idx + 1]
+                    logger.debug("🧰 JSON для '%s' знайдено (%d символів).", identifier, len(raw_json))	# 🪵 Фіксація успіху
+                    return _try_json_loads(raw_json)
+            else:
+                continue
+        logger.debug("🧰 Не вдалося завершити парсинг JSON для '%s'.", identifier)	# 🪵 Фінальна невдача
+        return None	# 🚫 Дані не зчитані

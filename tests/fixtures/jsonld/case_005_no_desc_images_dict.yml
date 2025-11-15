@@ -1,0 +1,10 @@
+title: "Training Shorts"
+price: "39.5"
+description: ""
+main_image: "https://ex.com/i/shorts_400x400.jpg"
+all_images:
+  - "https://ex.com/i/shorts_1200x1200.jpg"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: true
+stock_legacy: null

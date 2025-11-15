@@ -1,0 +1,11 @@
+title: "Ultra Hoodie 2.0"
+price: "79.99"
+description: "Soft fleece hoodie with ribbed cuffs."
+main_image: "https://cdn.example.com/p/hoodie/main.jpg"
+all_images:
+  - "https://cdn.example.com/p/hoodie/main.jpg"
+  - "https://cdn.example.com/p/hoodie/alt1.jpg"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: true
+stock_legacy: null

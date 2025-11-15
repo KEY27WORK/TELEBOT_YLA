@@ -1,0 +1,12 @@
+title: "Cap"
+price: "25"
+description: ""
+main_image: "https://i.ex/cap_main.jpg"
+all_images:
+  - "https://i.ex/cap_main.jpg"
+  - "https://i.ex/cap_alt.webp"
+  - "https://i.ex/cap_side.png"
+stock_jsonld:
+  DEFAULT:
+    DEFAULT: true
+stock_legacy: null

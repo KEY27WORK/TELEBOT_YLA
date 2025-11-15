@@ -1,9 +1,19 @@
-# 📐 services/__init__.py
+# 📐 app/infrastructure/size_chart/services/__init__.py
 """
-📐 Сервіси для генерації таблиць розмірів.
+📐 Допоміжні сервіси для геометрії таблиць розмірів.
 
-🔹 Включає:
-- TableGeometryService — логіка розрахунку ширин, масштабів, положень таблиці
+🔹 `TableGeometryService` — обчислює розмітку та координати елементів таблиці.
 """
 
-from .table_geometry_service import TableGeometryService
+from __future__ import annotations
+
+# 🌐 Зовнішні бібліотеки — відсутні
+
+# 🔠 Системні імпорти — відсутні
+
+# 🧩 Внутрішні модулі проєкту
+from .table_geometry_service import TableGeometryService							# 🧮 Розрахунок координат і масштабу
+
+__all__ = [
+    "TableGeometryService",														# 🧮 Публічний сервіс геометрії
+]

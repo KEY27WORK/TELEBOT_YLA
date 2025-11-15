@@ -1,0 +1,12 @@
+title: "Runner Shoes"
+price: "129.90"
+description: ""
+main_image: "https://img.example.com/s/shoe_main.webp"
+all_images:
+  - "https://img.example.com/s/shoe_main.webp"
+  - "https://img.example.com/s/shoe_alt.webp"
+stock_jsonld:
+  Black:
+    "42": true
+    "43": false
+stock_legacy: null

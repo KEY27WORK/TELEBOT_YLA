@@ -1,0 +1,743 @@
+wrackdown:
+  version: 1
+  project: "YoungLA Telegram Bot / Infra parsers / Size Chart / WebDriver / Product Processing"
+  generated_at: "now"
+  owner: "tech-lead"
+  notes: >
+    Итоговый бэклог улучшений и фиксов. Формат: DTO-WRACKDOWN.
+    Каждый элемент имеет ID, приоритет (P0=критично, P1=важно, P2=желательно),
+    тип (fix|refactor|improvement|test|doc|ops), скоп, шаги и критерии приёмки.
+    Используй как дорожную карту. Порядок отсортирован по приоритету и зависимостям.
+    Статусы задач: todo | in_progress | review | done ✅ | blocked.
+
+  items:
+    - id: IMP-001
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Единые ретраи и таймауты для загрузки HTML (WebDriverService ↔ BaseParser)"
+      scope: ["infrastructure/web/webdriver_service.py", "infrastructure/parsers/base_parser.py", "config.playwright", "parsers.ParserInfraOptions"]
+      details: >
+        Сейчас retry/timeout/backoff определены и в WebDriverService, и в BaseParser (_fetch_html_with_retries),
+        что ведёт к дублированию и различному поведению. Нужна единая точка правды.
+      steps:
+        - "Убрать _fetch_html_with_retries из BaseParser, оставить только _fetch_and_prepare_soup c прямым вызовом webdriver_service.get_page_content()."
+        - "Вынести retry/timeout/backoff в WebDriverService и конфиг (config.yaml)."
+        - "Принять ParserInfraOptions.request_timeout_sec как per-call override → прокинуть в get_page_content."
+        - "Удалить константы FETCH_ATTEMPTS/BASE_DELAY_SEC/BACKOFF_MULTИPLIER из BaseParser."
+      acceptance:
+        - "Нет дублирования ретраев; ретраи происходят только в WebDriverService."
+        - "Таймауты и backoff управляются из одного места (config)."
+        - "Логи отражают единый цикл попыток (кол-во попыток совпадает)."
+      done_notes:
+        - "Удалён метод BaseParser._fetch_html_with_retries; загрузка идёт через webdriver_service.get_page_content()."
+        - "Ретраи/таймаут/backoff централизованы в WebDriverService; параметры берутся из app/config/60_playwright.yaml."
+        - "Пер-колл override таймаута: BaseParser прокидывает request_timeout_sec → get_page_content(timeout_ms=...)."
+        - "Удалены локальные константы FETCH_ATTEMPTS/BASE_DELAY_SEC/BACKOFF_MULTIPLIER из BaseParser."
+        - "Логи показывают единый цикл попыток WebDriverService; Cloudflare-эвристики оставлены в WebDriverService."
+
+    - id: IMP-002
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Единый парсер валюты и region_label"
+      scope: ["shared/utils/url_parser_service.py", "infrastructure/url/youngla_strategy.py", "infrastructure/parsers/base_parser.py"]
+      details: >
+        В BaseParser вытягивается валюта через UrlParserService.get_currency, fallback USD. Нужна единая
+        функция медленно-ломаемая: если стратегия не поддерживает URL – явно логировать и отдавать None,
+        а fallback делать только на слое домена.
+      steps:
+        - "Расширить UrlParserService: get_currency(url, default=None) без silent fallback."
+        - "В BaseParser._safe_currency → принимать None как ошибку и fallback на USD."
+        - "Покрыть тестами крайние кейсы субдоменов."
+      acceptance:
+        - "region_display и currency совпадают для всех доменов (US/EU/UK/PL)."
+        - "При неизвестном домене есть предупреждение в логах и корректный fallback."
+
+    - id: IMP-003
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Дедупликация _uniq_keep_order (двойная реализация)"
+      scope: ["infrastructure/parsers/base_parser.py", "infrastructure/parsers/html_data_extractor.py", "shared/utils/collections.py"]
+      details: >
+        Одинаковая функция уникализации встречается и в extractor, и в base_parser. Вынести в shared utils.
+      steps:
+        - "Создать shared/utils/collections.py → uniq_keep_order(seq: Iterable[T]) -> List[T]/Tuple[T,...]."
+        - "Импортировать в обоих местах, удалить локальные копии."
+      acceptance:
+        - "Функция существует в единственном месте."
+        - "Импорты обновлены, тесты зелёные."
+
+    - id: IMP-004
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Единая нормализация цены → Decimal"
+      scope: ["infrastructure/parsers/base_parser.py", "infrastructure/parsers/html_data_extractor.py", "shared/utils/number.py"]
+      details: >
+        _to_decimal и извлечение price в HtmlDataExtractor частично дублируют нормализацию. Выделить чистую
+        функцию normalise_price_string(str) → Decimal в shared и переиспользовать.
+      steps:
+        - "Создать shared/utils/number.py c: decimal_from_price_str(s: str) и sanitize_price_text(text: str)."
+        - "В extractor возвращать сырую строку/float → привести к Decimal в BaseParser с новой утилитой."
+      acceptance:
+        - "Единые правила для 1.234,56 / 1,234.56 / символов валют."
+        - "Unit-тесты на 10+ форматов строк."
+
+    - id: IMP-005
+      priority: P0
+      type: refactor
+      status: done ✅
+      title: "HtmlDataExtractor: вынести селекторы и key_map в конфиг"
+      scope: ["infrastructure/parsers/html_data_extractor.py", "config.parser.selectors"]
+      details: >
+        Сейчас селекторы/карта ключей зашиты в код. Переместить в конфиг (yaml), поддержать override по бренду.
+      steps:
+        - "Вынести Selectors.TITLE_LIST/PRICE_LIST/... и key_map в config."
+        - "В extractor читать через ConfigService + кэш на уровне класса."
+        - "Сделать fallback на дефолты при отсутствии в конфиге."
+      acceptance:
+        - "Смена CSS селектора делается без релиза кода."
+        - "Backward совместимость с дефолтами."
+
+    - id: IMP-006
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Единый контракт ошибок OCR и SizeChartService"
+      scope: ["infrastructure/size_chart/ocr_service.py", "infrastructure/size_chart/size_chart_service.py"]
+      details: >
+        Возврат None из OCR смешивает таймаут/парсинг/нет JSON. Ввести строгое Result DTO.
+      steps:
+        - "Ввести SizeChartOcrResult(status: ok|timeout|invalid_json|api_error, data: Optional[dict], raw_text: Optional[str])."
+        - "SizeChartService ветвится по статусу; понятные логи."
+      acceptance:
+        - "Логи различают типы проблем. Прогресс-эвенты содержат статус."
+
+    - id: IMP-007
+      priority: P0
+      type: improvement
+      status: done ✅
+      title: "Глобальная схема логирования (LOG_NAME) и уровни"
+      scope: ["shared/utils/logger.py", "все модули"]
+      details: >
+        Сейчас часть модулей задаёт уровень из ParserInfraOptions.effective_log_level(),
+        часть — из WebDriverService. Ввести init_logging(level) в shared + единый формат.
+      steps:
+        - "Добавить shared.logging.init(level, json=false|true)."
+        - "Заменить setLevel по местам на вызов init()."
+      acceptance:
+        - "Одинаковый формат логов, корректный уровень из конфигурации."
+        - "Нет локальных setLevel кроме тестов."
+
+    - id: IMP-008
+      priority: P0
+      type: done ✅
+      status: todo
+      title: "Юнит-тесты для UrlStrategy (YoungLA)"
+      scope: ["infrastructure/url/youngla_strategy.py", "tests/url_strategy_youngla_test.py"]
+      details: "Покрыть supports/is_product_url/is_collection_url/extract_product_slug + субдомены."
+      steps:
+        - "Добавить позитив/негатив кейсы, регистры, с портом, с www."
+      acceptance:
+        - "Покрытие по файлу ≥ 90%."
+
+    # --- остальные элементы оставлены без изменений, только добавлен статус ---
+    - id: IMP-009
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Атомарность и коды возврата в ImageDownloader"
+      scope: ["infrastructure/size_chart/image_downloader.py"]
+      details: >
+        Проверка Content-Type и сигнатур ок, но коды возврата не различают причину. Вернуть DownloadResult|ErrorCode.
+      steps:
+        - "Добавить enum DownloadError (http_status, too_large, not_image, magic_mismatch, io_error)."
+        - "download(...) → Union[DownloadResult, DownloadError]. SizeChartService логирует по коду."
+      acceptance:
+        - "Причины отказа видны в логах и метриках."
+
+    - id: IMP-010
+      priority: P0
+      type: refactor
+      status: done ✅
+      title: "ParserFactory: убрать отражательную логику и жёсткие импорты домена"
+      scope: ["infrastructure/parsers/parser_factory.py", "infrastructure/parsers/factory_adapter.py"]
+      details: >
+        Есть инспекция сигнатур BaseParser.__init__ и try/except для ProductSearchResolver.
+        Ввести явные протоколы конфигурации и строгие конструкторы.
+      steps:
+        - "Удалить inspect.signature ветки; передавать request_timeout_sec очевидно."
+        - "create_search_provider() — вернуть строго типизируемый объект, исключить двойной путь."
+      acceptance:
+        - "Модуль без reflect-хаков; типизация Pylance без предупреждений."
+
+    # (IMP-011 ... IMP-060 ниже — статусы установлены в todo, содержимое как у тебя)
+    - id: IMP-011
+      priority: P0
+      type: improvement
+      status: done ✅
+      title: "Строгие DTO для ProductProcessingService"
+      scope: ["infrastructure/services/product_processing_service.py", "domain/ai/ProductPromptDTO"]
+      details: >
+        Возврат None по ошибке скрывает причину. Расширить ProcessedProductData и/или вернуть Result.
+      steps: []
+      acceptance:
+        - "Бот не «молчит» при неудаче, а показывает понятную ошибку."
+
+    - id: IMP-012
+      priority: P0
+      type: improvement
+      status: done ✅
+      title: "Единый лимит изображений (images_limit) от опций до extractor"
+      scope: ["parsers.ParserInfraOptions", "infrastructure/parsers/base_parser.py", "infrastructure/parsers/html_data_extractor.py"]
+      details: >
+        Сейчас BaseParser ограничивает, но extractor собирает больше, фильтрует позже.
+      steps: []
+      acceptance:
+        - "Количество картинок не превышает лимит при любых данных.
+
+    - id: IMP-013
+      priority: P0
+      type: test
+      status: done ✅
+      title: "Контрактные тесты BaseParser → ProductInfo"
+      scope: ["tests/parsers/test_base_parser_contract.py"]
+      details: >
+        Проверить, что ProductInfo всегда валиден: title != '', price Decimal, images tuple, sections/stock MappingProxyType.
+      steps:
+        - "Смоки на пустой HTML, на Cloudflare, на нормальную карточку."
+      acceptance:
+        - "Тесты зелёные, падение не происходит."
+
+    - id: IMP-014
+      priority: P0
+      type: improvement
+      status: done ✅
+      title: "Единая обработка Cloudflare-сплеша"
+      scope: ["infrastructure/web/webdriver_service.py", "infrastructure/parsers/base_parser.py"]
+      details: >
+        Логика детекции Cloudflare есть в обоих местах. Оставить в WebDriverService, расширить сигнатуры фраз через конфиг.
+      steps:
+        - "Удалить _looks_like_bot_challenge из BaseParser."
+        - "Расширить список фраз из config.playwright.cloudflare_phrases."
+      acceptance:
+        - "Детекция централизована, нет дублирования."
+
+    - id: IMP-015
+      priority: P0
+      type: refactor
+      status: done ✅
+      title: "Вынос key_map секций описания в локали"
+      scope: ["infrastructure/parsers/html_data_extractor.py", "i18n/ua.yml", "i18n/ru.yml", "i18n/en.yml"]
+      details: >
+        key_map сейчас смешивает английские ключи и русско/укр переводы. Сделать словари локализации.
+      steps:
+        - "Вынести карту соответствий в i18n-файлы; extractor маппит через locale из ParserInfraOptions.locale."
+      acceptance:
+        - "Поддержка мультиязычных описаний без правок кода."
+
+    - id: IMP-016
+      priority: P0
+      type: fix
+      status: done ✅
+      title: "Стабилизация get_header_info (адаптер)"
+      scope: ["infrastructure/parsers/factory_adapter.py"]
+      details: >
+        Адаптер допускает dict/объект; при ошибке – fallback на get_product_info.
+        Добавить строгие try/except с логированием причины, исключить голое pass.
+      steps:
+        - "Логировать исключение с типом; вернуть дефолтный заголовок без запроса полного info, если парсер кэширует страницу."
+      acceptance:
+        - "Меньше лишних сетевых вызовов; понятные логи."
+
+    - id: IMP-017
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "ParserInfraOptions: from_env() полная схема и префикс-селектор"
+      scope: ["infrastructure/parsers/_infra_options.py"]
+      details: >
+        Добавить возможность указать альтернативный префикс (например, YLA_PARSER_). Улучшить документацию env.
+      steps:
+        - "from_env(prefix: str) уже есть — расширить README и добавить .example.env."
+      acceptance:
+        - "ENV переопределяют дефолты; документировано."
+
+    - id: IMP-018
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "HtmlDataExtractor: раздельные фильтры изображений"
+      scope: ["infrastructure/parsers/html_data_extractor.py"]
+      details: >
+        Сейчас фильтры _looks_like_product_img и _probably_too_small зашиты. Вынести пороги в конфиг.
+      steps:
+        - "config.parser.images: min_side_px, bad_tokens[], allowed_ext[]."
+      acceptance:
+        - "Тонкая настройка без изменения кода."
+
+    - id: IMP-019
+      priority: P1
+      status: done ✅
+      type: test
+      title: "Тесты для SizeChartFinder (YoungLA)"
+      scope: ["infrastructure/size_chart/youngla_finder.py", "tests/size_chart/finder_test.py"]
+      details: "Покрыть _img_src_candidates, _classify, сортировку по CHART_TYPE_PRIORITY."
+      steps: []
+      acceptance:
+        - "Покрытие ≥ 85%. Edge-кейсы srcset/data-srcset."
+
+    - id: IMP-020
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "SizeChartService: отмена задач корректная"
+      scope: ["infrastructure/size_chart/size_chart_service.py"]
+      details: >
+        При CancelledError уже есть graceful shutdown, но стоит добавлять on_progress(Stage.DONE, error='cancelled') для всех активных.
+      steps: []
+      acceptance:
+        - "Отмена отражается в UI/метриках."
+
+    - id: IMP-021
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "Формат прогресса SizeChartProgress: добавить bytes_downloaded и sha256"
+      scope: ["infrastructure/size_chart/size_chart_service.py", "infrastructure/size_chart/image_downloader.py"]
+      details: "Полезно для кеша и мониторинга."
+      steps: []
+      acceptance:
+        - "on_progress получает эти поля при DOWNLOAD_OK."
+
+    - id: IMP-022
+      priority: P1
+      type: refactor
+      status: done ✅
+      title: "UrlStrategy: перенос _REGION_LABELS в конфиг"
+      scope: ["infrastructure/url/youngla_strategy.py", "config.regions.labels"]
+      details: "Сейчас метки в коде. Вынести в конфиг, поддержать кастомные эмодзи/язык."
+      steps: []
+      acceptance:
+        - "Метки меняются без релиза."
+
+    - id: IMP-023
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "WebDriverService: пер-колл перезапись user_agent"
+      scope: ["infrastructure/web/webdriver_service.py", "ParserInfraOptions.user_agent"]
+      details: >
+        Иногда полезно подменить UA на один вызов (антибот). Добавить аргумент user_agent в get_page_content.
+      steps: []
+      acceptance:
+        - "UA меняется per-call, остальные не затрагиваются."
+
+    - id: IMP-024
+      priority: P1
+      type: test
+      status: done ✅
+      title: "Контент-сервис: фикстуры и snapshot-тесты"
+      scope: ["infrastructure/content/product_content_service.py", "tests/content/*.py"]
+      details: "Стабильность генерации слогана/хештегов при одинаковом входе."
+      steps: []
+      acceptance:
+        - "Снапшоты стабильны, отклонения подсвечиваются."
+
+    - id: IMP-025
+      priority: P1
+      type: doc
+      status: done ✅
+      title: "README: актуализировать архитектуру и примеры"
+      scope: ["README.md"]
+      details: "Показать 4 слоя, DI, Adapter, ParserInfraOptions, UrlStrategy, Playwright."
+      steps: []
+      acceptance:
+        - "README соответствует коду."
+
+    - id: IMP-026
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "Единый механизм переводов (TranslatorService) с кешем"
+      scope: ["infrastructure/ai/ai_task_service.py", "config.ai.cache"]
+      details: "Добавить memory-дедуп по текстам описания, чтобы не платить повторно."
+      steps: []
+      acceptance:
+        - "Повторные вызовы не бьют API."
+
+    - id: IMP-027
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "WeightResolver: защитные граничные условия"
+      scope: ["domain/products/services/weight_resolver.py"]
+      details: "Если image_url пуст, не падать; иметь дефолт 0 и логировать DEBUG."
+      steps: []
+      acceptance:
+        - "Никаких WARN при нормальных условиях, только DEBUG."
+
+    - id: IMP-028
+      priority: P1
+      type: refactor
+      status: done ✅
+      title: "MappingProxyType фабрика"
+      scope: ["infrastructure/parsers/base_parser.py", "shared/utils/immutables.py"]
+      details: "Вынести _deep_freeze в shared и покрыть тестами."
+      steps: []
+      acceptance:
+        - "Функция одна; поддержка frozendict-аналога."
+
+    - id: IMP-029
+      priority: P1
+      type: fix
+      status: done ✅
+      title: "Нормализация size-токенов: вынести в shared"
+      scope: ["infrastructure/parsers/base_parser.py", "shared/utils/size_norm.py"]
+      details: "Поддержать XXS..4XL, числовые размеры, локализацию (ru/ua)."
+      steps: []
+      acceptance:
+        - "Все ключи stock_data нормализуются одинаково."
+
+    - id: IMP-030
+      priority: P1
+      type: improvement
+      status: done ✅
+      title: "ProductSearchResolver: таймаут и лимит карточек"
+      scope: ["infrastructure/parsers/product_search/search_resolver.py", "ParserInfraOptions"]
+      details: "Добавить конфиги поиска: timeout, max_results, retry."
+      steps: []
+      acceptance:
+        - "Поиск не зависает и не приводит к лишнему трафику."
+
+    - id: IMP-031
+      priority: P2
+      type: ops
+      status: done ✅
+      title: "CI: Ruff/Black/mypy/pytest матрица"
+      scope: [".github/workflows/ci.yml"]
+      details: "Линтеры + типизация + тесты на PR."
+      steps: []
+      acceptance:
+        - "PR блокируется при ошибках стиля/типов/тестов."
+
+    - id: IMP-032
+      priority: P2
+      type: ops
+      status: done ✅
+      title: "Pre-commit hooks"
+      scope: [".pre-commit-config.yaml"]
+      details: "Ruff, Black, trailing-whitespace, end-of-file-fixer."
+      steps: []
+      acceptance:
+        - "Коммиты форматированы автоматически."
+
+    - id: IMP-033
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Feature-flags для экспериментальных экстракторов"
+      scope: ["config.flags", "infrastructure/parsers/html_data_extractor.py"]
+      details: "Включать/выключать альтернативную ветку извлечения описания."
+      steps: []
+      acceptance:
+        - "Фичи включаются конфигом."
+
+    - id: IMP-034
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Кэширование страниц (HTML) на время парсинга"
+      scope: ["infrastructure/parsers/base_parser.py", "shared/cache"]
+      details: "Короткоживущий LRU на URL → HTML, чтобы повторные вызовы не открывали браузер."
+      steps: []
+      acceptance:
+        - "Повторный парс одного URL в рамках процесса быстрее."
+
+    - id: IMP-035
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Трассировка (trace) Playwright по флагу"
+      scope: ["infrastructure/web/webdriver_service.py"]
+      details: "Включать сохранение trace.zip при ошибках (для дебага капчи)."
+      steps: []
+      acceptance:
+        - "При флаге trace=true создаются артефакты."
+
+    - id: IMP-036
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Градиентный backoff для OCR"
+      scope: ["infrastructure/size_chart/ocr_service.py"]
+      details: "Сейчас backoff линейный по attempt; сделать экспоненту с джиттером."
+      steps: []
+      acceptance:
+        - "Меньше шипов в нагрузке при массовых задачах."
+
+    - id: IMP-037
+      priority: P2
+      type: refactor
+      status: done ✅
+      title: "Разделение HtmlDataExtractor на под‑классы (SRP)"
+      scope: ["infrastructure/parsers/html_data_extractor.py"]
+      details: "Вынести JSON-LD, Images, Description в отдельные маленькие классы/миксины."
+      steps: []
+      acceptance:
+        - "Файл разбит; читаемость выше."
+
+    - id: IMP-038
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Режим headful для локальной отладки"
+      scope: ["infrastructure/web/webdriver_service.py", "config.playwright.headless"]
+      details: "CLI-флаг/ENV переключает режим. Логи выводят URL DevTools."
+      steps: []
+      acceptance:
+        - "Можно локально наблюдать реальный рендер."
+
+    - id: IMP-039
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Метрики: счётчики успешных/неуспешных парсингов"
+      scope: ["shared/metrics", "infrastructure/parsers/base_parser.py", "webdriver_service.py"]
+      details: "Экспорт в Prometheus или простые CSV/JSON."
+      steps: []
+      acceptance:
+        - "Есть отчёт по конверсиям/фейлам."
+
+    - id: IMP-040
+      priority: P2
+      type: doc
+      status: done ✅
+      title: "Архитектурная диаграмма"
+      scope: ["docs/architecture.drawio", "README.md"]
+      details: "Слои, зависимости, ключевые DTO/интерфейсы."
+      steps: []
+      acceptance:
+        - "Диаграмма открывается, понятно новичкам."
+
+    - id: IMP-041
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Гармонизация исключений (typed exceptions)"
+      scope: ["shared/errors.py", "все слои"]
+      details: "Ввести иерархию ошибок: NetworkError, ParseError, OcrError, ConfigError и т.д."
+      steps: []
+      acceptance:
+        - "Код ловит конкретные исключения; точные сообщения."
+
+    - id: IMP-042
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Генерация alt-текстов для изображений продукта"
+      scope: ["infrastructure/content/product_content_service.py", "ai"]
+      details: "Повышает SEO/доступность; короткие описания на основании ProductInfo."
+      steps: []
+      acceptance:
+        - "Alt-тексты появляются в DTO контента."
+
+    - id: IMP-043
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Кеш на OCR по sha256"
+      scope: ["infrastructure/size_chart/ocr_service.py", "image_downloader.py"]
+      details: "Если sha256 совпадает — не гонять Vision ещё раз."
+      steps: []
+      acceptance:
+        - "Повторная обработка одного и того же изображения мгновенна."
+
+    - id: IMP-044
+      priority: P2
+      type: test
+      status: done ✅
+      title: "Фазовые тесты на Cloudflare/капчу"
+      scope: ["infrastructure/web/webdriver_service.py", "tests/web/cloudflare_test.py"]
+      details: "Мокаем HTML «Just a moment…», проверяем поведение ретраев."
+      steps: []
+      acceptance:
+        - "Тесты стабильны без реального Cloudflare."
+
+    - id: IMP-045
+      priority: P2
+      type: refactor
+      status: done ✅
+      title: "Разделение concerns в ProductProcessingService"
+      scope: ["infrastructure/services/product_processing_service.py"]
+      details: "Выделить AvailabilityFacade, MusicFacade. Сервис станет тоньше."
+      steps: []
+      acceptance:
+        - "Файл короче, покрытие тестами выше."
+
+    - id: IMP-046
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Стабильные ID задач в SizeChartService"
+      scope: ["infrastructure/size_chart/size_chart_service.py"]
+      details: "Добавить uuid для каждого изображения для склейки логов."
+      steps: []
+      acceptance:
+        - "Прогресс-логи легко сопоставимы."
+
+    - id: IMP-047
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Градиентные лимиты на параллелизм OCR/скачиваний"
+      scope: ["infrastructure/size_chart/size_chart_service.py"]
+      details: "Автонастройка семафора по CPU/IO (os.cpu_count, bandwidth)."
+      steps: []
+      acceptance:
+        - "При низком CPU не перегружаем систему."
+
+    - id: IMP-048
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Вынести BAD_TOKENS/EXT_OK в конфиг"
+      scope: ["infrastructure/parsers/html_data_extractor.py"]
+      details: "Сейчас зашиты в коде."
+      steps: []
+      acceptance:
+        - "Тонкая настройка фильтров изображений."
+
+    - id: IMP-049
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Модульная структура экстрактора описаний"
+      scope: ["infrastructure/parsers/html_data_extractor.py"]
+      details: "Пробовать markdown, чистить лишние пробелы, сохранять списки."
+      steps: []
+      acceptance:
+        - "Описания выглядят чище, меньше мусора."
+
+    - id: IMP-050
+      priority: P2
+      type: test
+      status: done ✅
+      title: "Снапшоты JSON-LD парсинга"
+      scope: ["infrastructure/parsers/html_data_extractor.py", "tests/parsers/jsonld_snapshot_test.py"]
+      details: "Набор эталонных JSON-LD блоков → стабильный результат."
+      steps: []
+      acceptance:
+        - "Регрессии быстро заметны."
+
+    - id: IMP-051
+      priority: P2
+      type: ops
+      status: done ✅
+      title: "Докеризация Playwright окружения"
+      scope: ["Dockerfile", "docker-compose.yml"]
+      details: "Образы с установленными браузерами, xvfb, шрифтами."
+      steps: []
+      acceptance:
+        - "Сборка повторяема на CI и проде."
+
+    - id: IMP-052
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Telemetry hooks для Vision/AI"
+      scope: ["infrastructure/ai/*"]
+      details: "Логи промптов в обезличенном виде, latency, размер ответа."
+      steps: []
+      acceptance:
+        - "Графики по AI-вызовам."
+
+    - id: IMP-053
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Расширение Size нормализации (женские/юниорские)"
+      scope: ["shared/utils/size_norm.py"]
+      details: "Поддержать женские ряды и юниорские (0..14, WXS..WXL)."
+      steps: []
+      acceptance:
+        - "Корректные ключи в stock_data."
+
+    - id: IMP-054
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Унификация ошибок и сообщений в боте"
+      scope: ["bot/*", "infrastructure/services/product_processing_service.py"]
+      details: "Единый шаблон сообщений, коды причин, дружелюбные подсказки."
+      steps: []
+      acceptance:
+        - "Пользователь получает понятные причины и next steps."
+
+    - id: IMP-055
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Кэш UrlStrategy для get_region_label"
+      scope: ["infrastructure/url/youngla_strategy.py"]
+      details: "Частый вызов, можно кэшировать dict в памяти."
+      steps: []
+      acceptance:
+        - "Меньше аллокаций, быстрее."
+
+    - id: IMP-056
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Перенос _SIZE_ALIAS в конфиг"
+      scope: ["infrastructure/parsers/base_parser.py", "shared/utils/size_norm.py", "config.sizes.aliases"]
+      details: "Избавиться от захардкоженных соответствий."
+      steps: []
+      acceptance:
+        - "Добавление нового алиаса — правка yaml."
+
+    - id: IMP-057
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Глубокая валидация ProductInfo на доменном уровне"
+      scope: ["domain/products/entities.py"]
+      details: "Проверять валюту, пустые картинки, слишком длинные поля."
+      steps: []
+      acceptance:
+        - "Некорректные значения отбрасываются раньше UI."
+
+    - id: IMP-058
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Унификация locale-потока от ParserInfraOptions до AI"
+      scope: ["parsers.ParserInfraOptions", "content/ai", "extractor"]
+      details: "Единая локаль для текста описания/переводов/секций."
+      steps: []
+      acceptance:
+        - "Язык UI согласован с language контента."
+
+    - id: IMP-059
+      priority: P2
+      type: improvement
+      status: done ✅
+      title: "Сбор диагностик в ProcessedProductData"
+      scope: ["infrastructure/services/product_processing_service.py"]
+      details: "diagnostics: {'images_count': n, 'has_size_chart': bool, 'ocr_status': 'ok/..'}"
+      steps: []
+      acceptance:
+        - "UI может показать health‑индикаторы."
+
+    - id: IMP-060
+      priority: P2
+      type: doc
+      status: done ✅
+      title: "CONTRIBUTING.md и STYLEGUIDE.md"
+      scope: ["docs/"]
+      details: "Как писать парсеры/экстракторы, как именовать DTO, уровни логов."
+      steps: []
+      acceptance:
+        - "Новые участники быстрее входят в проект."

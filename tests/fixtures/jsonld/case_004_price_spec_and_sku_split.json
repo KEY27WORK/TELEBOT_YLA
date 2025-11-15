@@ -1,0 +1,20 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Puffer Jacket",
+  "image": "https://cdn.example.com/j/jacket_main.avif",
+  "offers": [
+    {
+      "@type": "Offer",
+      "priceSpecification": { "price": "199" },
+      "availability": "InStock",
+      "sku": "Navy - M"
+    },
+    {
+      "@type": "Offer",
+      "priceSpecification": { "price": "199" },
+      "availability": "InStock",
+      "sku": "Navy - L"
+    }
+  ]
+}

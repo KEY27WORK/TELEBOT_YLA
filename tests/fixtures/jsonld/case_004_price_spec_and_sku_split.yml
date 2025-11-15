@@ -1,0 +1,11 @@
+title: "Puffer Jacket"
+price: "199"
+description: ""
+main_image: "https://cdn.example.com/j/jacket_main.avif"
+all_images:
+  - "https://cdn.example.com/j/jacket_main.avif"
+stock_jsonld:
+  Navy:
+    M: true
+    L: true
+stock_legacy: null

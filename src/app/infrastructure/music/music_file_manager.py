@@ -1,184 +1,88 @@
-""" 🎼 music_file_manager.py — менеджер роботи з mp3-треками (завантаження, кешування, парсинг списку).
+# 🎼 app/infrastructure/music/music_file_manager.py
+"""
+🎼 MusicFileManager — керує локальним кешем mp3-файлів.
 
-🔹 Клас:
-- `MusicFileManager` — менеджер:
-    - кешу для mp3
-    - завантаження треків з YouTube
-    - парсинг текстових списків треків
-
-Використовує:
-- yt_dlp
-- FFmpeg (для конвертації в mp3)
-- asyncio для паралельного завантаження
-- logging для логування
+🔹 Отримує шлях до вже збережених треків.
+🔹 Очищує кеш асинхронно у фоні.
+🔹 Нормалізує назви файлів та гарантує наявність директорії.
 """
 
-# 📦 Стандартна бібліотека Python
-import os
-import re
-import glob
-import time
-import logging
-import asyncio
-from typing import List, Optional
+from __future__ import annotations
 
-# 🎵 Зовнішні бібліотеки
-import yt_dlp
-from yt_dlp.utils import DownloadError
+# 🔠 Системні імпорти
+import asyncio	# ⏱️ Виносимо блокувальні операції в thread pool
+import glob	# 🔍 Пошук mp3-файлів у кеші
+import logging	# 🧾 Логування операцій файлового шару
+import os	# 📁 Робота з файловою системою
+import re	# 🧼 Нормалізація імен файлів
+from typing import Optional	# 🧰 Анотації
 
-# 🛠️ Логер
-logger = logging.getLogger(__name__)
+# 🧩 Внутрішні модулі проєкту
+from app.config.config_service import ConfigService
+from app.domain.music.interfaces import IMusicFileManager, RecommendedTrack
+from app.shared.utils.logger import LOG_NAME
+
+# ================================
+# 🧾 ЛОГЕР
+# ================================
+logger = logging.getLogger(LOG_NAME)	# 🧾 Використовуємо загальний логер застосунку
 
 
-class MusicFileManager:
-    """
-    🎵 Менеджер mp3-файлів: кеш, завантаження, парсинг.
-    """
+class MusicFileManager(IMusicFileManager):
+    """🎧 Відповідає лише за файлові операції без завантажень/мережі."""
 
-    CACHE_DIR = "music_cache"
-    MAX_CONCURRENT_DOWNLOADS = 10
-    DOWNLOAD_TIMEOUT = 15
+    def __init__(self, config: ConfigService) -> None:
+        """⚙️ Зберігає шлях до кешу та створює директорію, якщо вона відсутня."""
+        cache_dir = str(config.get("files.music_cache", "music_cache"))	# 🗂️ Шлях із конфігурації
+        self._cache_dir: str = cache_dir	# 🧾 Зберігаємо як атрибут
+        os.makedirs(self._cache_dir, exist_ok=True)	# 🧱 Гарантуємо існування директорії
+        logger.debug("🎧 Music cache directory готовий: %s", self._cache_dir)	# 🪵 Діагностика
 
-    def __init__(self):
-        os.makedirs(self.CACHE_DIR, exist_ok=True)
-
-    def clear_cache(self):
+    # ================================
+    # 📣 ПУБЛІЧНИЙ API
+    # ================================
+    def get_cached_path(self, track: RecommendedTrack) -> Optional[str]:
         """
-        🧹 Безпечне очищення кешу з перевіркою існування файлів.
-        Чекає 2 секунди перед видаленням, щоб уникнути конфліктів з yt-dlp.
-        """
-        time.sleep(2)  # ⏳ Дати ffmpeg і yt-dlp завершити postprocessing
+        Повертає абсолютний шлях до mp3, якщо файл уже є в кеші.
 
-        files = glob.glob(os.path.join(self.CACHE_DIR, "*.mp3"))
-        for f in files:
-            if os.path.exists(f):
-                try:
-                    os.remove(f)
-                    logger.info(f"🧺 Видалено з кешу: {f}")
-                except Exception as e:
-                    logger.warning(f"⚠️ Не вдалося видалити файл {f}: {e}")
+        Args:
+            track: RecommendedTrack (artist + title)
+        """
+        file_path = self._generate_path(track.display_name)	# 📄 Формуємо шлях
+        if os.path.exists(file_path):	# ✅ Кеш-хіт
+            logger.debug("🎧 Кеш-хіт для треку '%s': %s", track.display_name, file_path)
+            return file_path
+        logger.debug("🎧 Кеш-промах для треку '%s'", track.display_name)	# ❌ Немає файлу
+        return None
 
+    async def clear_cache(self) -> None:
+        """🧹 Асинхронне очищення кешу у фоні."""
+        await asyncio.to_thread(self._blocking_clear_cache)	# 🔁 Виносимо блокувальну операцію
 
-    def get_cached_filename(self, track_name: str) -> str:
-        """
-        📁 Генерує шлях до mp3-файлу з очищеною назвою.
-        """
-        clean_name = re.sub(r"[^\w\s\-\(\)\[\]]", "", track_name).strip()
-        clean_name = re.sub(r"\s+", "_", clean_name)
-        return os.path.join(self.CACHE_DIR, f"{clean_name}.mp3")
+    # ================================
+    # ⚙️ ВНУТРІШНІ МЕТОДИ
+    # ================================
+    def _blocking_clear_cache(self) -> None:
+        """🧽 Видаляє всі mp3 з кешу (блокувальна операція)."""
+        logger.info("🧹 Очищення музичного кешу…")	# 🪵 Початок операції
+        pattern = os.path.join(self._cache_dir, "*.mp3")	# 🗂️ Маска для mp3
+        for filepath in glob.glob(pattern):	# 🔁 Перебираємо всі файли
+            try:
+                os.remove(filepath)	# ❌ Видаляємо файл
+                logger.debug("🧺 Видалено з кешу: %s", filepath)	# 🪵 Успіх
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("⚠️ Не вдалося видалити %s: %s", filepath, exc)	# ⚠️ Попередження
 
-    def is_cached(self, track_name: str) -> bool:
-        """
-        📦 Перевіряє, чи трек вже є в кеші.
-        """
-        return os.path.exists(self.get_cached_filename(track_name))
-
-    def download_from_youtube(self, track_name: str) -> str:
-        """
-        📥 Завантажує трек з YouTube і зберігає у вигляді mp3 у кеші.
-        """
-        final_path = self.get_cached_filename(track_name)
-        temp_path = final_path.replace(".mp3", "")
-
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'noplaylist': True,
-            'quiet': True,
-            'outtmpl': temp_path + '.%(ext)s',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
-
-        query = f"ytsearch1:{track_name}"
-        try:
-            logger.info(f"⬇️ Завантаження з YouTube: {track_name}")
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([query])
-
-            if not os.path.exists(final_path):
-                raise FileNotFoundError(f"❌ Трек не збережено як mp3: {track_name}")
-
-            logger.info(f"✅ Успішно завантажено: {track_name}")
-            return final_path
-
-        except DownloadError as de:
-            logger.error(f"🚫 YouTube помилка для '{track_name}': {de}")
-            raise
-        except Exception as e:
-            logger.error(f"❌ Невідома помилка завантаження '{track_name}': {e}")
-            raise
-
-    def find_or_download_track(self, track_name: str) -> str:
-        """
-        🔁 Повертає шлях до mp3: з кешу або після завантаження.
-        """
-        if self.is_cached(track_name):
-            logger.info(f"🎵 Трек знайдено в кеші: {track_name}")
-            return self.get_cached_filename(track_name)
-
-        return self.download_from_youtube(track_name)
-
-    async def async_find_or_download_track(self, name: str) -> str:
-        """
-        ⚡ Асинхронна обгортка для find_or_download_track, виконується в окремому потоці.
-        """
-        return await asyncio.to_thread(self.find_or_download_track, name)
-
-    def download_track(self, track_url: str) -> Optional[str]:
-        """
-        ⬇️ Завантажує один трек через yt_dlp (ytsearch:... або URL). Повертає шлях до mp3.
-        """
-        try:
-            output_template = os.path.join(self.CACHE_DIR, "%(title)s.%(ext)s")
-            ydl_opts = {
-                "format": "bestaudio/best",
-                "outtmpl": output_template,
-                "quiet": True,
-                "noplaylist": True,
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }],
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(track_url, download=True)
-                title = info_dict.get("title", "")
-                filename = os.path.join(self.CACHE_DIR, f"{title}.mp3")
-                return filename if os.path.exists(filename) else None
-        except DownloadError as e:
-            logger.warning(f"❌ Помилка завантаження {track_url}: {e}")
-            return None
-
-    async def _async_download_track(self, url: str) -> Optional[str]:
-        """
-        ⚡ Асинхронне завантаження треку з таймаутом і обмеженням паралельності.
-        """
-        try:
-            async with asyncio.Semaphore(self.MAX_CONCURRENT_DOWNLOADS):
-                return await asyncio.wait_for(
-                    asyncio.to_thread(self.download_track, url),
-                    timeout=self.DOWNLOAD_TIMEOUT
-                )
-        except Exception as e:
-            logger.warning(f"⚠️ Не вдалося завантажити {url}: {e}")
-            return None
-
-    async def download_multiple_tracks(self, urls: List[str]) -> List[str]:
-        """
-        🚀 Паралельне завантаження до 10 треків одночасно. Повертає тільки успішні.
-        """
-        tasks = [self._async_download_track(url) for url in urls]
-        results = await asyncio.gather(*tasks)
-        return [r for r in results if r]
+    def _generate_path(self, name: str) -> str:
+        """📁 Формує детермінований шлях до mp3 у кеші."""
+        clean = self._clean_track_name(name)	# 🧼 Нормалізоване імʼя файлу
+        return os.path.join(self._cache_dir, f"{clean}.mp3")	# 📎 Повний шлях
 
     @staticmethod
-    def parse_song_list(text: str) -> list[str]:
-        """
-        📜 Парсить список треків із тексту.
-        """
-        lines = text.strip().split("\n")
-        return [line.split(". ", 1)[1].strip() for line in lines if ". " in line]
+    def _clean_track_name(name: str) -> str:
+        """🧼 Фільтрує назву треку: дозволяє [a-zA-Z0-9] + пробіли + -_()[]."""
+        filtered = re.sub(r"[^\w\s\-\(\)\[\]]", "", name or "").strip()	# 🧹 Видаляємо заборонені символи
+        return re.sub(r"\s+", "_", filtered)	# 🔁 Замінюємо пробіли на підкреслення
+
+
+__all__ = ["MusicFileManager"]	# 📦 Експортований інтерфейс модуля

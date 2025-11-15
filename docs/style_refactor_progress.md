@@ -1,0 +1,142 @@
+# 📋 Статус стилізації src/app
+
+Відстежуємо прогрес приведення файлів до STYLEGUIDE.
+
+## Активний список
+
+- [ ] `src/app/bot/commands/base.py`
+- [ ] `src/app/bot/commands/core_commands_feature.py`
+- [ ] `src/app/bot/commands/currency_feature.py`
+- [ ] `src/app/bot/commands/main_menu_feature.py`
+- [ ] `src/app/bot/handlers/callback_handler.py`
+- [ ] `src/app/bot/handlers/link_handler.py`
+- [ ] `src/app/bot/handlers/price_calculator_handler.py`
+- [ ] `src/app/bot/handlers/product/collection_handler.py`
+- [ ] `src/app/bot/handlers/product/collection_runner.py`
+- [ ] `src/app/bot/handlers/product/image_sender.py`
+- [ ] `src/app/bot/handlers/product/product_handler.py`
+- [ ] `src/app/bot/handlers/size_chart_handler_bot.py`
+- [ ] `src/app/bot/main.py`
+- [ ] `src/app/bot/services/callback_data_factory.py`
+- [ ] `src/app/bot/services/callback_registry.py`
+- [ ] `src/app/bot/services/custom_context.py`
+- [ ] `src/app/bot/services/types.py`
+- [x] `src/app/bot/ui/error_presenter.py`
+- [x] `src/app/bot/ui/formatters/message_formatter.py`
+- [x] `src/app/bot/ui/formatters/price_report_formatter.py`
+- [x] `src/app/bot/ui/keyboards/keyboards.py`
+- [x] `src/app/bot/ui/messengers/availability_messenger.py`
+- [x] `src/app/bot/ui/messengers/product_messenger.py`
+- [x] `src/app/bot/ui/messengers/size_chart_messenger.py`
+- [ ] `src/app/bot/ui/static_messages.py`
+- [ ] `src/app/config/config_service.py`
+- [ ] `src/app/config/setup/bot_registrar.py`
+- [ ] `src/app/config/setup/constants.py`
+- [ ] `src/app/config/setup/container.py`
+- [ ] `src/app/domain/ai/interfaces/prompt_service_interface.py`
+- [ ] `src/app/domain/ai/task_contracts.py`
+- [ ] `src/app/domain/availability/interfaces.py`
+- [ ] `src/app/domain/availability/services.py`
+- [ ] `src/app/domain/availability/sorting_strategies.py`
+- [ ] `src/app/domain/availability/status.py`
+- [ ] `src/app/domain/content/interfaces.py`
+- [ ] `src/app/domain/currency/interfaces.py`
+- [ ] `src/app/domain/delivery/interfaces.py`
+- [ ] `src/app/domain/image_generation/interfaces.py`
+- [ ] `src/app/domain/music/interfaces.py`
+- [ ] `src/app/domain/pricing/interfaces.py`
+- [ ] `src/app/domain/pricing/rounding.py`
+- [ ] `src/app/domain/pricing/services.py`
+- [ ] `src/app/domain/products/entities.py`
+- [ ] `src/app/domain/products/interfaces.py`
+- [ ] `src/app/domain/products/services/weight_resolver.py`
+- [ ] `src/app/domain/size_chart/interfaces.py`
+- [ ] `src/app/domain/web/interfaces.py`
+- [ ] `src/app/errors/custom_errors.py`
+- [ ] `src/app/errors/error_handler.py`
+- [ ] `src/app/errors/exception_handler_service.py`
+- [ ] `src/app/errors/reason_codes.py`
+- [ ] `src/app/errors/reason_mapper.py`
+- [ ] `src/app/errors/strategies.py`
+- [ ] `src/app/infrastructure/adapters/hashtag_adapter.py`
+- [ ] `src/app/infrastructure/adapters/price_facade.py`
+- [ ] `src/app/infrastructure/ai/ai_task_service.py`
+- [ ] `src/app/infrastructure/ai/open_ai_serv.py`
+- [ ] `src/app/infrastructure/ai/prompt_service.py`
+- [ ] `src/app/infrastructure/ai/telemetry_ai.py`
+- [ ] `src/app/infrastructure/availability/availability_handler.py`
+- [ ] `src/app/infrastructure/availability/availability_i18n.py`
+- [ ] `src/app/infrastructure/availability/availability_manager.py`
+- [ ] `src/app/infrastructure/availability/availability_processing_service.py`
+- [ ] `src/app/infrastructure/availability/cache_service.py`
+- [ ] `src/app/infrastructure/availability/formatter.py`
+- [ ] `src/app/infrastructure/availability/metrics.py`
+- [ ] `src/app/infrastructure/availability/report_builder.py`
+- [ ] `src/app/infrastructure/collection_processing/collection_processing_service.py`
+- [ ] `src/app/infrastructure/content/alt_text_generator.py`
+- [ ] `src/app/infrastructure/content/gender_classifier.py`
+- [ ] `src/app/infrastructure/content/hashtag_generator.py`
+- [ ] `src/app/infrastructure/content/product_content_service.py`
+- [ ] `src/app/infrastructure/content/product_header_service.py`
+- [ ] `src/app/infrastructure/currency/currency_converter.py`
+- [ ] `src/app/infrastructure/currency/currency_manager.py`
+- [ ] `src/app/infrastructure/data_storage/weight_data_service.py`
+- [ ] `src/app/infrastructure/delivery/meest_delivery_service.py`
+- [ ] `src/app/infrastructure/image_generation/font_service.py`
+- [ ] `src/app/infrastructure/music/music_file_manager.py`
+- [ ] `src/app/infrastructure/music/music_recommendation.py`
+- [ ] `src/app/infrastructure/music/music_sender.py`
+- [ ] `src/app/infrastructure/music/yt_downloader.py`
+- [ ] `src/app/infrastructure/parsers/_infra_options.py`
+- [ ] `src/app/infrastructure/parsers/base_parser.py`
+- [ ] `src/app/infrastructure/parsers/collections/universal_collection_parser.py`
+- [ ] `src/app/infrastructure/parsers/contracts.py`
+- [ ] `src/app/infrastructure/parsers/extractors/base.py`
+- [ ] `src/app/infrastructure/parsers/extractors/description.py`
+- [ ] `src/app/infrastructure/parsers/extractors/images.py`
+- [ ] `src/app/infrastructure/parsers/extractors/json_ld.py`
+- [ ] `src/app/infrastructure/parsers/factory_adapter.py`
+- [ ] `src/app/infrastructure/parsers/html_data_extractor.py`
+- [ ] `src/app/infrastructure/parsers/parser_factory.py`
+- [ ] `src/app/infrastructure/parsers/product_search/search_resolver.py`
+- [ ] `src/app/infrastructure/services/facades/availability_facade.py`
+- [ ] `src/app/infrastructure/services/facades/music_facade.py`
+- [ ] `src/app/infrastructure/services/product_processing_service.py`
+- [ ] `src/app/infrastructure/size_chart/generators/base_generator.py`
+- [ ] `src/app/infrastructure/size_chart/generators/general_table_generator.py`
+- [ ] `src/app/infrastructure/size_chart/generators/unique_grid_table_generator.py`
+- [ ] `src/app/infrastructure/size_chart/generators/unique_table_generator.py`
+- [ ] `src/app/infrastructure/size_chart/image_downloader.py`
+- [ ] `src/app/infrastructure/size_chart/ocr_service.py`
+- [ ] `src/app/infrastructure/size_chart/services/table_geometry_service.py`
+- [ ] `src/app/infrastructure/size_chart/size_chart_service.py`
+- [ ] `src/app/infrastructure/size_chart/table_generator_factory.py`
+- [ ] `src/app/infrastructure/size_chart/youngla_finder.py`
+- [ ] `src/app/infrastructure/url/youngla_strategy.py`
+- [ ] `src/app/infrastructure/web/webdriver_service.py`
+- [ ] `src/app/shared/cache/html_lru_cache.py`
+- [ ] `src/app/shared/errors.py`
+- [ ] `src/app/shared/metrics/content.py`
+- [ ] `src/app/shared/metrics/exporters.py`
+- [ ] `src/app/shared/metrics/ocr.py`
+- [ ] `src/app/shared/metrics/parsing.py`
+- [ ] `src/app/shared/utils/collections.py`
+- [ ] `src/app/shared/utils/immutables.py`
+- [ ] `src/app/shared/utils/interfaces.py`
+- [ ] `src/app/shared/utils/locale.py`
+- [ ] `src/app/shared/utils/logger.py`
+- [ ] `src/app/shared/utils/number.py`
+- [ ] `src/app/shared/utils/prompt_loader.py`
+- [ ] `src/app/shared/utils/prompt_service.py`
+- [ ] `src/app/shared/utils/prompts.py`
+- [ ] `src/app/shared/utils/result.py`
+- [ ] `src/app/shared/utils/size_norm.py`
+- [ ] `src/app/shared/utils/url_parser_service.py`
+
+## Відкладено (DTO / прості файли)
+
+- [ ] `src/app/domain/products/dto.py`
+- [ ] `src/app/infrastructure/ai/dto.py`
+- [ ] `src/app/infrastructure/availability/dto.py`
+- [ ] `src/app/infrastructure/size_chart/dto.py`
+

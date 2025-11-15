@@ -1,0 +1,103 @@
+# ⚙️ app/config/yamls/base/15_parser_selectors.yaml
+# 🧩 Селектори парсера + бренд-overrides
+# Нормалізація описів тепер живе в `app/i18n/<locale>.yml` (IMP-015), а фільтри зображень — у `parser.images` (IMP-018).
+
+# ================================
+# 🧷 КОНФІГ ПАРСЕРА
+# ================================
+parser:
+  selectors:
+    brand: "youngla"                              # 🧾 Активний бренд (можна перекрити у 99_local.yaml)
+
+    # ================================
+    # 🧱 ГЛОБАЛЬНІ ДЕФОЛТИ
+    # ================================
+    defaults:
+      TITLE_LIST:
+        - "h1.product-title"
+        - "h1.product__title"
+        - "h1[itemprop='name']"
+        - "meta[property='og:title']"
+        - "title"
+
+      PRICE_LIST:
+        - ".price__current, .price--large, .product__price .price"
+        - ".product-price, .sale-price, .price-item--regular, .price-item--sale"
+        - "meta[itemprop='price']"
+
+      MAIN_IMAGE_LIST:
+        - 'meta[property="og:image"]'
+        - ".product__media img[src], .product-gallery__image img[src]"
+        - "img#FeaturedMedia-product-template[src]"
+
+      ALL_IMAGES_LIST:
+        - ".product-gallery__image-list img[src]"
+        - ".product-gallery__thumbnail img[src]"
+        - ".product-gallery__thumbnail-list img[src]"
+
+      DESCRIPTION_CONTAINER_LIST:
+        - '.product-info__block-item[data-block-type="description"] .prose'
+        - 'div[data-block-type="description"] .prose'
+        - "div.product__description, div#ProductAccordion-product-description .prose"
+        - "div#product-description, section.product-description, .rte.product__description, .prose"
+
+      JSON_LD_SCRIPT: 'script[type="application/ld+json"]'              # 📄 JSON-LD з товарами
+
+      LEGACY_STOCK_SELECTORS:
+        - "script#ProductJson"                                          # 🧾 Shopify JSON
+        - 'script[data-product-json="true"]'
+        - "script"                                                      # 🧪 Фолбек
+
+    # ================================
+    # 🎯 БРЕНДОВІ OVERRIDES
+    # ================================
+    brands:
+      youngla:
+        TITLE_LIST:
+          - "h1.product-title"
+          - "h1[itemprop='name']"
+          - "title"
+        DESCRIPTION_CONTAINER_LIST:
+          - "div.product__description, .prose"
+
+        images:                                    # 📸 Override фільтрів зображень
+          allowed_ext:
+            - ".jpg"
+            - ".jpeg"
+            - ".png"
+            - ".webp"
+          bad_tokens:
+            - "sprite"
+            - "logo"
+            - "icon"
+            - "placeholder"
+            - "thumb"
+            - "badge"
+          min_side_px: 160
+
+  # ================================
+  # 🖼️ ФІЛЬТРИ ЗОБРАЖЕНЬ (ГЛОБАЛЬНІ)
+  # ================================
+  images:
+    allowed_ext:                                  # ✅ Дозволені розширення (case-insensitive)
+      - ".jpg"
+      - ".jpeg"
+      - ".png"
+      - ".webp"
+      - ".avif"
+
+    bad_tokens:                                   # 🧹 Відкидаємо сміттєві зображення
+      - "sprite"
+      - "favicon"
+      - "logo"
+      - "icon"
+      - "spinner"
+      - "loading"
+      - "placeholder"
+      - "badge"
+      - "swatch"
+      - "thumb"
+      - "minicart"
+      - "lazy"
+
+    min_side_px: 120                               # 📐 Мінімальний розмір (парсимо _80x, /w80/, width_80)
