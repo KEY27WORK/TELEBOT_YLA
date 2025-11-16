@@ -151,6 +151,26 @@ class ProductProcessingService:
             self.size_chart_service is not None,
         )
 
+    @staticmethod
+    def _extract_sku_from_url(url: str) -> Optional[str]:
+        """Повертає SKU з YoungLA URL (`/products/<sku>`), якщо його можна виокремити."""
+
+        if not isinstance(url, str):
+            return None
+
+        raw = url.strip()
+        if not raw:
+            return None
+
+        candidate = raw
+        if "://" in raw:
+            path_part = raw.split("://", 1)[1]
+            candidate = path_part.rsplit("/", 1)[-1]
+
+        candidate = candidate.split("?", 1)[0].split("#", 1)[0].strip()
+
+        return candidate or None
+
     # ================================
     # 🔗 ПУБЛІЧНЕ API
     # ================================
@@ -168,6 +188,8 @@ class ProductProcessingService:
                 message,
             )
 
+        product_sku = self._extract_sku_from_url(url)					# 🔖 Прагнемо витягнути артикул з URL
+
         # 1) Парсимо картку
         try:
             parser = self.parser_factory.create_product_parser(url)			# 🧩 Підбираємо парсер
@@ -184,7 +206,6 @@ class ProductProcessingService:
                 "Не вдалося обробити сторінку товару.",
                 cause=exc,
             )
-
         if not isinstance(product_info, ProductInfo) or not (product_info.title or "").strip():
             logger.error("❌ Не вдалося отримати базову інформацію про товар: %s", url)
             return ProductProcessingResult.fail(
@@ -262,9 +283,12 @@ class ProductProcessingService:
         sc_status = "not_run"												# 🧬 Початковий статус OCR
         page_source = getattr(parser, "page_source", "") or ""				# 🧾 HTML для diagnostics
 
-        if self.size_chart_service is not None and page_source:			# ✅ Сервіс доступний і маємо HTML
+        if self.size_chart_service is not None and page_source:		# ✅ Сервіс доступний і маємо HTML
             try:
-                chart_paths = await self.size_chart_service.process_all_size_charts(page_source)  # 📏 Запускаємо пайплайн
+                chart_paths = await self.size_chart_service.process_all_size_charts(
+                    page_source,
+                    product_sku=product_sku,
+                )  # 📏 Запускаємо пайплайн з урахуванням SKU
                 sc_has_chart = bool(chart_paths)							# 📌 Виставляємо прапорець
                 sc_status = "ok" if sc_has_chart else "not_found"			# 🧾 Статус OCR
                 logger.debug("📏 SizeChart результат: %s (%s)", sc_status, chart_paths)

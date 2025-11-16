@@ -279,18 +279,18 @@ class SizeChartService(ISizeChartService):
         if env_dl and env_dl.isdigit():										# 🌐 Якщо задано env — воно має пріоритет
             self._dl_max = int(env_dl)											# 🔌 Жорстке значення з env
         else:
-            self._dl_max = dl_cfg if dl_cfg is not None else dl_auto			# ⚙️ Конфіг чи авто
+            self._dl_max = dl_cfg if dl_cfg is not None else dl_auto			# ⚙️ Конфігурація чи авто
         self._dl_max = max(dl_min, min(dl_cap, self._dl_max))					# 🧮 Затискаємо в межах
 
         ocr_auto = max(1, min(8, cpu // 2))									# 🔧 Автоліміт для CPU/API
-        ocr_cfg = cast(Optional[int], self._cfg.get("size_chart.concurrency.ocr.max", None, int))		# ⚙️ Конфіг генерації/OCR
+        ocr_cfg = cast(Optional[int], self._cfg.get("size_chart.concurrency.ocr.max", None, int))		# ⚙️ Конфігурація генерації/OCR
         ocr_min = cast(int, self._cfg.get("size_chart.concurrency.ocr.min", 1, int) or 1)				# 🪙 Мінімальний CPU-паралелізм
         ocr_cap = cast(int, self._cfg.get("size_chart.concurrency.ocr.max_cap", 8, int) or 8)			# 🧱 Верхня межа CPU
         env_ocr = os.getenv("SIZE_CHART_OCR_MAX")								# 🌐 Env-override для OCR
         if env_ocr and env_ocr.isdigit():									# 🌐 Якщо задано env — воно має пріоритет
             self._ocr_max = int(env_ocr)										# 🔌 Жорстке значення з env
         else:
-            self._ocr_max = ocr_cfg if ocr_cfg is not None else ocr_auto		# ⚙️ Конфіг чи авто
+            self._ocr_max = ocr_cfg if ocr_cfg is not None else ocr_auto		# ⚙️ Конфігурація чи авто
         self._ocr_max = max(ocr_min, min(ocr_cap, self._ocr_max))				# 🧮 Затискаємо в межах
 
         if self._LEGACY_MAX_CONCURRENCY > 0:									# 🪢 Історичне загальне обмеження
@@ -332,18 +332,17 @@ class SizeChartService(ISizeChartService):
     async def process_all_size_charts(
         self,
         page_source: str,
+        product_sku: Optional[str] = None,
         on_progress: Optional[ProgressFn] = None,
     ) -> List[str]:
-        """
-        🚀 Обробляє всі таблиці розмірів у переданому HTML.
+        """Оркеструє повний цикл пошуку/обробки size-chart для переданого HTML.
 
         Args:
-            page_source (str): HTML-код сторінки з таблицями.
-            on_progress (ProgressFn | None): Локальний слухач прогресу (перекриває глобальний).
-
-        Returns:
-            List[str]: Шляхи до сгенерованих PNG-файлів.
+            page_source: Сирий HTML сторінки товару.
+            product_sku: Артикул, який допомагає точніше знайти таблиці.
+            on_progress: Опційний callback прогресу.
         """
+
         original_callback = self.on_progress									# 🔁 Зберігаємо поточний колбек
         if on_progress is not None:										# 🔄 Підміняємо глобальний колбек на локальний
             self.on_progress = on_progress										# 🎯 Тимчасово підміняємо його
@@ -362,7 +361,10 @@ class SizeChartService(ISizeChartService):
                 return []													# ↩️ Пайплайн уже скасований
 
             started_at = time.time()										# 🕒 Запам'ятовуємо час початку
-            images_to_process = self.finder.find_images(page_source)		# 🔎 Шукаємо кандидати
+            images_to_process = self.finder.find_images(
+                page_source,
+                product_sku=product_sku,
+            )		# 🔎 Шукаємо кандидати з урахуванням SKU
             if not images_to_process:										# ℹ️ Немає що обробляти
                 logger.info("ℹ️ Таблиці розмірів не знайдено.")
                 return []													# ↩️ Пустий результат без помилок

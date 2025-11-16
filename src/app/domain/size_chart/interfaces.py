@@ -69,8 +69,18 @@ class ISizeChartFinder(Protocol):
     Контракт пошуку таблиць розмірів у HTML (розбір DOM/regex тощо).
     """
 
-    def find_images(self, page_source: str) -> List[Tuple[Url, ChartType]]:
-        """Повертає список пар (URL зображення, тип таблиці)."""
+    def find_images(
+        self,
+        page_source: str,
+        product_sku: Optional[str] = None,
+    ) -> List[Tuple[Url, ChartType]]:
+        """
+        Повертає список пар (URL зображення, тип таблиці).
+
+        Args:
+            page_source: HTML-джерело сторінки.
+            product_sku: Артикул товару (наприклад, "W542"), якщо відомий.
+        """
         ...
 
 
@@ -86,9 +96,17 @@ class ISizeChartService(Protocol):
     async def process_all_size_charts(
         self,
         page_source: str,
+        product_sku: Optional[str] = None,
         on_progress: Optional[ProgressFn] = None,
     ) -> List[str]:
-        """Повертає список шляхів до згенерованих таблиць (PNG/зображення)."""
+        """
+        Повертає список шляхів до згенерованих таблиць (PNG/зображення).
+
+        Args:
+            page_source: HTML-код сторінки товару.
+            product_sku: Артикул товару (наприклад, "W542"), якщо відомий.
+            on_progress: Колбек прогресу.
+        """
         ...
 
 

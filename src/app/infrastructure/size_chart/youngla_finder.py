@@ -55,6 +55,9 @@ _GRID_HITS: Tuple[str, ...] = ("grid", "size-grid", "size_grid")  # 🗺️ За
 _ATTR_HINTS_UNIQUE: Tuple[str, ...] = ("data-size-chart", "data-size", "data-sizes")  # 🏷️ Атрибути унікальних таблиць
 _ATTR_HINTS_GENERAL: Tuple[str, ...] = ("data-women-size", "data-women-chart")        # 🏷️ Атрибути жіночих таблиць
 
+_CDN_HOST_HINTS: Tuple[str, ...] = ("cdn.shopify.com",)  # 🏬 Shopify CDN для YoungLA
+_CDN_PATH_MARKERS: Tuple[str, ...] = ("/s/files/1/1775/6429/files/",)  # 📂 Типова директорія size-chart PNG
+
 
 # ================================
 # 🔧 ДОПОМІЖНІ ФУНКЦІЇ
@@ -150,7 +153,30 @@ def _img_src_candidates(img: Tag) -> Iterator[str]:
                             yield value
 
 
-def _classify(url_lower: str, img_tag: Tag) -> Optional[ChartType]:
+def _matches_sku(filename: str, product_sku: str) -> bool:
+    """Перевіряє, чи містить ім'я файлу артикул товару."""
+    if not filename or not product_sku:
+        return False                                                    # ⛔ Немає даних для порівняння
+
+    fname = filename.lower()                                           # 🔡 Нормалізуємо ім'я файлу
+    sku = product_sku.strip().lower()                                  # 🔡 Нормалізуємо SKU
+    if not sku:
+        return False
+
+    sku_main = sku.split()[0]                                          # ✂️ Беремо перше слово ("w542", "2047")
+    candidates = {sku_main}                                            # 🧺 Основний кандидат
+
+    if len(sku_main) > 1 and sku_main[0].isalpha() and sku_main[1:].isdigit():
+        candidates.add(sku_main[1:])                                   # 🔁 Додаємо варіант без префікса ("542")
+
+    return any(candidate in fname for candidate in candidates)         # ✅ Збіг знайдено
+
+
+def _classify(
+    url_lower: str,
+    img_tag: Tag,
+    product_sku: Optional[str] = None,
+) -> Optional[ChartType]:
     """
     Визначає тип таблиці (`ChartType`) на основі URL та атрибутів.
     Порядок перевірок: строгі хіт-листи → data-атрибути → alt/title.
@@ -183,6 +209,17 @@ def _classify(url_lower: str, img_tag: Tag) -> Optional[ChartType]:
         if "grid" in alt_title and "size" in alt_title:
             return ChartType.UNIQUE_GRID                                # 🗺️ Таблиці-сітки (height/weight)
 
+    # 🧩 CDN + SKU як додатковий сигнал
+    if product_sku:
+        filename = url_lower.rsplit("/", 1)[-1]
+        if (
+            filename.endswith(".png")
+            and any(host in url_lower for host in _CDN_HOST_HINTS)
+            and any(marker in url_lower for marker in _CDN_PATH_MARKERS)
+            and _matches_sku(filename, product_sku)
+        ):
+            return ChartType.UNIQUE                                     # 🧬 Унікальна таблиця для конкретного артикулу
+
     return None                                                         # ❔ Тип не визначено
 
 
@@ -195,12 +232,17 @@ class YoungLASizeChartFinder(ISizeChartFinder):
     def __init__(self) -> None:
         logger.debug("🔎 YoungLASizeChartFinder ініціалізований.")
 
-    def find_images(self, page_source: str) -> List[Tuple[Url, ChartType]]:
+    def find_images(
+        self,
+        page_source: str,
+        product_sku: Optional[str] = None,
+    ) -> List[Tuple[Url, ChartType]]:
         """
         Повертає список `(url, ChartType)` — відсортований за пріоритетом.
 
         Args:
             page_source: HTML-джерело сторінки (повинно бути непорожнім).
+            product_sku: Артикул товару для посилення евристик (опційно).
         """
         if not isinstance(page_source, str) or not page_source.strip():          # 🛡️ Валідація вхідних даних
             logger.warning("⚠️ Порожній page_source для YoungLASizeChartFinder")
@@ -240,7 +282,7 @@ class YoungLASizeChartFinder(ISizeChartFinder):
                     if not url or url in seen:                                   # 🛑 Пропускаємо порожні/дубльовані
                         continue
 
-                    chart_type = _classify(url.lower(), img)                     # 🧮 Спробуємо визначити тип
+                    chart_type = _classify(url.lower(), img, product_sku=product_sku)  # 🧮 Спробуємо визначити тип з огляду на SKU
                     if chart_type is None:
                         seen.add(url)                                            # 📌 Не size-chart → ігноруємо надалі
                         continue

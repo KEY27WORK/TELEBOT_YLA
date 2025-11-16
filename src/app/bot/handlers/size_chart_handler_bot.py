@@ -131,9 +131,14 @@ class SizeChartHandlerBot:
 
             # 3) Обробити всі таблиці (з таймаутом)
             await self._send_text_safe(update, context, msg.SIZE_CHART_IN_PROGRESS)		# 🔧 Старт обробки таблиць (OCR/генерація)
+
+            product_sku = self._extract_product_sku(final_url or (args[0] if args else None))	# 🆔 Витягуємо артикул товару (URL чи прямий ввід)
             try:
                 image_paths = await asyncio.wait_for(										# 🖼️ Отримуємо шляхи до згенерованих зображень
-                    self.size_chart_service.process_all_size_charts(page_source),
+                    self.size_chart_service.process_all_size_charts(
+                        page_source,
+                        product_sku=product_sku,
+                    ),
                     timeout=_SIZECHART_TIMEOUT_SEC,
                 )
             except asyncio.TimeoutError:
@@ -155,6 +160,26 @@ class SizeChartHandlerBot:
     # ==========================
     # 🧰 ДОПОМІЖНЕ
     # ==========================
+    @staticmethod
+    def _extract_product_sku(source: Optional[str]) -> Optional[str]:
+        """Пробує витягнути артикул (SKU) з URL або сирого рядка."""
+
+        if not isinstance(source, str):
+            return None
+
+        raw = source.strip()
+        if not raw:
+            return None
+
+        candidate = raw
+        if "://" in raw:
+            path_part = raw.split("://", 1)[1]
+            candidate = path_part.rsplit("/", 1)[-1]
+
+        candidate = candidate.split("?", 1)[0].split("#", 1)[0].strip()
+
+        return candidate or None
+
     async def _send_text_safe(
         self,
         update: Update,
