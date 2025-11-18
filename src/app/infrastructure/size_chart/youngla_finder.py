@@ -154,7 +154,14 @@ def _img_src_candidates(img: Tag) -> Iterator[str]:
 
 
 def _matches_sku(filename: str, product_sku: str) -> bool:
-    """Перевіряє, чи містить ім'я файлу артикул товару."""
+    """
+    Перевіряє, чи містить ім'я файлу артикул товару.
+
+    Підтримує варіанти:
+      • "W3155_SIZE_CHART.png"  → sku "W3155"
+      • "w3155.png"             → sku "w3155"
+      • "2047_f3946...png"      → sku "2047"
+    """
     if not filename or not product_sku:
         return False                                                    # ⛔ Немає даних для порівняння
 
@@ -179,9 +186,14 @@ def _classify(
 ) -> Optional[ChartType]:
     """
     Визначає тип таблиці (`ChartType`) на основі URL та атрибутів.
-    Порядок перевірок: строгі хіт-листи → data-атрибути → alt/title.
+
+    Порядок:
+      1) Жорсткі хіти за URL
+      2) data-атрибути
+      3) alt/title
+      4) CDN+SKU як додаткова евристика
     """
-    # 📌 Строгі хіти за URL
+    # 1️⃣ Строгі хіти за URL
     if any(hit in url_lower for hit in _GENERAL_HITS):
         return ChartType.GENERAL
     if any(hit in url_lower for hit in _UNIQUE_HITS) and "women-size-chart" not in url_lower:
@@ -189,7 +201,7 @@ def _classify(
     if any(hit in url_lower for hit in _GRID_HITS):
         return ChartType.UNIQUE_GRID
 
-    # 🏷️ Евіристики за data-атрибутами
+    # 2️⃣ Евристики за data-атрибутами
     for key in _ATTR_HINTS_UNIQUE:
         if img_tag.has_attr(key):                                       # 🏷️ Унікальні таблиці позначаються data-атрибутами
             return ChartType.UNIQUE
@@ -197,7 +209,7 @@ def _classify(
         if img_tag.has_attr(key):                                       # 🏷️ Жіночі таблиці часто мають спеціальні мітки
             return ChartType.GENERAL
 
-    # 🔍 Alt/title як слабкі сигнали
+    # 3️⃣ Alt/title як слабкі сигнали
     alt_title = (
         _first_truthy(_attr_str(img_tag, "alt"), _attr_str(img_tag, "title")) or ""
     ).lower()                                                           # 🔍 Аналізуємо текстові підказки (alt/title)
@@ -209,9 +221,10 @@ def _classify(
         if "grid" in alt_title and "size" in alt_title:
             return ChartType.UNIQUE_GRID                                # 🗺️ Таблиці-сітки (height/weight)
 
-    # 🧩 CDN + SKU як додатковий сигнал
+    # 4️⃣ CDN + SKU як слабкий, але корисний сигнал
     if product_sku:
-        filename = url_lower.rsplit("/", 1)[-1]
+        base_url = url_lower.split("?", 1)[0]                            # ⚙️ Відрізаємо query типу ?v=1762650190
+        filename = base_url.rsplit("/", 1)[-1]
         if (
             filename.endswith(".png")
             and any(host in url_lower for host in _CDN_HOST_HINTS)
