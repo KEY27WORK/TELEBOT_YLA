@@ -48,6 +48,7 @@ class ProductContentDTO:
     price_message: str                                               # 💸 Повідомлення ціни
     images: List[str]                                                # 🖼️ URL зображень
     alt_texts: Dict[str, str]                                        # 🔎 ALT-тексти url → alt
+    alt_fallback_used: bool                                          # 🛠️ Чи був застосований ALT-фолбек
 
 
 __all__ = ["ProductContentDTO", "ProductContentService"]
@@ -132,6 +133,7 @@ class ProductContentService:
         image_candidates = [img for img in images if isinstance(img, str) and img]  # 🖼️ нормалізуємо URL
         if not image_candidates:
             image_candidates = [img for img in (product.images or ()) if isinstance(img, str) and img]  # ↩️ fallback
+        alt_fallback_used = False                                       # 🛠️ Чи були ALT-фолбеки
 
         if self._alt and image_candidates:
             try:
@@ -143,6 +145,7 @@ class ProductContentService:
             except Exception as alt_err:
                 logger.warning("⚠️ ALT-генерація не вдалася: %s", alt_err)  # ⚠️ не валимо пайплайн
                 alt_texts = {}                                            # ↩️ Порожні ALT
+                alt_fallback_used = True
 
         raw_parser_sections: Dict[str, str] = {
             str(k): str(v)
@@ -170,6 +173,7 @@ class ProductContentService:
             price_message=price_message or "",
             images=image_candidates,
             alt_texts=alt_texts,
+            alt_fallback_used=alt_fallback_used,
         )
         logger.info("✅ Контент збудовано: %s", product.title)
         return dto

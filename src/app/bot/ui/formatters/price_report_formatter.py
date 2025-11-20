@@ -222,11 +222,13 @@ class PriceReportFormatter:
 
         sale_multi = self._format_multi_currency(details.sale_price, converter, region_code)              # 💵 Продажна ціна
         sale_rounded_multi = self._format_multi_currency(details.sale_price_rounded, converter, region_code)  # 💢 Округлена ціна
+        base_price_multi = self._format_multi_currency(details.base_price, converter, region_code)        # 💲 Стартова ціна
         discounted_multi = self._format_multi_currency(details.discounted_price, converter, region_code)  # 🎯 Ціна після знижки
         local_delivery_multi = self._format_multi_currency(details.local_delivery, converter, region_code)    # 📦 Локальна доставка
         intl_delivery_multi = self._format_multi_currency(details.international_delivery, converter, region_code)  # ✈️ Міжнародна доставка
         full_delivery_multi = self._format_multi_currency(details.full_delivery, converter, region_code)    # 🚚 Повна доставка
         protection_multi = self._format_multi_currency(details.protection, converter, region_code)         # 🛡️ Страхування
+        meest_insurance_multi = self._format_multi_currency(details.meest_insurance, converter, region_code)  # 🛡️ Страхування Meest
         cost_base_multi = self._format_multi_currency(details.cost_without_delivery, converter, region_code)  # 🧾 Собівартість без доставки
         cost_total_multi = self._format_multi_currency(details.cost_price, converter, region_code)          # 🧾 Собівартість з доставкою
         profit_multi = self._format_multi_currency(details.profit, converter, region_code)                 # 📊 Прибуток
@@ -247,9 +249,11 @@ class PriceReportFormatter:
             "",
             f"💱 Валюта звіту: <b>{target_currency}</b>",
             "",
+            f"💲 Стартова ціна: {base_price_multi}",
             f"💵 Ціна продажу: {sale_multi}",
             f"💢 Округлена ціна: {sale_rounded_multi}",
             f"🎯 Ціна після знижки: {discounted_multi}",
+            f"🎁 Знижка: {details.discount_percent:.2f}%",
             f"🔁 Дельта округлення: {round_delta_multi} (UAH: {details.round_delta_uah:.2f})",
             "",
             f"⚖️ Вага: {details.weight_lbs:.2f} фунтів",
@@ -257,16 +261,32 @@ class PriceReportFormatter:
             f"📦 Meest доставка: {intl_delivery_multi}",
             f"🚚 Повна доставка до {self._UA_FLAG} {self._UA_NAME} з {origin_flag} {origin_label}: {full_delivery_multi}",
             f"🛡️ Страховка Navidium: {protection_multi}",
-            "",
-            f"🏷️ Собівартість без доставки: {cost_base_multi}",
-            f"🏷️ Собівартість з доставкою: {cost_total_multi}",
-            "",
-            f"📉 Корекція націнки: {details.markup_adjustment:+.2f} п.п.",
-            f"📈 Націнка: {details.markup:.2f}%",
-            "",
-            f"📊 Чистий прибуток: {profit_multi}",
-            f"📊 Прибуток (після округлення): {profit_rounded_multi}",
         ]
+
+        meest_insurance_amount = self._to_decimal(details.meest_insurance.amount)
+        if details.meest_insurance_mode != "none" and meest_insurance_amount > Decimal("0"):
+            mode_hint = details.meest_insurance_mode
+            if details.meest_insurance_percent is not None:
+                percent_value = self._to_decimal(details.meest_insurance_percent)
+            else:
+                percent_value = Decimal("0")
+            if percent_value > Decimal("0"):
+                mode_hint = f"{self._format_decimal(percent_value)}%"
+            lines.append(f"🛡️ Страховка Meest: {meest_insurance_multi} ({mode_hint})")
+
+        lines.extend(
+            [
+                "",
+                f"🏷️ Собівартість без доставки: {cost_base_multi}",
+                f"🏷️ Собівартість з доставкою: {cost_total_multi}",
+                "",
+                f"📉 Корекція націнки: {details.markup_adjustment:+.2f} п.п.",
+                f"📈 Націнка: {details.markup:.2f}%",
+                "",
+                f"📊 Чистий прибуток: {profit_multi}",
+                f"📊 Прибуток (після округлення): {profit_rounded_multi}",
+            ]
+        )
 
         if isinstance(price_input, PricingContext):                   # 🌍 Додаємо інформацію про регіон тарифів
             lines.append("")

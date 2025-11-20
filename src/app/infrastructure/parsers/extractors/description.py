@@ -33,6 +33,7 @@ from app.infrastructure.parsers.extractors.base import (				# 🔗 Спільн�
     Selectors,
     _clean_text_nodes,
     _norm_ws,
+    _normalize_description_labels,
     logger,
 )
 
@@ -482,12 +483,12 @@ class DescriptionMixin:
         🧾 Перетворює детальні секції у markdown/плоский текст.
         """
         host = cast(_DescriptionHost, self)
-        sections = host.extract_detailed_sections(preserve_lists=True)	# 🗂️ Отримуємо секції зі списками
+        sections = host.extract_detailed_sections(preserve_lists=True)
         if not sections:
             logger.debug("🧾 Секції відсутні — нема що рендерити у markdown.")
             return ""
 
-        priority: List[str] = []										# 🧱 Черга ключів у порядку важливості
+        priority: List[str] = []
         priority.extend(
             value
             for key, value in self._KEY_MAP.items()
@@ -500,9 +501,9 @@ class DescriptionMixin:
         )
         priority.extend(["Description", "Design", "Details", "Features"])
 
-        picked: List[Tuple[str, str]] = []								# 📋 Вибрані секції
-        seen_values: set[str] = set()									# 👀 Щоб не дублювати однакові тіла
-        for key in priority:											# 🔁 Проходимо за пріоритетом
+        picked: List[Tuple[str, str]] = []
+        seen_values: set[str] = set()
+        for key in priority:
             section_value = sections.get(key)
             if not section_value or section_value in seen_values:
                 continue
@@ -513,8 +514,8 @@ class DescriptionMixin:
             picked = list(sections.items())
         logger.debug("🧾 Обрано секцій для злиття: total=%d picked=%d", len(sections), len(picked))
 
-        parts: List[str] = []											# 🧩 Список блоків для кінцевого markdown
-        for title, body in picked:										# 🔁 Складаємо розділ за розділом
+        parts: List[str] = []
+        for title, body in picked:
             if opts.as_markdown:
                 parts.append(f"**{title}**")
                 parts.append(body)
@@ -536,63 +537,61 @@ class DescriptionMixin:
             Dict[str, str]: Ключ → текст секції.
         """
         logger.debug("🧾 Витяг секцій: preserve_lists=%s", preserve_lists)
-        sections: Dict[str, str] = {}									# 📦 Словник результуючих секцій
-        container = self._find_description_container()					# 🧱 Шукаємо контейнер з описом
+        sections: Dict[str, str] = {}
+        container = self._find_description_container()
         if not container:
             logger.debug("🧾 Витяг секцій: контейнер не знайдено.")
             return sections
 
-        key_map = self._KEY_MAP											# 🗺️ Відображення сирих заголовків → ключі
+        key_map = self._KEY_MAP
 
         def _collect_until_next_strong(
             paragraph: Tag,
             strong_tag: Tag,
         ) -> List[Union[str, NavigableString, Tag, PageElement]]:
-            parts: List[Union[str, NavigableString, Tag, PageElement]] = []	# 📑 Збираємо вузли до наступного розділу
+            parts: List[Union[str, NavigableString, Tag, PageElement]] = []
 
-            # 1) Контент усередині поточного <p> після <strong>
             for sibling in strong_tag.next_siblings:
                 parts.append(cast(Union[str, NavigableString, Tag, PageElement], sibling))
 
-            # 2) Наступні DOM-вузли аж до наступного <p> зі <strong>
             next_sibling = paragraph.next_sibling
             while next_sibling is not None:
                 if isinstance(next_sibling, Tag) and next_sibling.name == "p" and next_sibling.find("strong"):
-                    break												# 🛑 Зупиняємося перед наступним розділом
+                    break
                 parts.append(cast(Union[str, NavigableString, Tag, PageElement], next_sibling))
                 next_sibling = next_sibling.next_sibling
             return parts
 
-        for paragraph in container.find_all("p"):						# 🔁 Основний шлях: <p><strong>Title</strong> …
+        for paragraph in container.find_all("p"):
             if not isinstance(paragraph, Tag):
                 continue
             strong = paragraph.find("strong")
             if not isinstance(strong, Tag):
                 continue
-            key_raw = _norm_ws(str(strong.get_text(" ", strip=True)).replace(":", ""))	# 🗝️ Чистимо назву секції
+            key_raw = _norm_ws(str(strong.get_text(" ", strip=True)).replace(":", ""))
             if not key_raw:
                 continue
-            mapped_key = key_map.get(key_raw.upper())					# 🧭 Шукаємо відповідний ключ
+            mapped_key = key_map.get(key_raw.upper())
             if not mapped_key:
                 continue
 
-            parts = _collect_until_next_strong(paragraph, strong)		# 🧱 Забираємо контент до наступного розділу
-            value = self._render_section_value(parts, preserve_lists)	# 🧾 Рендеримо текст секції
+            parts = _collect_until_next_strong(paragraph, strong)
+            value = self._render_section_value(parts, preserve_lists)
             if value:
                 sections[mapped_key] = value
                 logger.debug("🧾 Секція %s зібрана з <p><strong>.", mapped_key)
 
         if not sections:
-            for heading in container.select("h2, h3, h4, strong"):		# 🔁 Альтернативний шлях через явні заголовки
+            for heading in container.select("h2, h3, h4, strong"):
                 if not isinstance(heading, Tag):
                     continue
-                key_candidate = _norm_ws(heading.get_text(" ", strip=True).replace(":", ""))	# 🗝️ Назва із заголовка
-                mapped_key = key_map.get(key_candidate.upper())		# 🧭 Перетворюємо на відомий ключ
+                key_candidate = _norm_ws(heading.get_text(" ", strip=True).replace(":", ""))
+                mapped_key = key_map.get(key_candidate.upper())
                 if not mapped_key:
                     continue
 
-                parts: List[Union[str, NavigableString, Tag, PageElement]] = []	# 📑 Буфер тексту секції
-                node = heading.next_sibling								# 🧷 Крокуємо до наступного заголовка
+                parts: List[Union[str, NavigableString, Tag, PageElement]] = []
+                node = heading.next_sibling
                 while node is not None:
                     if isinstance(node, Tag) and node.name in {"h2", "h3", "h4", "strong"}:
                         break
@@ -602,6 +601,22 @@ class DescriptionMixin:
                 if value:
                     sections[mapped_key] = value
                     logger.debug("🧾 Секція %s зібрана з заголовка.", mapped_key)
+
+        if not sections:
+            raw_description = cast(_DescriptionHost, self)._description_from_json_ld() or ""
+            if not raw_description:
+                meta_tag = cast(_DescriptionHost, self).soup.select_one('meta[name="description"]')
+                if isinstance(meta_tag, Tag) and meta_tag.has_attr("content"):
+                    raw_description = str(meta_tag.get("content") or "")
+
+            if raw_description:
+                labels = ["MATERIAL:", "FABRIC WEIGHT:", "FIT:", "DESCRIPTION:", "MODEL:"]
+                parsed_sections = _split_description_sections(raw_description, labels)
+                for label_key, content in parsed_sections.items():
+                    mapped_key = key_map.get(label_key.upper())
+                    if mapped_key and content and mapped_key not in sections:
+                        sections[mapped_key] = content
+                        logger.debug("🧾 Секція %s зібрана з raw description.", mapped_key)
 
         logger.debug("🧾 Витяг секцій завершено: %d елемент(ів)", len(sections))
         return sections
@@ -616,40 +631,76 @@ class DescriptionMixin:
         """
         logger.debug("🧾 Рендер секції: preserve_lists=%s", preserve_lists)
         if preserve_lists:
-            buffer: List[str] = []										# 📦 Накопичувач рядків секції
+            buffer: List[str] = []
             for node in nodes:
                 if isinstance(node, NavigableString):
-                    text = _norm_ws(str(node))							# 🧼 Очищаємо текстовий вузол
+                    text = _norm_ws(str(node))
                     if text:
-                        buffer.append(text)							# ➕ Додаємо як окремий рядок
+                        buffer.append(text)
                     continue
                 if isinstance(node, Tag):
                     if node.name in {"ul", "ol"}:
-                        ordered = node.name == "ol"					# 🔢 Визначаємо тип списку
-                        index = 1										# 🧮 Лічильник пунктів
+                        ordered = node.name == "ol"
+                        index = 1
                         for li in node.find_all("li", recursive=False):
                             if not isinstance(li, Tag):
                                 continue
-                            text = _norm_ws(li.get_text(" ", strip=True))	# 🧼 Вміст пункту
+                            text = _norm_ws(li.get_text(" ", strip=True))
                             if not text:
                                 continue
-                            bullet = f"{index}." if ordered else "-"	# 🧷 Маркер списку
+                            bullet = f"{index}." if ordered else "-"
                             buffer.append(f"{bullet} {text}")
                             index += 1
                         continue
                     if node.name == "p":
-                        text = _norm_ws(node.get_text(" ", strip=True))	# 🧼 Абзац усередині секції
+                        text = _norm_ws(node.get_text(" ", strip=True))
                         if text:
                             buffer.append(text)
                         continue
-                    fallback_text = _norm_ws(node.get_text(" ", strip=True))	# 🛟 Інші теги
+                    fallback_text = _norm_ws(node.get_text(" ", strip=True))
                     if fallback_text:
                         buffer.append(fallback_text)
-            rendered = "\n".join(entry for entry in buffer if entry)	# 🧵 Склеюємо рядки
-            rendered = re.sub(r"\n{3,}", "\n\n", rendered).strip()		# 🧼 Схлопуємо пусті абзаци
+            rendered = "\n".join(entry for entry in buffer if entry)
+            rendered = re.sub(r"\n{3,}", "\n\n", rendered).strip()
             logger.debug("🧾 Рендер секції (markdown) довжина=%d", len(rendered))
             return rendered
 
-        fallback = _clean_text_nodes(nodes)								# 🧼 Повертаємо plain-текст
+        fallback = _clean_text_nodes(nodes)
         logger.debug("🧾 Рендер секції (plain) довжина=%d", len(fallback))
         return fallback
+
+
+def _split_description_sections(raw_description: str, labels: Sequence[str]) -> Dict[str, str]:
+    """
+    🪡 Розбиває сирий опис на секції за списком лейблів.
+
+    Args:
+        raw_description: Повний текстопис із JSON-LD/meta.
+        labels: Перелік міток з двокрапкою, за якими шукаємо секції.
+
+    Returns:
+        Dict[str, str]: Мапа {label_without_colon: content}.
+    """
+    normalized = _normalize_description_labels(_norm_ws(raw_description))
+    if not normalized:
+        return {}
+
+    label_pattern = "|".join(re.escape(label) for label in labels)
+    matcher = re.compile(f"({label_pattern})", re.IGNORECASE)
+    sections: Dict[str, str] = {}
+    last_label: Optional[str] = None
+    last_end = 0
+    label_lookup = {label.upper().rstrip(":"): label.rstrip(":") for label in labels}
+
+    for match in matcher.finditer(normalized):
+        if last_label:
+            sections[last_label] = normalized[last_end : match.start()].strip()
+        token = match.group(0).strip()
+        label_key = token.upper().rstrip(":")
+        last_label = label_lookup.get(label_key, label_key)
+        last_end = match.end()
+
+    if last_label:
+        sections[last_label] = normalized[last_end:].strip()
+
+    return {key: value for key, value in sections.items() if value}

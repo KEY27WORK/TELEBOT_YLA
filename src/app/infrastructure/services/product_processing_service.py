@@ -68,6 +68,7 @@ class ProcessedProductData:
     page_source: str														# 🧾 HTML джерело (для дебагу)
     region_display: str														# 🌍 Людяний регіон/локаль
     content: ProductContentDTO												# 📝 Згенерований контент
+    alt_fallback_used: bool												# 🛠️ Чи був ALT-фолбек
     music_text: str															# 🎵 Результат музичної рекомендації
     diagnostics: Diagnostics												# 🩺 Діагностики size-chart/зображень
 
@@ -82,6 +83,8 @@ class ProcessingErrorCode(Enum):
     ParsingFailed = auto()													# 🧨 Парсер не впорався
     ContentBuildFailed = auto()												# 🧵 Контент не зібрано
     UnexpectedError = auto()												# ❓ Резерв для несподіваних збоїв
+    CardValidationFailed = auto()											# 🧱 Не вдалося зібрати повну картку
+    MediaPreparationFailed = auto()											# 🖼️ Не вдалося підготувати стек медіа
 
 
 @dataclass(frozen=True)
@@ -93,12 +96,21 @@ class ProductProcessingResult:
     error_code: Optional[ProcessingErrorCode] = None						# 🚨 Код помилки
     error_message: Optional[str] = None										# 🧾 Опис помилки
     _cause: Optional[BaseException] = None									# 🐞 Внутрішня причина (для логів)
+    alt_fallback_used: bool = False											# 🛠️ Чи був ALT-фолбек
 
     @staticmethod
-    def success(data: ProcessedProductData) -> "ProductProcessingResult":
+    def success(
+        data: ProcessedProductData,
+        *,
+        alt_fallback_used: bool = False,
+    ) -> "ProductProcessingResult":
         """✅ Успішний результат."""
 
-        return ProductProcessingResult(ok=True, data=data)					# 📬 Повертаємо DTO
+        return ProductProcessingResult(
+            ok=True,
+            data=data,
+            alt_fallback_used=alt_fallback_used,
+        )																		# 📬 Повертаємо DTO
 
     @staticmethod
     def fail(
@@ -106,11 +118,13 @@ class ProductProcessingResult:
         message: str,
         *,
         cause: Optional[BaseException] = None,
+        data: Optional[ProcessedProductData] = None,
     ) -> "ProductProcessingResult":
         """❌ Невдалий результат з кодом помилки."""
 
         return ProductProcessingResult(										# 📬 Формуємо опис помилки
             ok=False,
+            data=data,
             error_code=code,
             error_message=message,
             _cause=cause,
@@ -285,13 +299,14 @@ class ProductProcessingService:
 
         if self.size_chart_service is not None and page_source:		# ✅ Сервіс доступний і маємо HTML
             try:
-                chart_paths = await self.size_chart_service.process_all_size_charts(
-                    page_source,
-                    product_sku=product_sku,
+                chart_artifacts = await self.size_chart_service.process_all_size_charts(
+                     page_source,
+                     product_sku=product_sku,
                 )  # 📏 Запускаємо пайплайн з урахуванням SKU
+                chart_paths = chart_artifacts.ordered_paths()
                 sc_has_chart = bool(chart_paths)							# 📌 Виставляємо прапорець
                 sc_status = "ok" if sc_has_chart else "not_found"			# 🧾 Статус OCR
-                logger.debug("📏 SizeChart результат: %s (%s)", sc_status, chart_paths)
+                logger.debug("📏 SizeChart результат: %s (%s)", sc_status, chart_artifacts.as_dict())
             except asyncio.CancelledError:
                 raise
             except Exception as exc:											# 🔥 Size-chart деградував — лог і рухаємось
@@ -309,6 +324,7 @@ class ProductProcessingService:
             page_source=page_source,
             region_display=region_display,
             content=content_data,
+            alt_fallback_used=content_data.alt_fallback_used,
             music_text=getattr(music_result, "raw_text", "") or "",			# 🎵 safe fallback
             diagnostics=Diagnostics(
                 images_count=images_count,
@@ -316,4 +332,7 @@ class ProductProcessingService:
                 ocr_status=sc_status,
             ),
         )
-        return ProductProcessingResult.success(result_data)					# ✅ Повертаємо успіх
+        return ProductProcessingResult.success(
+            result_data,
+            alt_fallback_used=result_data.alt_fallback_used,
+        )																		# ✅ Повертаємо успіх

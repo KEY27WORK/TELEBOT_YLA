@@ -42,9 +42,19 @@ logger = logging.getLogger(f"{LOG_NAME}.domain.pricing")      # 🧾 Імено�
 # ⚙️ ДОДАТКОВІ НАЛАШТУВАННЯ
 # ================================
 @dataclass(frozen=True, slots=True)
-class _Cfg:
-    """Внутрішній конфіг: параметри «з формули», не описані в Protocol."""
-    discount_percent: Decimal = Decimal("15")                  # 🎯 Фіксований відсоток знижки
+class PricingConfig:
+    """Конфігураційні параметри формули прайсингу."""
+    discount_percent: Decimal = Decimal("15")  # 🎯 Відсоток знижки магазину
+
+    # 🛡️ Страховка Meest
+    # Режими:
+    #   - "none"         — не використовувати страховку
+    #   - "fixed"        — фіксована сума в USD, додається до full_delivery
+    #   - "percent_cost" — % від собівартості (до націнки), додається перед маркапом
+    #   - "percent_final"— %, який нараховується від фінальної ціни після округлення
+    meest_insurance_mode: str = "none"
+    meest_insurance_fixed_usd: Decimal = Decimal("0.00")
+    meest_insurance_percent: Decimal = Decimal("0.00")
 
 
 # ================================
@@ -53,7 +63,7 @@ class _Cfg:
 class PricingService(IPricingService):
     """💸 Доменний сервіс, що виконує **чистий** конвеєр розрахунку ціни."""
 
-    def __init__(self, delivery_service: IDeliveryService, cfg: _Cfg | None = None) -> None:
+    def __init__(self, delivery_service: IDeliveryService, cfg: PricingConfig | None = None) -> None:
         """
         ⚙️ Прив'язує сервіс до абстрактного доставника та базового конфіга.
 
@@ -62,7 +72,7 @@ class PricingService(IPricingService):
             cfg: Кастомний набір параметрів розрахунку, опційний.
         """
         self._delivery = delivery_service                               # 🚚 Зберігаємо сервіс доставки
-        cfg_fallback = cfg or _Cfg()                                    # ⚙️ Визначаємо активний конфіг
+        cfg_fallback = cfg or PricingConfig()                            # ⚙️ Визначаємо активний конфіг
         self._cfg = cfg_fallback                                        # 🧾 Кешуємо конфігурацію у сервісі
 
     # ================================
@@ -106,6 +116,9 @@ class PricingService(IPricingService):
         local_delivery_usd = self._to_usd(context.local_delivery_cost, converter)  # 🚚 Локальна доставка в USD
         ai_commission_usd = self._to_usd(context.ai_commission, converter)         # 🤖 Комісія в USD
         phone_cost_usd = self._to_usd(context.phone_number_cost, converter)        # 📞 Вартість номера в USD
+        meest_insurance_mode = self._cfg.meest_insurance_mode                      # ⚙️ Активний режим страховки
+        meest_insurance_amount_usd = Decimal("0")                                 # 🛡️ Фактична сума страховки Meest
+        meest_insurance_percent = Decimal("0")                                    # 📊 Відсоток (для percent_final)
         logger.info(
             "🔄 USD normalization | "
             f"product={product_price} {price.currency} → {original_price_usd.amount} USD, "
@@ -151,6 +164,17 @@ class PricingService(IPricingService):
             f"→ full_delivery={full_delivery_usd_amt} USD"
         )
 
+        # 🛡️ Meest insurance (fixed) → частина доставки, впливає на маркап
+        if self._cfg.meest_insurance_mode == "fixed" and self._cfg.meest_insurance_fixed_usd > 0:
+            fixed_insurance = q2(self._cfg.meest_insurance_fixed_usd)
+            full_delivery_usd_amt = q2(full_delivery_usd_amt + fixed_insurance)
+            meest_insurance_amount_usd = fixed_insurance
+            logger.info(
+                "🛡️ Meest insurance (fixed) | +%s USD → full_delivery=%s USD",
+                fixed_insurance,
+                full_delivery_usd_amt,
+            )
+
         # --- 🧾 Крок 4: Собівартість («ціна для друзів») ---
         cost_price_usd_amt = q2(
             discounted_price_usd
@@ -172,6 +196,24 @@ class PricingService(IPricingService):
             f"+ full_delivery={full_delivery_usd_amt} USD → cost_price={cost_price_usd_amt} USD"
         )
 
+        # 🛡️ Meest insurance (percent від собівартості)
+        if (
+            self._cfg.meest_insurance_mode == "percent_cost"
+            and self._cfg.meest_insurance_percent > 0
+        ):
+            insurance_usd_amt = q2(
+                cost_price_usd_amt * self._cfg.meest_insurance_percent / Decimal("100")
+            )
+            cost_price_usd_amt = q2(cost_price_usd_amt + insurance_usd_amt)
+            meest_insurance_amount_usd = insurance_usd_amt
+            meest_insurance_percent = self._cfg.meest_insurance_percent
+            logger.info(
+                "🛡️ Meest insurance (percent_cost) | rate=%s%% → +%s USD → cost_price=%s USD",
+                self._cfg.meest_insurance_percent,
+                insurance_usd_amt,
+                cost_price_usd_amt,
+            )
+
         # --- 📈 Крок 5: Фінальна маржинальна націнка ---
         final_markup, markup_adjustment = self._final_markup(
             price_usd=discounted_price_usd,
@@ -184,7 +226,7 @@ class PricingService(IPricingService):
 
         # --- 💵 Крок 6: Ціна продажу та прибуток (до округлення) ---
         sale_price_usd_amt = q2(
-            cost_price_usd_amt * (Decimal("1") + Decimal(str(final_markup)) / Decimal("100"))
+            cost_price_usd_amt * (Decimal("1") + final_markup / Decimal("100"))
         )                                                                          # 💵 Розраховуємо ціну продажу
         profit_usd_amt = q2(sale_price_usd_amt - cost_price_usd_amt)              # 💰 Прибуток до округлення
         logger.info(
@@ -206,6 +248,40 @@ class PricingService(IPricingService):
             f"round_delta={delta_uah} UAH, profit_rounded={profit_rounded_usd_amt} USD"
         )
 
+        # === 🛡️ Meest insurance (percent of final price) ===
+        # За замовчуванням фінальні значення збігаються з rounded
+        sale_price_final_usd_amt = sale_price_rounded_usd_amt
+        profit_final_usd_amt = profit_rounded_usd_amt
+
+        if (
+            self._cfg.meest_insurance_mode == "percent_final"
+            and self._cfg.meest_insurance_percent > 0
+        ):
+            # 1) Страховка як % від уже округленої USD-ціни
+            insurance_usd_amt = q2(
+                sale_price_rounded_usd_amt * self._cfg.meest_insurance_percent / Decimal("100")
+            )
+            meest_insurance_amount_usd = insurance_usd_amt
+            meest_insurance_percent = self._cfg.meest_insurance_percent
+
+            # 2) Додаємо страховку та знову робимо маркетингове округлення через UAH
+            sale_plus_insurance_usd = sale_price_rounded_usd_amt + insurance_usd_amt
+            sale_plus_insurance_uah = sale_plus_insurance_usd * usd_to_uah
+            sale_plus_insurance_uah_rounded = self._ceil_to_10_uah(q2(sale_plus_insurance_uah))
+
+            sale_price_final_usd_amt = q2(sale_plus_insurance_uah_rounded / usd_to_uah)
+            profit_final_usd_amt = q2(sale_price_final_usd_amt - cost_price_usd_amt)
+
+            logger.info(
+                "🛡️ Meest insurance (percent_final) | rate=%s%% → +%s USD; "
+                "sale_rounded=%s USD → sale_final=%s USD (%s UAH)",
+                self._cfg.meest_insurance_percent,
+                insurance_usd_amt,
+                sale_price_rounded_usd_amt,
+                sale_price_final_usd_amt,
+                sale_plus_insurance_uah_rounded,
+            )
+
         # --- 📦 Крок 8: Пакуємо результат (строго Money-поля з Protocol) ---
         discounted_price_money = PMoney(discounted_price_usd, "USD")              # 💵 Підготовлена знижена ціна
         cost_without_delivery_money = PMoney(
@@ -214,18 +290,24 @@ class PricingService(IPricingService):
         )                                                                          # 📦 Собівартість без доставки (без негативів)
         result = FullPriceDetails(                                                 # 📦 Пакуємо агрегований результат
             sale_price=PMoney(sale_price_usd_amt, "USD"),
-            sale_price_rounded=PMoney(sale_price_rounded_usd_amt, "USD"),
+            # з урахуванням можливого percent_final
+            sale_price_rounded=PMoney(sale_price_final_usd_amt, "USD"),
+            base_price=PMoney(original_price_usd.amount, "USD"),
             cost_price=PMoney(cost_price_usd_amt, "USD"),
             profit=PMoney(profit_usd_amt, "USD"),
-            profit_rounded=PMoney(profit_rounded_usd_amt, "USD"),
+            profit_rounded=PMoney(profit_final_usd_amt, "USD"),
             full_delivery=PMoney(full_delivery_usd_amt, "USD"),
             protection=PMoney(protection_usd_amt, "USD"),
             discounted_price=discounted_price_money,
+            meest_insurance=PMoney(meest_insurance_amount_usd, "USD"),
+            meest_insurance_mode=meest_insurance_mode,
+            meest_insurance_percent=meest_insurance_percent,
+            discount_percent=self._cfg.discount_percent,
             local_delivery=local_delivery_usd,
             international_delivery=meest_delivery_money,
             cost_without_delivery=cost_without_delivery_money,
             markup=Decimal(str(final_markup)),
-            markup_adjustment=Decimal(str(markup_adjustment)),
+            markup_adjustment=markup_adjustment,
             weight_lbs=q2(weight_lbs),
             round_delta_uah=q2(delta_uah),
         )
@@ -284,31 +366,31 @@ class PricingService(IPricingService):
         return base_premium + step_count * Decimal("0.75")             # 🛡️ Премія з урахуванням кроків
 
     @staticmethod
-    def _final_markup(price_usd: Decimal, delivery_usd: Decimal) -> Tuple[float, float]:
+    def _final_markup(price_usd: Decimal, delivery_usd: Decimal) -> Tuple[Decimal, Decimal]:
         """📈 Базова націнка + коригування за часткою доставки."""
-        price_usd_amount = float(price_usd)                            # 💵 Ціна товару у float
-        delivery_usd_amount = float(delivery_usd)                      # 🚚 Доставка у float
+        price_usd_amount = price_usd                                   # 💵 Ціна товару як Decimal
+        delivery_usd_amount = delivery_usd                             # 🚚 Доставка як Decimal
         combined_cost = price_usd_amount + delivery_usd_amount         # 🧮 Загальна база для частки
 
-        if price_usd_amount < 20:                                      # 🧮 Діапазон ціни < 20
-            base_markup_percent = 30                                   # 📈 Базова націнка
-        elif price_usd_amount < 30:                                    # 🧮 20–30 USD
-            base_markup_percent = 27                                   # 📈 Націнка для сегменту
-        elif price_usd_amount < 40:                                    # 🧮 30–40 USD
-            base_markup_percent = 25                                   # 📈 Відповідна ставка
-        elif price_usd_amount < 50:                                    # 🧮 40–50 USD
-            base_markup_percent = 23                                   # 📈 Зменшена ставка
+        if price_usd_amount < Decimal("20"):                           # 🧮 Діапазон ціни < 20
+            base_markup_percent = Decimal("30")                        # 📈 Базова націнка
+        elif price_usd_amount < Decimal("30"):                         # 🧮 20–30 USD
+            base_markup_percent = Decimal("27")                        # 📈 Націнка для сегменту
+        elif price_usd_amount < Decimal("40"):                         # 🧮 30–40 USD
+            base_markup_percent = Decimal("25")                        # 📈 Відповідна ставка
+        elif price_usd_amount < Decimal("50"):                         # 🧮 40–50 USD
+            base_markup_percent = Decimal("23")                        # 📈 Зменшена ставка
         else:                                                          # 🧮 Більше 50 USD
-            base_markup_percent = 20                                   # 📈 Мінімальна базова націнка
+            base_markup_percent = Decimal("20")                        # 📈 Мінімальна базова націнка
 
-        delivery_share_percent = (delivery_usd_amount / combined_cost * 100) if combined_cost > 0 else 0  # 📊 Частка доставки
-        if delivery_share_percent > 20:                                # 🛫 Доставка занадто дорога
-            adjustment_percent = -3                                    # 🔻 Зменшуємо націнку
-        elif delivery_share_percent < 10:                              # 🛬 Доставка дешева
-            adjustment_percent = 3                                     # 🔺 Збільшуємо націнку
+        delivery_share_percent = (delivery_usd_amount / combined_cost * Decimal("100")) if combined_cost > Decimal("0") else Decimal("0")  # 📊 Частка доставки
+        if delivery_share_percent > Decimal("20"):                     # 🛫 Доставка занадто дорога
+            adjustment_percent = Decimal("-3")                         # 🔻 Зменшуємо націнку
+        elif delivery_share_percent < Decimal("10"):                   # 🛬 Доставка дешева
+            adjustment_percent = Decimal("3")                          # 🔺 Збільшуємо націнку
         else:                                                          # ⚖️ Частка у комфортному коридорі
-            adjustment_percent = 0                                     # ➖ Залишаємо без змін
-        final_markup_percent = float(base_markup_percent + adjustment_percent)  # 📈 Підсумкова націнка
+            adjustment_percent = Decimal("0")                          # ➖ Залишаємо без змін
+        final_markup_percent = base_markup_percent + adjustment_percent  # 📈 Підсумкова націнка
         logger.info(
             "🧮 Markup rule | price=%s USD delivery=%s USD cost_share=%.2f%% base=%s%% adj=%s%% → final=%s%%",
             price_usd,
@@ -318,7 +400,7 @@ class PricingService(IPricingService):
             adjustment_percent,
             final_markup_percent,
         )
-        return final_markup_percent, float(adjustment_percent)         # 📦 Повертаємо (markup, adjustment)
+        return final_markup_percent, adjustment_percent                # 📦 Повертаємо (markup, adjustment)
 
     @staticmethod
     def _ceil_to_10_uah(value_uah: Decimal) -> Decimal:

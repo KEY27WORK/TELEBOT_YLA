@@ -17,16 +17,17 @@ from telegram.error import BadRequest, RetryAfter, NetworkError
 # 🔠 Системні імпорти
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, List
 
 # 🧩 Внутрішні модулі проєкту
 from app.bot.services.custom_context import CustomContext
 from app.bot.ui import static_messages as msg
 from app.bot.ui.messengers.size_chart_messenger import SizeChartMessenger
+from app.config.setup.constants import AppConstants
+from app.domain.size_chart.interfaces import SizeChartArtifacts
 from app.errors.exception_handler_service import ExceptionHandlerService
 from app.infrastructure.parsers.parser_factory import ParserFactory
 from app.infrastructure.size_chart.size_chart_service import SizeChartService
-from app.config.setup.constants import AppConstants
 from app.shared.utils.logger import LOG_NAME
 
 
@@ -134,7 +135,7 @@ class SizeChartHandlerBot:
 
             product_sku = self._extract_product_sku(final_url or (args[0] if args else None))	# 🆔 Витягуємо артикул товару (URL чи прямий ввід)
             try:
-                image_paths = await asyncio.wait_for(										# 🖼️ Отримуємо шляхи до згенерованих зображень
+                artifacts = await asyncio.wait_for(										# 🖼️ Отримуємо структурований результат
                     self.size_chart_service.process_all_size_charts(
                         page_source,
                         product_sku=product_sku,
@@ -147,6 +148,15 @@ class SizeChartHandlerBot:
                 return
 
             # 4) Надіслати результат
+            image_paths = artifacts.ordered_paths()
+            if not image_paths:
+                await self._send_text_safe(update, context, msg.SIZE_CHART_FAILED)
+                return
+
+            summary_text = self._format_size_chart_summary(artifacts)
+            if summary_text:
+                await self._send_text_safe(update, context, summary_text)
+
             await self.messenger.send(update, context, image_paths)						# ✉️ Відправляємо всі зображення користувачу  ✅ FIX: додано context
 
         except asyncio.CancelledError:													# ⛔ Коректна відміна таска — не ковтаємо
@@ -204,3 +214,17 @@ class SizeChartHandlerBot:
                 )
         except Exception as e:  # best‑effort, не валимо основний сценарій				# 🟡 Відправка службових повідомлень — безпечний режим
             logger.debug("⚠️ Не вдалося надіслати службове повідомлення: %s", e, exc_info=True)
+
+    def _format_size_chart_summary(self, artifacts: SizeChartArtifacts) -> Optional[str]:
+        """📄 Готує коротке резюме по знайдених таблицях."""
+        parts: List[str] = []
+        if artifacts.product_tables:
+            parts.append(f"🧵 Унікальні таблиці: {len(artifacts.product_tables)}")
+        if artifacts.global_tables:
+            parts.append(f"🌐 Загальні таблиці: {len(artifacts.global_tables)}")
+        extra_total = sum(len(paths) for paths in artifacts.extra_tables.values())
+        if extra_total:
+            parts.append(f"🧩 Додаткові таблиці: {extra_total}")
+        if not parts:
+            return None
+        return "📏 Знайдено таблиці розмірів:\n" + "\n".join(parts)

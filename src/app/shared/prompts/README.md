@@ -24,6 +24,7 @@
     ├── 📄 alt_text.txt
     ├── 📄 clothing_type.txt
     ├── 📄 hashtags.txt
+    ├── 📄 banner_post.txt
     ├── 📄 music.txt
     ├── 📄 slogan.txt
     ├── 📄 translation.txt
@@ -38,6 +39,7 @@
 - `music.txt` — добірка музики
 - `hashtags.txt` — генерація хештегів
 - `slogan.txt` — створення слоганів
+- `banner_post.txt` — Instagram‑пост для сценарію BannerDrop
 - `weight.txt` — оцінка ваги товару
 - `clothing_type.txt` — визначення типу одягу
 - `translation.txt` — переклад опису

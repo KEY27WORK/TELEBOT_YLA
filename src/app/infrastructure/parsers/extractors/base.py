@@ -97,6 +97,22 @@ def _norm_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()	# 🧹 Стискаємо та обрізаємо пробіли
 
 
+def _normalize_description_labels(text: str) -> str:
+    """Нормалізує ключі секцій, щоб DESIGN трактувався як DESCRIPTION."""
+    if not text:
+        return text
+
+    replacements = {
+        "DESIGN:": "DESCRIPTION:",
+        "Design:": "DESCRIPTION:",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    return text
+
+
 def _attr_to_str(value: Any) -> str:
     """Повертає перше непорожнє текстове значення атрибута."""
     if value is None:	# 🚫 Атрибут відсутній

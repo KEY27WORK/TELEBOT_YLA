@@ -25,8 +25,10 @@ from telegram.constants import ChatAction  # 🖋️ Статус "друкує"
 
 # 🔠 Системні імпорти
 import asyncio  # 🔄 Обробка асинхронних відмін
+import contextlib  # 🛡️ Безпечне подавлення винятків у побічних діях
 import logging  # 🧾 Логування
-from typing import Optional, TYPE_CHECKING  # 🧰 Типізація
+from dataclasses import dataclass  # 🧱 DTO для підготовлених карток
+from typing import Optional, Sequence, TYPE_CHECKING  # 🧰 Типізація
 
 # 🧩 Внутрішні модулі проєкту
 from app.bot.services.custom_context import CustomContext  # 🧠 Розширений контекст застосунку
@@ -35,10 +37,19 @@ from app.config.setup.constants import AppConstants  # ⚙️ Глобальні
 from app.errors.exception_handler_service import ExceptionHandlerService  # 🧯 Єдиний обробник винятків
 from app.infrastructure.currency.currency_manager import CurrencyManager  # 💱 Курси валют (оновлення з TTL)
 from app.infrastructure.services.product_processing_service import (  # 🛠️ Основний сервіс обробки
+    ProcessingErrorCode,
+    ProcessedProductData,
+    ProductProcessingResult,
     ProductProcessingService,
+)
+from app.infrastructure.services.product_media_preparer import (  # 🖼️ Підготовка стеку фото
+    PreparedMediaStack,
+    ProductMediaPreparer,
+    ProductMediaPreparationError,
 )
 from app.shared.utils.logger import LOG_NAME  # 🏷️ Ім’я логера
 from app.shared.utils.url_parser_service import UrlParserService  # 🔗 Валідація/нормалізація URL
+from .image_sender import MediaRef  # 🖼️ Типи медіа, які приймає ImageSender
 
 if TYPE_CHECKING:
     from app.bot.ui.messengers.product_messenger import ProductMessenger  # ✉️ Відправник блоків про товар
@@ -48,6 +59,13 @@ if TYPE_CHECKING:
 # ================================
 logger = logging.getLogger(LOG_NAME)  # 🧾 Єдиний логер застосунку
 
+
+@dataclass(slots=True)
+class PreparedProductCard:
+    """📦 Обʼєднує результат процесингу з готовими медіа."""
+
+    result: ProductProcessingResult
+    media_stack: Optional[Sequence[MediaRef]] = None
 
 # ================================
 # 🏛️ ОБРОБНИК ЗАПИТІВ ПРО ТОВАР
@@ -65,6 +83,7 @@ class ProductHandler:
         currency_manager: CurrencyManager,
         processing_service: ProductProcessingService,
         messenger: "ProductMessenger",
+        media_preparer: ProductMediaPreparer,
         exception_handler: ExceptionHandlerService,
         constants: AppConstants,
         url_parser_service: UrlParserService,
@@ -75,6 +94,7 @@ class ProductHandler:
             currency_manager: Менеджер курсів валют (оновлення/читання з кешу).
             processing_service: Сервіс повного циклу обробки URL (парсинг, збагачення, агрегація).
             messenger: Відправник готових блоків повідомлень у Telegram.
+            media_preparer: Відповідає за завантаження/валідацію фото перед надсиланням.
             exception_handler: Централізований обробник винятків (логування + UX).
             constants: Глобальні константи застосунку (UI/налаштування).
             url_parser_service: Валідація та нормалізація посилань.
@@ -82,6 +102,7 @@ class ProductHandler:
         self.currency_manager = currency_manager  # 💱 Курси валют (оновлення/кеш)
         self.processing_service = processing_service  # 🛠️ Повний процесинг товару
         self.messenger = messenger  # ✉️ Надсилання підготовлених блоків
+        self.media_preparer = media_preparer  # 🖼️ Готує стек фото
         self.exception_handler = exception_handler  # 🧯 Єдиний обробник винятків
         self.const = constants  # ⚙️ Константи застосунку/UI
         self.url_parser = url_parser_service  # 🔗 Валідація/нормалізація URL
@@ -97,86 +118,177 @@ class ProductHandler:
         context: CustomContext,
         url: Optional[str] = None,
         update_currency: bool = True,
-    ) -> None:
-        """Основний вхід: приймає URL, виконує процесинг і шле результат."""
-        user_id: str = "N/A"  # 🆔 Попереднє значення для логів (на випадок guard'ів)
-        final_url: str = ""  # 🔗 Нормалізований URL (може не бути, доки не отримаємо дані)
+        *,
+        send_immediately: bool = True,
+    ) -> Optional[PreparedProductCard]:
+        """Основний вхід: приймає URL, виконує процесинг і (опційно) надсилає результат."""
+        user_id: str = "N/A"
+        final_url: str = ""
 
         try:
             if not update.message:
-                return  # 🛑 Немає текстового повідомлення — нічого обробляти
+                return None  # 🛑 Без message не можемо відповідати
 
-            user_id = getattr(update.effective_user, "id", "N/A")  # 👤 Ідентифікатор користувача
-            upd_id = getattr(update, "update_id", "N/A")  # 🏷️ Ідентифікатор апдейта
+            user_id = getattr(update.effective_user, "id", "N/A")
+            upd_id = getattr(update, "update_id", "N/A")
 
-            # ✅ UX: індикація «друкує»
-            try:
-                await update.message.chat.send_action(action=ChatAction.TYPING)
-            except Exception:
-                pass  # 🙈 Не критично — ігноруємо
+            if send_immediately:
+                with contextlib.suppress(Exception):
+                    await update.message.chat.send_action(action=ChatAction.TYPING)
 
             message_text = (update.message.text or "").strip()
-            final_url = (url or message_text).strip()  # 🔗 Пріоритет аргументу над текстом
+            final_url = (url or message_text).strip()
+            if not final_url:
+                if send_immediately:
+                    await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
+                return None
 
-            # ✅ Валідація/нормалізація через UrlParserService (з фолбеком)
             try:
                 is_valid = self.url_parser.is_valid_url(final_url)  # type: ignore[attr-defined]
             except Exception:
                 is_valid = final_url.startswith(("http://", "https://"))
 
             if not is_valid:
-                logger.warning(f"[product] некоректний URL '{final_url}' | user={user_id}")
-                await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
-                return
+                logger.warning("[product] некоректний URL '%s' | user=%s", final_url, user_id)
+                if send_immediately:
+                    await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
+                return None
 
-            try:
+            with contextlib.suppress(Exception):
                 final_url = self.url_parser.normalize(final_url)  # type: ignore[attr-defined]
-            except Exception:
-                pass  # 🪪 Якщо нормалізатор відсутній або впав — працюємо як є
 
-            # ✅ «Розумне» оновлення курсів з TTL
             if update_currency:
                 await self.currency_manager.update_all_rates_if_needed()
 
-            logger.info(f"📩 product.handle_url | user={user_id} upd={upd_id} url={final_url}")
+            logger.info("📩 product.handle_url | user=%s upd=%s url=%s", user_id, upd_id, final_url)
 
-            # 1) Процесинг з поверненням строгого Result
-            result = await self.processing_service.process_url(final_url)
-            if not result.ok:
-                # Показуємо користувачу зрозуміле повідомлення з Result
-                human_msg = (result.error_message or msg.PRODUCT_FETCH_ERROR)
-                await update.message.reply_text(human_msg)
+            processing_result = await self.processing_service.process_url(final_url)
+            prepared_card = PreparedProductCard(result=processing_result)
 
-                # Лог: код помилки + первинна причина (не для користувача)
+            if not processing_result.ok:
+                if send_immediately:
+                    human_msg = processing_result.error_message or msg.PRODUCT_FETCH_ERROR
+                    await update.message.reply_text(human_msg)
                 logger.warning(
                     "product.handle_url fail | code=%s url=%s cause=%r",
-                    getattr(result.error_code, "name", "N/A"),
+                    getattr(processing_result.error_code, "name", "N/A"),
                     final_url,
-                    getattr(result, "_cause", None),
+                    getattr(processing_result, "_cause", None),
                 )
-                return
+                return prepared_card
 
-            # 2) Повідомлення про визначений регіон
-            # Pylance: result.data має тип ProcessedProductData | None.
-            # Гарантуємо, що при ok=True data не None, інакше — мʼяко фейлимось.
-            if result.data is None:
+            data = processing_result.data
+            if data is None:
                 logger.error("Invariant violation: result.ok=True, але data=None | url=%s", final_url)
-                await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
-                return
+                failure = ProductProcessingResult.fail(
+                    ProcessingErrorCode.UnexpectedError,
+                    "Не вдалося сформувати дані товару.",
+                )
+                if send_immediately:
+                    await update.message.reply_text(msg.PRODUCT_FETCH_ERROR)
+                return PreparedProductCard(failure)
 
-            processed_data = result.data  # тепер тип звужено до ProcessedProductData
-            region_display = getattr(processed_data, "region_display", "N/A")
-            parse_mode = getattr(getattr(self.const, "UI", object()), "DEFAULT_PARSE_MODE", "HTML")
-            await update.message.reply_text(
-                msg.PRODUCT_REGION_DETECTED.format(region=region_display),
-                parse_mode=parse_mode,
-            )
+            validation_error = self._validate_card_ready(data)
+            if validation_error:
+                failure = ProductProcessingResult.fail(
+                    ProcessingErrorCode.CardValidationFailed,
+                    validation_error,
+                    data=data,
+                )
+                if send_immediately:
+                    await update.message.reply_text(msg.PRODUCT_CARD_INCOMPLETE)
+                logger.warning("product.card_validation_failed | url=%s reason=%s", final_url, validation_error)
+                return PreparedProductCard(failure)
 
-            # 3) Надсилання підготовлених блоків через мессенджер
-            await self.messenger.send(update, context, processed_data)
+            try:
+                media_stack = await self._prepare_media_stack(data)
+            except ProductMediaPreparationError as exc:
+                failure = ProductProcessingResult.fail(
+                    ProcessingErrorCode.MediaPreparationFailed,
+                    str(exc),
+                    cause=exc,
+                    data=data,
+                )
+                if send_immediately:
+                    await update.message.reply_text(msg.PRODUCT_MEDIA_FAILED)
+                logger.warning("product.media_prepare_failed | url=%s reason=%s", final_url, exc)
+                return PreparedProductCard(failure)
+
+            prepared_card = PreparedProductCard(processing_result, media_stack)
+
+            if send_immediately:
+                await self.send_prepared_card(update, context, prepared_card, include_region_notice=True)
+
+            return prepared_card
 
         except asyncio.CancelledError:
             logger.info("🛑 ProductHandler cancelled")
+            return None
+        except Exception as exc:  # noqa: BLE001
+            await self.exception_handler.handle(exc, update)
+            return None
+
+    async def send_prepared_card(
+        self,
+        update: Update,
+        context: CustomContext,
+        prepared_card: PreparedProductCard,
+        *,
+        include_region_notice: bool = False,
+    ) -> None:
+        """Надсилає вже підготовлений результат (використовується в колекціях)."""
+        data = prepared_card.result.data
+        if data is None:
+            logger.error("send_prepared_card called без даних")
             return
-        except Exception as e:
-            await self.exception_handler.handle(e, update)  # 🧯 Єдине місце обробки помилок
+
+        media_stack = prepared_card.media_stack
+        if not media_stack:
+            raise ProductMediaPreparationError("Порожній стек медіа для надсилання")
+
+        parse_mode = getattr(getattr(self.const, "UI", object()), "DEFAULT_PARSE_MODE", "HTML")
+        if include_region_notice and update.message:
+            region_display = getattr(data, "region_display", "N/A")
+            with contextlib.suppress(Exception):
+                await update.message.reply_text(
+                    msg.PRODUCT_REGION_DETECTED.format(region=region_display),
+                    parse_mode=parse_mode,
+                )
+
+        await self.messenger.send(update, context, data, media_stack=media_stack)
+
+    def _validate_card_ready(self, data: ProcessedProductData) -> Optional[str]:
+        """Перевіряє, що всі критичні блоки картки присутні."""
+        content = data.content
+        missing: list[str] = []
+
+        if not (content.title or "").strip():
+            missing.append("title")
+        if not (content.slogan or "").strip():
+            missing.append("slogan")
+        if not (content.hashtags or "").strip():
+            missing.append("hashtags")
+        if not (content.colors_text or "").strip():
+            missing.append("availability")
+        if not (content.price_message or "").strip():
+            missing.append("price")
+        if not content.images:
+            missing.append("photos")
+        if not (data.music_text or "").strip():
+            missing.append("music")
+        if not getattr(data.diagnostics, "has_size_chart", False):
+            missing.append("size_chart")
+
+        if missing:
+            return "Відсутні критичні блоки: " + ", ".join(missing)
+        return None
+
+    async def _prepare_media_stack(self, data: ProcessedProductData) -> Sequence[MediaRef]:
+        """Викачує та повертає стек фото у вигляді InputFile."""
+        stack: PreparedMediaStack = await self.media_preparer.prepare_stack(
+            data.content.images,
+            title=data.content.title or data.url,
+        )
+        if not stack.files:
+            raise ProductMediaPreparationError("Не вдалося підготувати жодного фото товару.")
+        return tuple(stack.files)

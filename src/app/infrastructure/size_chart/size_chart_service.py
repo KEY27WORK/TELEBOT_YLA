@@ -36,8 +36,10 @@ from app.domain.size_chart.interfaces import (								# 🧠 Контракти 
     ISizeChartFinder,
     ISizeChartService,
     ProgressFn,
+    SizeChartArtifacts,
 )
 from app.infrastructure.size_chart.dto import (							# 📋 DTO результатів OCR
+    ChartRenderResult,
     SizeChartOcrResult,
     SizeChartOcrStatus,
 )
@@ -334,7 +336,7 @@ class SizeChartService(ISizeChartService):
         page_source: str,
         product_sku: Optional[str] = None,
         on_progress: Optional[ProgressFn] = None,
-    ) -> List[str]:
+    ) -> SizeChartArtifacts:
         """Оркеструє повний цикл пошуку/обробки size-chart для переданого HTML.
 
         Args:
@@ -350,7 +352,7 @@ class SizeChartService(ISizeChartService):
         try:
             if not page_source or not isinstance(page_source, str):		# 🚫 Валідуємо, що HTML коректний
                 logger.warning("⚠️ Передано порожній або некоректний page_source.")
-                return []													# ↩️ Немає сенсу продовжувати
+                return SizeChartArtifacts()									# ↩️ Немає сенсу продовжувати
 
             product_gender = self._product_gender_detector.detect(page_source)	# 🚻 Визначаємо стать товару
             logger.debug("🚻 Визначена стать товару: %s", product_gender.value)
@@ -358,7 +360,7 @@ class SizeChartService(ISizeChartService):
             current_task = asyncio.current_task()							# 🔍 Отримуємо поточну корутину
             if current_task is not None and current_task.cancelled():		# 🛑 Обробка була скасована до старту
                 logger.info("🛑 Обробку скасовано до старту.")
-                return []													# ↩️ Пайплайн уже скасований
+                return SizeChartArtifacts()									# ↩️ Пайплайн уже скасований
 
             started_at = time.time()										# 🕒 Запам'ятовуємо час початку
             images_to_process = self.finder.find_images(
@@ -367,7 +369,7 @@ class SizeChartService(ISizeChartService):
             )		# 🔎 Шукаємо кандидати з урахуванням SKU
             if not images_to_process:										# ℹ️ Немає що обробляти
                 logger.info("ℹ️ Таблиці розмірів не знайдено.")
-                return []													# ↩️ Пустий результат без помилок
+                return SizeChartArtifacts()									# ↩️ Пустий результат без помилок
 
             tmp_dir = Path(self._TMP_DIR_NAME)								# 📁 Каталог тимчасових файлів
             tmp_dir.mkdir(parents=True, exist_ok=True)						# 🧱 Створюємо при потребі
@@ -376,7 +378,7 @@ class SizeChartService(ISizeChartService):
             sem_dl = asyncio.Semaphore(max(1, self._dl_max))				# 🔐 Обмеження IO-завдань
             sem_ocr = asyncio.Semaphore(max(1, self._ocr_max))				# 🔐 Обмеження CPU/OCR-завдань
 
-            tasks: List[asyncio.Task[Optional[str]]] = []					# 📋 Реєстр асинхронних задач
+            tasks: List[asyncio.Task[Optional[ChartRenderResult]]] = []		# 📋 Реєстр асинхронних задач
             general_variants_seen: Set[GeneralChartVariant] = set()			# 🚫 Уникаємо дублювання універсальних таблиць
             for idx, (url, chart_type) in enumerate(images_to_process):	# 🔄 Плануємо окрему корутину на кожний URL
                 general_variant: Optional[GeneralChartVariant] = None
@@ -419,7 +421,7 @@ class SizeChartService(ISizeChartService):
                 tasks.append(task)
 
             try:
-                raw_results: List[Union[Optional[str], BaseException]] = await asyncio.gather(
+                raw_results: List[Union[Optional[ChartRenderResult], BaseException]] = await asyncio.gather(
                     *tasks,
                     return_exceptions=True,
                 )															# 🧺 Збираємо результати й помилки
@@ -451,21 +453,21 @@ class SizeChartService(ISizeChartService):
                 await asyncio.gather(*tasks, return_exceptions=True)		# ⏳ Чекаємо коректного завершення
                 raise														# 🚨 Прокидаємо скасування далі
 
-            success_paths: List[str] = []									# 📦 Список успішних PNG
+            artifacts = SizeChartArtifacts()
             for result in raw_results:										# 📦 Розбираємо відповіді gather
                 if isinstance(result, BaseException):						# ⚠️ Підзадача завершилась помилкою
                     logger.warning("⚠️ Підзадача завершилася помилкою: %s", result)
                     continue												# ❌ Пропускаємо невдалий результат
                 if result:
-                    success_paths.append(result)								# ✅ Додаємо шлях до готового PNG
+                    self._record_artifact(artifacts, result)
 
             logger.info(
                 "✅ Оброблено %d/%d таблиць за %.2f сек.",
-                len(success_paths),
+                len(artifacts.ordered_paths()),
                 len(images_to_process),
                 time.time() - started_at,
             )
-            return success_paths											# ↩️ Повертаємо список результатів
+            return artifacts												# ↩️ Повертаємо структурований результат
 
         finally:
             self.on_progress = original_callback							# 🔄 Відновлюємо глобальний колбек
@@ -535,7 +537,7 @@ class SizeChartService(ISizeChartService):
         sem_ocr: asyncio.Semaphore,
         task_id: str,
         general_variant: Optional[GeneralChartVariant] = None,
-    ) -> Optional[str]:
+    ) -> Optional[ChartRenderResult]:
         """
         🔄 Повний конвеєр обробки одного зображення.
 
@@ -581,7 +583,7 @@ class SizeChartService(ISizeChartService):
                             "cache_hit": True,
                         },
                     )
-                    return cached_path
+                    return ChartRenderResult(chart_type=chart_type, path=cached_path)
 
             try:
                 await self._emit_progress(
@@ -811,7 +813,7 @@ class SizeChartService(ISizeChartService):
                 if self._autotune_enabled:									# 🤖 Збираємо метрики генератора
                     self._maybe_log_autotune_hint()							# 🤖 Підказка щодо тюнінгу
 
-                return result_path											# ✅ Повертаємо шлях до PNG
+                return ChartRenderResult(chart_type=chart_type, path=result_path)	# ✅ Повертаємо шлях + тип
 
             except asyncio.CancelledError:
                 logger.info("🛑 [task=%s] Підзадачу скасовано: %s", task_id, human_title)
@@ -909,3 +911,12 @@ class SizeChartService(ISizeChartService):
         sorted_values = sorted(values)									# 📊 Сортуємо для p95
         index = max(0, int(0.95 * (len(sorted_values) - 1)))				# 🔢 Обчислюємо індекс p95
         return float(sorted_values[index])								# 📈 Повертаємо значення
+
+    def _record_artifact(self, artifacts: SizeChartArtifacts, render_result: ChartRenderResult) -> None:
+        """🧺 Розкладає результати рендера по категоріях."""
+        if render_result.chart_type is ChartType.UNIQUE:
+            artifacts.register_product(render_result.path)
+        elif render_result.chart_type is ChartType.GENERAL:
+            artifacts.register_global(render_result.path)
+        else:
+            artifacts.register_extra(render_result.chart_type.value, render_result.path)

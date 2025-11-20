@@ -23,6 +23,7 @@ from .table_generator_factory import TableGeneratorFactory
 
 # 🧭 Оркестрація процесу
 from .size_chart_service import ProgressCallback, SizeChartProgress, SizeChartService, Stage
+from app.domain.size_chart.interfaces import SizeChartArtifacts
 
 # 🔍 Пошук таблиць на сторінці
 from .youngla_finder import YoungLASizeChartFinder
@@ -41,4 +42,5 @@ __all__ = [
     "SizeChartService",
     "Stage",
     "YoungLASizeChartFinder",
+    "SizeChartArtifacts",
 ]

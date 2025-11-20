@@ -17,11 +17,17 @@ import asyncio                                                          # 🔄 �
 import contextlib                                                       # 🧰 Безпечне подавлення винятків
 import logging                                                          # 🧾 Логування подій
 import time                                                             # ⏱️ Вимірювання часу для тротлінгу
-from typing import Awaitable, Callable, List                            # 🧰 Типи для колбеків та списків
+from dataclasses import dataclass
+from enum import Enum
+from typing import Awaitable, Callable, List, Optional, Sequence, Tuple
 
 # 🧩 Внутрішні модулі проєкту
-from app.bot.handlers.product.product_handler import ProductHandler     # 🛍️ Обробник одного товару (UI‑шар)
+from app.bot.handlers.product.product_handler import (                  # 🛍️ Обробник одного товару (UI‑шар)
+    PreparedProductCard,
+    ProductHandler,
+)
 from app.bot.services.custom_context import CustomContext               # 🧠 Розширений контекст бота
+from app.infrastructure.services.collection_health import CollectionHealthSummary  # 🩺 Звіти про здоров'я колекції
 from app.shared.utils.logger import LOG_NAME                            # 🏷️ Ім'я логера з єдиного централізованого місця
 
 
@@ -29,6 +35,40 @@ from app.shared.utils.logger import LOG_NAME                            # 🏷�
 # 🧾 ЛОГЕР
 # ==========================
 logger = logging.getLogger(LOG_NAME)
+
+
+class CollectionItemState(str, Enum):
+    """Стан окремого товару в рамках колекції."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    RETRYING = "retry"
+    OK = "ok"
+    FAILED = "failed"
+
+
+@dataclass(slots=True)
+class CollectionItemStatus:
+    """Відображає прогрес обробки одного URL."""
+
+    index: int
+    url: str
+    title: str = ""
+    state: CollectionItemState = CollectionItemState.PENDING
+    detail: Optional[str] = None
+
+    def display_name(self) -> str:
+        return self.title or f"#{self.index + 1}"
+
+
+@dataclass(slots=True)
+class CollectionProgressSnapshot:
+    """Знімок загального прогресу колекції."""
+
+    completed: int
+    total: int
+    successes: int
+    statuses: Tuple[CollectionItemStatus, ...]
 
 
 # ==========================
@@ -68,87 +108,189 @@ class CollectionRunner:
         update: Update,
         context: CustomContext,
         urls: List[str],
-        on_progress: Callable[[int, int], Awaitable[None]],
+        on_progress: Callable[[CollectionProgressSnapshot], Awaitable[None]],
         is_cancelled: Callable[[], bool],
-    ) -> int:
+    ) -> tuple[int, CollectionHealthSummary]:
         """
-        ▶️ Запускає обробку списку URL з контрольною логікою паралелізму, ретраїв і тротлінгу.
-
-        Args:
-            update: Об'єкт Telegram Update (прокидується в product_handler).
-            context: Кастомний контекст (дані сесії, кеші, DI).
-            urls: Перелік URL товарів для обробки.
-            on_progress: Колбек оновлення прогресу: `processed, total`.
-            is_cancelled: Функція-перевірка, чи скасована операція зверху (наприклад, користувачем).
+        ▶️ Запускає обробку списку URL з контролем паралелізму, ретраїв і тротлінгу.
 
         Returns:
-            Кількість успішно оброблених товарів.
+            tuple[int, CollectionHealthSummary]: (успішно відправлено, health-звіт).
         """
-        processed_count = 0												# 🔢 Лічильник успішно оброблених позицій
-        total = len(urls)												# 📦 Загальна кількість робіт
-        last_push_time = 0.0											# 🕓 Останній час пушу прогресу (для тротлінгу)
+        success_count = 0                                               # 🔢 Лічильник успішно надісланих карточок
+        completed_count = 0                                             # 🔢 Скільки товарів уже завершено (успіх + фейл)
+        total = len(urls)                                               # 📦 Загальна кількість
+        last_push_time = 0.0                                            # 🕓 Останній час оновлення прогресу
+        health = CollectionHealthSummary()                              # 🩺 Метрики стану колекції
+        statuses: List[CollectionItemStatus] = [
+            CollectionItemStatus(index=i, url=url) for i, url in enumerate(urls)
+        ]
+        status_lock = asyncio.Lock()
 
-        # --------------------------
-        # 🔧 Локальна обробка одного URL
-        # --------------------------
-        async def _process_one_url(url: str) -> bool:
+        def _resolve_title(card: Optional[PreparedProductCard], idx: int) -> str:
+            data = getattr(card.result, "data", None) if card else None
+            title = getattr(getattr(data, "content", object()), "title", "") if data else ""
+            return title or f"#{idx + 1}"
+
+        async def _push_progress(force: bool = False) -> None:
+            nonlocal last_push_time
+            now = time.monotonic()
+            if not force and completed_count < total and (now - last_push_time) < self._progress_interval:
+                return
+            last_push_time = now
+            async with status_lock:
+                snapshot_statuses = tuple(
+                    CollectionItemStatus(
+                        index=s.index,
+                        url=s.url,
+                        title=s.title,
+                        state=s.state,
+                        detail=s.detail,
+                    )
+                    for s in statuses
+                )
+            try:
+                await on_progress(
+                    CollectionProgressSnapshot(
+                        completed=completed_count,
+                        total=total,
+                        successes=success_count,
+                        statuses=snapshot_statuses,
+                    )
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
+        async def _update_status(
+            idx: int,
+            state: CollectionItemState,
+            *,
+            detail: Optional[str] = None,
+            title: Optional[str] = None,
+            force: bool = False,
+        ) -> None:
+            async with status_lock:
+                current = statuses[idx]
+                if title:
+                    current.title = title
+                current.state = state
+                current.detail = detail
+            if force:
+                await _push_progress(force=True)
+
+        async def _process_one_url(idx: int, url: str) -> Tuple[int, Optional[PreparedProductCard]]:
             if is_cancelled():
-                return False											# 🛑 Якщо зверху вже скасували — виходимо без роботи
+                await _update_status(idx, CollectionItemState.FAILED, detail="Скасовано", force=True)
+                return idx, None
 
             async with self._sem:
-                delay = 0.6											# ⏳ Початкова затримка для exponential backoff
+                delay = 0.6
                 for attempt in range(self._retries + 1):
                     try:
-                        await self._product_handler.handle_url(
+                        await _update_status(idx, CollectionItemState.PROCESSING)
+                        prepared = await self._product_handler.handle_url(
                             update,
                             context,
                             url=url,
-                            update_currency=False,							# 💱 Колекція не повинна постійно смикати оновлення курсів
+                            update_currency=False,
+                            send_immediately=False,
                         )
-                        return True									# ✅ Успішно
+                        return idx, prepared
                     except asyncio.CancelledError:
                         logger.info("🛑 Cancelled item: %s", url)
-                        return False									# 🧹 Коректно завершуємо цей айтем
-                    except Exception as e:  # noqa: BLE001 (свідомо логимо будь-яку помилку як попередження)
+                        await _update_status(idx, CollectionItemState.FAILED, detail="Скасовано", force=True)
+                        return idx, None
+                    except Exception as exc:  # noqa: BLE001
                         logger.warning(
                             "[CollectionRunner] Помилка (%s/%s) на %s: %s",
                             attempt + 1,
                             self._retries + 1,
                             url,
-                            e,
+                            exc,
+                        )
+                        await _update_status(
+                            idx,
+                            CollectionItemState.RETRYING,
+                            detail=str(exc),
+                            force=True,
                         )
                         if attempt >= self._retries:
-                            return False								# ❌ Вичерпали спроби — фіксуємо провал
-                        await asyncio.sleep(delay)						# 😴 Backoff перед наступною спробою
-                        delay *= 2										# 📈 Експоненційно збільшуємо затримку
-                return False											# 🧯 Невдача після циклу спроб
+                            return idx, None
+                        await asyncio.sleep(delay)
+                        delay *= 2
 
-        tasks = [asyncio.create_task(_process_one_url(u)) for u in urls]				# 🧵 Створюємо задачі одразу — виконуємо конкурентно
+            return idx, None
+
+        tasks = [asyncio.create_task(_process_one_url(i, url)) for i, url in enumerate(urls)]
+        await _push_progress(force=True)
 
         try:
-            # Обходимо по мірі завершення
             for fut in asyncio.as_completed(tasks):
-                success = await fut
-                if success:
-                    processed_count += 1								# ➕ Рахуємо лише успішні
+                idx, prepared_card = await fut
+                completed_count += 1
 
-                # ⏱️ Троттлимо прогрес, щоб не дудосити UI
-                now = time.monotonic()
-                if (now - last_push_time) >= self._progress_interval or processed_count == total:
-                    last_push_time = now
-                    try:
-                        await on_progress(processed_count, total)				# 📣 Акуратне оновлення прогресу
-                    except Exception:  # noqa: BLE001
-                        # 🙈 Не зриваємо основний цикл через проблеми з UI‑оновленням
-                        pass
+                if prepared_card and prepared_card.result.ok and prepared_card.media_stack:
+                    data = prepared_card.result.data
+                    if not data:
+                        health.register_failed()
+                        await _update_status(
+                            idx,
+                            CollectionItemState.FAILED,
+                            detail="Порожні дані картки",
+                            force=True,
+                        )
+                    else:
+                        try:
+                            await self._product_handler.send_prepared_card(
+                                update,
+                                context,
+                                prepared_card,
+                                include_region_notice=False,
+                            )
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("Не вдалося надіслати картку %s: %s", data.url, exc)
+                            health.register_failed()
+                            await _update_status(
+                                idx,
+                                CollectionItemState.FAILED,
+                                detail=str(exc),
+                                title=data.content.title,
+                                force=True,
+                            )
+                        else:
+                            success_count += 1
+                            health.register_ok(prepared_card.result.alt_fallback_used)
+                            await _update_status(
+                                idx,
+                                CollectionItemState.OK,
+                                title=data.content.title,
+                                detail=None,
+                                force=True,
+                            )
+                else:
+                    health.register_failed()
+                    reason = ""
+                    if prepared_card and prepared_card.result.error_message:
+                        reason = prepared_card.result.error_message
+                    await _update_status(
+                        idx,
+                        CollectionItemState.FAILED,
+                        detail=reason or "Не вдалося обробити товар",
+                        title=_resolve_title(prepared_card, idx),
+                        force=True,
+                    )
+
+                await _push_progress(force=False)
 
         except asyncio.CancelledError:
             logger.info("🛑 CollectionRunner cancelled")
-            # 🧹 Акуратно відміняємо інші таски
-            for t in tasks:
-                t.cancel()
+            for task in tasks:
+                task.cancel()
+        finally:
             with contextlib.suppress(Exception):
                 await asyncio.gather(*tasks, return_exceptions=True)
-            return processed_count										# 🔙 Повертаємо, що встигли обробити
 
-        return processed_count											# ✅ Загальний результат після успішного проходу
+        return success_count, health
+ 

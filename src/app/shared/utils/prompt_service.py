@@ -35,6 +35,7 @@ class PromptType(str, Enum):
     CLOTHING_TYPE = "clothing_type"                      # 👗 Визначення типу одягу
     TRANSLATION = "translation"                          # 🌐 Переклад текстів
     SLOGAN = "slogan"                                    # ✨ Рекламні слогани
+    BANNER_POST = "banner_post"                          # 🪧 Пост у стилі Instagram для банера
 
 
 class ChartType(str, Enum):

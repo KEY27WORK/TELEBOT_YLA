@@ -194,7 +194,8 @@ class OCRService:
         logger.info("📦 OCR cache MISS (%s)", sha256)
 
         prompt = self.prompt_service.size_chart(chart_type=size_chart_type)	# 💬 Підбираємо промт
-        logger.debug("💬 Сформовано промт для %s (len=%d символів).", size_chart_type.value, len(prompt or ""))
+        prompt_text = prompt if isinstance(prompt, str) else str(prompt)		# 🔤 Гарантуємо рядкове представлення
+        logger.debug("💬 Сформовано промт для %s (len=%d символів).", size_chart_type.value, len(prompt_text or ""))
         attempt = 0															# 🔢 Лічильник спроб
         last_error: Optional[str] = None										# 🧾 Остання помилка
         response_text: Optional[str] = None									# 🧾 Сирий текст відповіді

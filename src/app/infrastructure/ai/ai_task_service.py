@@ -19,11 +19,12 @@ import logging														# 🧾 Логування
 import re															# 🔤 Нормалізація заголовків секцій
 import time															# ⏱️ TTL та статистика
 from pathlib import Path											# 📂 Робота з директоріями кешу
-from typing import Any, Dict, Optional, Tuple						# 📐 Типізація
+from typing import Any, Dict, Optional, Sequence, Tuple			# 📐 Типізація
 
 # 🧩 Внутрішні модулі проєкту
 from app.config.config_service import ConfigService				# ⚙️ Читання конфігів
 from app.domain.ai.task_contracts import (							# 🤝 Контракти домену
+    IBannerPostGenerator,
     ISloganGenerator,
     ITranslator,
     IWeightEstimator,
@@ -40,6 +41,10 @@ from .telemetry_ai import TelemetrySink								# 📈 Телеметрія се�
 logger = logging.getLogger(f"{LOG_NAME}.ai.tasks")					# 🧾 Іменований логер
 
 DEFAULT_SLOGAN = "YoungLA вайб, твій щоденний драйв 🚀"				# 🪄 Fallback для слоганів
+DEFAULT_BANNER_POST = (
+    "❗️YoungLA drop вже на головній! Забирай свій сет та замовляй доставку по Україні просто зараз. "
+    "#youngla #younglaua #дроп #gymwear #стрітстайл"
+)																	# 🪧 Fallback caption
 
 
 # ================================
@@ -153,7 +158,7 @@ class _TTLCache:
 # ================================
 # 🧠 СЕРВІС AI-ЗАВДАНЬ
 # ================================
-class AITaskService(IWeightEstimator, ITranslator, ISloganGenerator):
+class AITaskService(IWeightEstimator, ITranslator, ISloganGenerator, IBannerPostGenerator):
     """🧠 Реалізація доменних контрактів для AI-перекладів/ваги/слоганів."""
 
     def __init__(
@@ -347,6 +352,43 @@ class AITaskService(IWeightEstimator, ITranslator, ISloganGenerator):
         self._emit("ai.slogan.result", {"ok": True, "len": len(cleaned)})
         logger.info("✨ Слоган згенеровано", extra={"len": len(cleaned)})
         return cleaned
+
+    async def generate_banner_post(
+        self,
+        *,
+        collection_label: str,
+        product_names: Sequence[str],
+        vibe_hint: str,
+        link_count: int,
+    ) -> str:
+        """🪧 Формує Instagram-стиль caption на базі банера."""
+        normalized_names = [name.strip() for name in product_names if name and name.strip()]
+        self._emit(
+            "ai.banner_post.request",
+            {
+                "label_len": len(collection_label or ""),
+                "product_count": len(normalized_names),
+                "link_count": link_count,
+                "has_hint": bool(vibe_hint),
+            },
+        )
+        product_blob = "\n".join(f"- {name}" for name in normalized_names) or "- YoungLA essentials"
+        prompt = self._prompts.banner_post(
+            collection_label=collection_label or "YoungLA drop",
+            product_list=product_blob,
+            vibe_hint=vibe_hint or "",
+            link_count=max(0, link_count),
+        )
+        response = await self._openai.chat_completion(prompt)
+        if not response:
+            self._emit("ai.banner_post.result", {"ok": False, "reason": "empty", "fallback": True})
+            logger.warning("🪧 Banner post: порожня відповідь — повертаємо fallback.")
+            return DEFAULT_BANNER_POST
+
+        cleaned = response.strip()
+        self._emit("ai.banner_post.result", {"ok": True, "len": len(cleaned)})
+        logger.info("🪧 Banner post згенеровано", extra={"len": len(cleaned)})
+        return cleaned or DEFAULT_BANNER_POST
 
 
 __all__ = ["AITaskService"]											# 📦 Публічний сервіс

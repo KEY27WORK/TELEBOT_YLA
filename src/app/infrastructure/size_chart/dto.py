@@ -14,6 +14,8 @@ from dataclasses import dataclass											# 🧱 Декларативні ст
 from enum import Enum														# 🏷️ Перелік статусів
 from typing import Any, Dict, Optional										# 🧰 Узгоджена типізація
 
+from app.shared.utils.prompts import ChartType
+
 
 # ================================
 # 🏷️ СТАТУСИ OCR
@@ -47,16 +49,17 @@ class SizeChartOcrResult:
     status: SizeChartOcrStatus											# 🏷️ Фіксуємо підсумковий статус
     data: Optional[Dict[str, Any]] = None								# 📊 Структурована таблиця з OCR
     raw_text: Optional[str] = None										# 📝 Сирий JSON або текст
-    error: Optional[str] = None											# ❌ Короткий опис збою
+    error: Optional[str] = None											# ❌ Пояснення помилки (якщо сталася)
 
-    @property
-    def ok(self) -> bool:
-        """✅ Перевіряє, що OCR пройшов успішно і дані непорожні."""
-        return (
-            self.status == SizeChartOcrStatus.OK							# 🟢 Маємо статус OK
-            and isinstance(self.data, dict)								# 📐 Дані представлені словником
-            and bool(self.data)											# 📦 Є хоча б один елемент
-        )
+
+@dataclass(frozen=True)
+class ChartRenderResult:
+    """
+    📄 Рендер конкретної PNG-таблиці (для акумуляції результатів).
+    """
+
+    chart_type: ChartType
+    path: str
 
 
 __all__ = ["SizeChartOcrStatus", "SizeChartOcrResult"]					# 📦 Експортуємо DTO

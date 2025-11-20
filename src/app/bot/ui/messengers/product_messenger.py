@@ -16,10 +16,13 @@ from telegram import Update                                              # 🤖 
 import asyncio                                                           # ⏱️ Асинхронні паузи між блоками
 import logging                                                           # 🧾 Логування перебігу сценарію
 import re                                                                # 🔍 Нормалізація музичних рекомендацій
-from typing import Final                                                 # 🧰 Типова константа (паузи між блоками)
+from typing import Final, Optional, Sequence                           # 🧰 Типи для медіастеку
 
 # 🧩 Внутрішні модулі проєкту
-from app.bot.handlers.product.image_sender import ImageSender            # 🖼️ Відправка фотографій/альбомів
+from app.bot.handlers.product.image_sender import (                     # 🖼️ Відправка фотографій/альбомів
+    ImageSender,
+    MediaRef,
+)
 from app.bot.handlers.size_chart_handler_bot import SizeChartHandlerBot  # 📏 Надсилання таблиць розмірів
 from app.bot.services.custom_context import CustomContext                # 🧰 Розширений контекст бота
 from app.bot.ui import static_messages as msg                            # 📝 Статичні повідомлення UI
@@ -68,7 +71,14 @@ class ProductMessenger:
     # ================================
     # 📤 ОСНОВНИЙ МЕТОД ВІДПРАВКИ
     # ================================
-    async def send(self, update: Update, context: CustomContext, data: ProcessedProductData) -> None:
+    async def send(
+        self,
+        update: Update,
+        context: CustomContext,
+        data: ProcessedProductData,
+        *,
+        media_stack: Optional[Sequence[MediaRef]] = None,
+    ) -> None:
         """
         🚚 Відправляє опис, заголовок, прайс, музику, фото та таблицю розмірів.
         """
@@ -111,10 +121,15 @@ class ProductMessenger:
 
             await self._send_music_block(update, context, data.music_text, title_upper)  # 🎵 Музичні рекомендації
 
+            final_media = media_stack if media_stack is not None else data.content.images
+            if not final_media:
+                logger.warning("🖼️ Стек фото порожній | title=%s", title_upper)
+                return
+
             sent_media = await self.image_sender.send_images(             # 🖼️ Фото/альбоми товару
                 update=update,
                 context=context,
-                images=data.content.images,
+                images=final_media,
             ) or []                                                       # 🔁 Гарантуємо список навіть у разі None
             logger.info(                                                  # 🧾 Лог відправлених фото
                 "🖼️ Фото відправлено | chat_id=%s user_id=%s requested=%d sent=%d",

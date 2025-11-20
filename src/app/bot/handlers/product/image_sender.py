@@ -315,10 +315,11 @@ class ImageSender:
                     batch_index, total_batches, e,
                 )                                                                           			# 🚨 Помилка — пробуємо розіслати по одному
                 out: List[Message] = []
-                for single in media_items:
+                for idx, single in enumerate(media_items):
+                    single_caption = first_caption if idx == 0 and first_caption else None
                     s = await self._send_single_photo(
                         update, context, single,
-                        caption=None, parse_mode=parse_mode,
+                        caption=single_caption, parse_mode=parse_mode,
                         reply_to_message_id=reply_to_message_id,
                         disable_notification=disable_notification,
                         protect_content=protect_content,

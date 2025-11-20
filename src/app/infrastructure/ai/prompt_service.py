@@ -140,6 +140,24 @@ class PromptService:
             description=description,
         )																# ↩️ DTO для OpenAIService
 
+    def banner_post(
+        self,
+        *,
+        collection_label: str,
+        product_list: str,
+        vibe_hint: Optional[str],
+        link_count: int,
+    ) -> ChatPrompt:
+        """🪧 Промпт для Instagram-поста за банером головної сторінки."""
+        return self._build_prompt(
+            prompt_type=PromptType.BANNER_POST,
+            system_lang=None,
+            collection_label=collection_label,
+            product_list=product_list,
+            vibe_hint=vibe_hint or "",
+            link_count=link_count,
+        )
+
     def music(self, *, title: str, description: str, image_url: str) -> ChatPrompt:
         """🎵 Опис композиції на основі даних товару."""
         return self._build_prompt(

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 # 🔠 Системні імпорти
 import logging                                                           # 🧾 Базові засоби логування
+from decimal import Decimal, InvalidOperation                            # 🪙 Конвертація конфігурацій грошей
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast              # 🧮 Допоміжні типи та касти
 
 # 🧩 Внутрішні модулі проєкту
@@ -41,7 +42,7 @@ from app.config.setup.constants import CONST, AppConstants               # ⚙�
 # 🏭 Доменна логіка
 from app.domain.availability.services import AvailabilityService         # 📊 Доменний сервіс доступності
 from app.domain.delivery.interfaces import IDeliveryService              # 🚚 Контракт сервісу доставки
-from app.domain.pricing.services import PricingService                   # 💵 Доменне ціноутворення
+from app.domain.pricing.services import PricingService, PricingConfig    # 💵 Доменне ціноутворення
 from app.domain.products.interfaces import IProductSearchProvider        # 🔍 Контракт пошуку товарів
 from app.domain.products.services.weight_resolver import WeightResolver  # ⚖️ Обрахунок ваги
 
@@ -72,6 +73,8 @@ from app.infrastructure.music.music_sender import MusicSender            # 📤 
 from app.infrastructure.music.yt_downloader import YtDownloader          # ⬇️ Завантаження з YouTube
 from app.infrastructure.parsers.factory_adapter import ParserFactoryAdapter  # 🔌 Адаптер фабрики парсерів
 from app.infrastructure.parsers.parser_factory import ParserFactory      # 🧩 Фабрика парсерів
+from app.infrastructure.services.banner_drop_service import BannerDropService      # 🪧 Banner drop
+from app.infrastructure.services.product_media_preparer import ProductMediaPreparer  # 🖼️ Підготовка фото
 from app.infrastructure.services.product_processing_service import ProductProcessingService  # 🛠️ Комплексна обробка товару
 
 # 📏 Інфраструктура: доступність та size chart
@@ -326,7 +329,50 @@ class Container:
         """
         Формує доменні сервіси ціноутворення, ваги та доступності.
         """
-        self.pricing_service = PricingService(delivery_service=self.delivery_service)     # 💵 Розрахунок цін
+        raw_discount = self.config.get("pricing.discount_percentage")                    # 🔻 Відсоток знижки з конфігів
+        discount_percent = Decimal("15")                                                 # 🎯 Запасне значення
+        if raw_discount is not None:
+            try:
+                discount_percent = Decimal(str(raw_discount))                             # 🔁 Нормалізуємо у Decimal
+            except (InvalidOperation, TypeError, ValueError):                             # ⚠️ Конфіг зіпсований
+                logger.warning(
+                    "pricing.discount_percentage має невалідне значення %r — використовую 15%%",
+                    raw_discount,
+                )
+
+        insurance_cfg: Dict[str, Any] = self.config.get("pricing.meest_insurance", {}) or {}
+        raw_mode = str(insurance_cfg.get("mode", "none")).strip().lower() or "none"
+        if raw_mode not in {"none", "fixed", "percent_cost", "percent_final"}:
+            logger.warning(
+                "pricing.meest_insurance.mode=%r невідомий — використовую 'none'",
+                raw_mode,
+            )
+            raw_mode = "none"
+
+        def _safe_decimal(value: Any, fallback: str) -> Decimal:
+            try:
+                return Decimal(str(value))
+            except (InvalidOperation, TypeError, ValueError):
+                logger.warning(
+                    "pricing.meest_insurance значення %r не конвертується у Decimal — використовую %s",
+                    value,
+                    fallback,
+                )
+                return Decimal(fallback)
+
+        fixed_usd = _safe_decimal(insurance_cfg.get("fixed_usd", "0"), "0")
+        percent = _safe_decimal(insurance_cfg.get("percent", "0"), "0")
+
+        pricing_cfg = PricingConfig(                                            # ⚙️ Формуємо конфіг домену
+            discount_percent=discount_percent,
+            meest_insurance_mode=raw_mode,
+            meest_insurance_fixed_usd=fixed_usd,
+            meest_insurance_percent=percent,
+        )
+        self.pricing_service = PricingService(                                            # 💵 Розрахунок цін
+            delivery_service=self.delivery_service,
+            cfg=pricing_cfg,
+        )
         self.weight_resolver = WeightResolver(
             weight_data_service=cast(Any, self.weight_data_service),
             ai_estimator=cast(Any, self.ai_task_service),
@@ -400,6 +446,9 @@ class Container:
             alt_text_generator=self.alt_text_generator,
         )                                                                                # 📝 Збагачення контенту
         self.image_downloader = ImageDownloader(compute_sha256=True)                     # 🖼️ Завантаження з SHA кешем
+        self.product_media_preparer = ProductMediaPreparer(                               # 🧰 Підготовка стеку фото
+            downloader=ImageDownloader(max_attempts=3, backoff_base_s=0.8),
+        )
         self.size_chart_finder = YoungLASizeChartFinder()                                # 🧭 Пошук таблиць YoungLA
         self.product_gender_detector = YoungLAProductGenderDetector()                    # 🚻 Детектор статі товару
         self.size_chart_service = SizeChartService(
@@ -440,6 +489,7 @@ class Container:
             currency_manager=self.currency_manager,
             processing_service=self.processing_service,
             messenger=self.messenger,
+            media_preparer=self.product_media_preparer,
             exception_handler=self.exception_handler_service,
             constants=self.constants,
             url_parser_service=self.url_parser_service,
@@ -466,6 +516,23 @@ class Container:
             collection_max_items,
             collection_concurrency,
         )                                                                                # 🧾 Стан високорівневих сервісів
+        banner_cfg = self.config.get("banner_drop", {}) or {}
+        banner_max_titles = _int_or_default(banner_cfg.get("max_product_titles"), 9)
+        banner_cache = _int_or_default(banner_cfg.get("processed_cache_size"), 5)
+        self.banner_drop_service = BannerDropService(
+            webdriver_service=self.webdriver_service,
+            url_parser_service=self.url_parser_service,
+            collection_processing_service=self.collection_processing_service,
+            product_processing_service=self.processing_service,
+            ai_service=self.ai_task_service,
+            image_downloader=self.image_downloader,
+            image_sender=self.image_sender,
+            collection_handler=self.collection_handler,
+            constants=self.constants,
+            exception_handler=self.exception_handler_service,
+            max_product_titles=banner_max_titles,
+            processed_cache_size=banner_cache,
+        )                                                                                # 🪧 Banner drop сценарій
 
     # ================================
     # 📚 ФІЧІ ТА РОУТЕРИ
@@ -494,6 +561,7 @@ class Container:
             size_chart_handler=self.size_chart_handler,
             price_calculator=self.price_calculator,
             availability_handler=self.availability_handler,
+            banner_drop_service=self.banner_drop_service,
             search_resolver=self.search_resolver,
             url_parser_service=self.url_parser_service,
             currency_manager=self.currency_manager,

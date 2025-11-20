@@ -31,6 +31,7 @@ from app.config.setup.constants import AppConstants
 from app.domain.products.interfaces import IProductSearchProvider
 from app.errors.exception_handler_service import ExceptionHandlerService
 from app.infrastructure.currency.currency_manager import CurrencyManager
+from app.infrastructure.services.banner_drop_service import BannerDropService
 from app.shared.utils.logger import LOG_NAME
 from app.shared.utils.url_parser_service import UrlParserService
 
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
 # 🧾 ЛОГЕР
 # ================================
 logger = logging.getLogger(LOG_NAME)											# 🧾 Ініціалізуємо іменований логер для єдиного формату логів
+HOME_PAGE_PATTERN = re.compile(r"^https?://(www\.)?youngla\.com/?$", re.IGNORECASE)
 
 
 # ================================
@@ -109,6 +111,7 @@ class LinkHandler:
         size_chart_handler: "SizeChartHandlerBot",
         price_calculator: Optional["PriceCalculationHandler"],					# ← ✅ зробили необовʼязковим
         availability_handler: "AvailabilityHandler",
+        banner_drop_service: BannerDropService,
         search_resolver: IProductSearchProvider,
         url_parser_service: UrlParserService,
         currency_manager: CurrencyManager,
@@ -120,6 +123,7 @@ class LinkHandler:
         self.size_chart_handler = size_chart_handler								# 🤝 Інʼєкція: обробник таблиць розмірів
         self.price_calculator = price_calculator									# 🤝 Інʼєкція: обробник розрахунку ціни (може бути None)
         self.availability_handler = availability_handler							# 🤝 Інʼєкція: обробник мульти-регіональної наявності
+        self.banner_drop_service = banner_drop_service								# 🪧 Інʼєкція: сценарій Banner drop
         self.search_resolver = search_resolver									# 🤝 Інʼєкція: провайдер пошуку URL за текстом
         self.url_parser_service = url_parser_service								# 🤝 Інʼєкція: сервіс парсингу/класифікації URL
         self.currency_manager = currency_manager									# 🤝 Інʼєкція: менеджер курсів валют
@@ -263,6 +267,11 @@ class LinkHandler:
     async def _route_by_url_type(self, update: Update, context: CustomContext, url: str) -> None:
         """Визначає тип URL (товар чи колекція) і викликає відповідний обробник."""
         if not update.message:													# 🧯 Без message немає кому відповідати
+            return
+
+        if HOME_PAGE_PATTERN.match(url):
+            logger.info("🪧 Виявлено головну youngla.com: %s", url)
+            await self.banner_drop_service.process_homepage(update=update, context=context, url=url)
             return
 
         is_collection = self.url_parser_service.is_collection_url(url)			# 🧪 Перевіряємо, чи це сторінка колекції

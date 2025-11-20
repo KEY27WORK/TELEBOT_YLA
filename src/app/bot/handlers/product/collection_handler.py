@@ -30,7 +30,12 @@ from app.infrastructure.collection_processing.collection_processing_service impo
 from app.domain.products.entities import Url                               # 🔗 Value-object посилання продукту
 from app.shared.utils.logger import LOG_NAME                               # 🏷️ Ім'я логера
 from app.shared.utils.url_parser_service import UrlParserService           # 🔎 Парсер/валідація URL + регіон
-from .collection_runner import CollectionRunner                            # 🏃 Оркестратор багатопотокової обробки
+from .collection_runner import (                                           # 🏃 Оркестратор багатопотокової обробки
+    CollectionItemState,
+    CollectionItemStatus,
+    CollectionProgressSnapshot,
+    CollectionRunner,
+)
 
 
 # ==========================
@@ -44,6 +49,14 @@ logger = logging.getLogger(LOG_NAME)
 # ==========================
 class CollectionHandler:
     """Оркестрація UI навколо обробки колекції."""
+
+    _STATUS_ICONS = {
+        CollectionItemState.PENDING: "⚪️",
+        CollectionItemState.PROCESSING: "⏳",
+        CollectionItemState.RETRYING: "🟡",
+        CollectionItemState.OK: "🟢",
+        CollectionItemState.FAILED: "🔴",
+    }
 
     # --------------------------
     # ⚙️ ІНІЦІАЛІЗАЦІЯ
@@ -92,36 +105,38 @@ class CollectionHandler:
     # ==========================
     # ▶️ ПУБЛІЧНИЙ МЕТОД
     # ==========================
-    async def handle_collection(self, update: Update, context: CustomContext) -> None:
+    async def handle_collection(self, update: Update, context: CustomContext, url: Optional[str] = None) -> None:
         """
         Приймає посилання на колекцію, запускає обробку та показує прогрес.
         """
         progress_msg: Optional[Message] = None								# 💬 Повідомлення, яке оновлюємо під час прогресу
         can_edit_progress = True										# 🛡️ Після першої помилки редагування — більше не пробуємо
         user_id: str = "unknown"										# 🆔 Ініціалізація для логів (перед guard)
-        url: str = ""												# 🔗 Початковий URL (може не бути заданий)
+        effective_url: str = ""										# 🔗 Початковий URL (може не бути заданий)
 
         try:
-            if not update.message or not context.url:
+            raw_url = url or context.url
+            if not update.message or not raw_url:
                 logger.debug("📭 Skip collection handling (message=%s url=%s)", bool(update.message), bool(context.url))
                 return											# 🚪 Нема що обробляти (unsafe guard)
 
-            url = context.url.strip()										# ✂️ Нормалізуємо URL
+            effective_url = raw_url.strip()									# ✂️ Нормалізуємо URL
+            context.url = effective_url										# 🧷 Зберігаємо normalized URL у контексті
             user_id = getattr(update.effective_user, "id", "unknown")                     # 🆔 Ідентифікатор користувача
-            logger.info("🗂️ Collection requested user=%s url=%s", user_id, url)          # 🧾 Фіксуємо запит
+            logger.info("🗂️ Collection requested user=%s url=%s", user_id, effective_url)  # 🧾 Фіксуємо запит
 
             # ==========================
             # ✅ ВАЛІДАЦІЯ URL
             # ==========================
             try:
                 # Якщо в сервісі є is_valid_url — використовуємо його
-                is_valid = self._url_parser.is_valid_url(url)  # type: ignore[attr-defined]
+                is_valid = self._url_parser.is_valid_url(effective_url)  # type: ignore[attr-defined]
             except Exception:
                 # Фолбек — простий префікс
-                is_valid = url.startswith(("http://", "https://"))
+                is_valid = effective_url.startswith(("http://", "https://"))
 
             if not is_valid:
-                logger.warning("⚠️ Invalid collection URL user=%s url=%s", user_id, url)
+                logger.warning("⚠️ Invalid collection URL user=%s url=%s", user_id, effective_url)
                 await update.message.reply_text(msg.COLL_INVALID_URL)
                 return											# 🧱 Зупиняємось — лінк невалідний
 
@@ -131,7 +146,7 @@ class CollectionHandler:
             # ==========================
             # 🌍 РЕГІОН + ПЕРШЕ ПОВІДОМЛЕННЯ ПРОГРЕСУ
             # ==========================
-            region_display = self._url_parser.get_region_label(url)				# 🌍 Обчислюємо регіон для UI
+            region_display = self._url_parser.get_region_label(effective_url)		# 🌍 Обчислюємо регіон для UI
             parse_mode = getattr(
                 getattr(self._const, "UI", object()), "DEFAULT_PARSE_MODE", None
             )												# 🧩 Опційний parse_mode (Markdown/HTML)
@@ -144,9 +159,9 @@ class CollectionHandler:
             # ==========================
             # 🔗 ЗБІР ПОСИЛАНЬ (з ретраями)
             # ==========================
-            urls = await self._get_links_with_retry(url)						# 🧵 Отримуємо всі посилання на товари
+            urls = await self._get_links_with_retry(effective_url)				# 🧵 Отримуємо всі посилання на товари
             if not urls:
-                logger.info("📭 Collection empty user=%s url=%s", user_id, url)
+                logger.info("📭 Collection empty user=%s url=%s", user_id, effective_url)
                 if progress_msg and can_edit_progress:
                     with contextlib.suppress(Exception):
                         await progress_msg.edit_text(msg.COLL_EMPTY)			# 🔕 Нічого не знайшли — інформуємо
@@ -175,30 +190,44 @@ class CollectionHandler:
             def _is_cancelled() -> bool:
                 return getattr(context, "mode", None) != collection_mode_value	# 🛑 Якщо юзер змінив режим — зупиняємося
 
-            async def _on_progress(done: int, total: int) -> None:
+            async def _on_progress(snapshot: CollectionProgressSnapshot) -> None:
                 nonlocal can_edit_progress
                 if progress_msg and can_edit_progress:
                     try:
                         await progress_msg.edit_text(
-                            msg.COLL_PROGRESS.format(processed=done, total=total)
-                        )										# 🔄 Актуалізуємо прогрес
+                            self._build_progress_text(snapshot),
+                            parse_mode=parse_mode,
+                        )
                     except Exception:
-                        can_edit_progress = False							# 🧷 Фіксуємо, що редагування більше не можна
+                        can_edit_progress = False
 
             # ==========================
             # ▶️ ЗАПУСК RUNNER
             # ==========================
             logger.info("🚀 Collection runner start user=%s total_urls=%s", user_id, len(urls))
-            done_count = await self._runner.run(
+            done_count, health_summary = await self._runner.run(
                 update, context, urls, _on_progress, _is_cancelled
             )												# 🚀 Паралельна обробка посилань з колекції
 
-            if progress_msg and can_edit_progress:
-                with contextlib.suppress(Exception):
-                    await progress_msg.edit_text(
-                        msg.COLL_DONE.format(total=done_count)
-                    )										# 🏁 Фінальний підсумок
             logger.info("🏁 Collection finished user=%s processed=%s", user_id, done_count)
+            logger.info(
+                "🩺 Collection health: total=%d ok=%d alt_fallback=%d failed=%d",
+                health_summary.total,
+                health_summary.ok,
+                health_summary.alt_fallback,
+                health_summary.failed,
+            )
+            if health_summary.total:
+                summary_text = msg.COLL_HEALTH_SUMMARY.format(
+                    ok=health_summary.ok,
+                    alt_fallback=health_summary.alt_fallback,
+                    failed=health_summary.failed,
+                )
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=summary_text,
+                    parse_mode=parse_mode,
+                )
 
         except asyncio.CancelledError:
             logger.info("🛑 Collection handling cancelled user=%s", user_id)
@@ -208,7 +237,36 @@ class CollectionHandler:
             return
         except Exception as exc:
             await self._exception_handler.handle(exc, update)				# 🧯 Центральна обробка помилок
-            logger.exception("🔥 Collection handling failed user=%s url=%s", user_id, url)
+            logger.exception("🔥 Collection handling failed user=%s url=%s", user_id, effective_url)
+
+    # ==========================
+    # 🧱 ФОРМАТУВАННЯ ПРОГРЕСУ
+    # ==========================
+    def _build_progress_text(self, snapshot: CollectionProgressSnapshot) -> str:
+        header = msg.COLL_PROGRESS.format(processed=snapshot.completed, total=snapshot.total)
+        lines: list[str] = [header, ""]
+        for status in snapshot.statuses:
+            lines.append(self._format_status_line(status))
+        if snapshot.completed >= snapshot.total and snapshot.total:
+            lines.append("")
+            lines.append(msg.COLL_DONE_STATUS.format(success=snapshot.successes, total=snapshot.total))
+        return "\n".join(line for line in lines if line is not None)
+
+    def _format_status_line(self, status: CollectionItemStatus) -> str:
+        icon = self._STATUS_ICONS.get(status.state, "⚪️")
+        detail = self._trim_detail(status.detail)
+        suffix = f" — {detail}" if detail else ""
+        name = status.display_name()
+        return f"{icon} {name}{suffix}"
+
+    @staticmethod
+    def _trim_detail(detail: Optional[str], limit: int = 80) -> str:
+        if not detail:
+            return ""
+        cleaned = " ".join(detail.strip().split())
+        if len(cleaned) <= limit:
+            return cleaned
+        return cleaned[: limit - 1] + "…"
 
     # ==========================
     # 🔧 ДОПОМІЖНІ

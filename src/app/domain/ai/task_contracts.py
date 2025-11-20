@@ -11,7 +11,7 @@ from __future__ import annotations                                              
 
 # 🔠 Системні імпорти
 import logging                                                                       # 🧾 Логування ініціалізації контрактів
-from typing import Dict, Protocol, runtime_checkable                                 # 🧰 Типи й Protocol
+from typing import Dict, Protocol, Sequence, runtime_checkable                      # 🧰 Типи й Protocol
 
 # 🧩 Внутрішні модулі
 from app.shared.utils.logger import LOG_NAME                                         # 🏷️ Базовий префікс логера
@@ -94,6 +94,36 @@ logger.debug("✨ ISloganGenerator protocol задокументовано")    
 
 
 # ================================
+# 🪧 КОНТРАКТ BANNER DROP
+# ================================
+@runtime_checkable
+class IBannerPostGenerator(Protocol):
+    """Пост у стилі Instagram на основі банера та списку товарів."""
+
+    async def generate_banner_post(
+        self,
+        *,
+        collection_label: str,
+        product_names: Sequence[str],
+        vibe_hint: str,
+        link_count: int,
+    ) -> str:
+        """
+        Створює україномовний caption із CTA та хештегами.
+
+        Args:
+            collection_label: Текст, підпис або назва банера.
+            product_names: Список найважливіших назв товарів.
+            vibe_hint: Додатковий опис/CTA з банера.
+            link_count: Скільки колекцій привʼязано до банера.
+        """
+        ...
+
+
+logger.debug("🪧 IBannerPostGenerator protocol задокументовано")                     # 🧾 Контракт BannerDrop активний
+
+
+# ================================
 # 🧠 КОМБО-ПРОТОКОЛ ТЕКСТОВОГО AI
 # ================================
 @runtime_checkable
@@ -116,6 +146,7 @@ __all__ = [
     "IWeightEstimator",                                                              # ⚖️ Контракт оцінки ваги
     "ITranslator",                                                                   # 🌐 Контракт перекладача
     "ISloganGenerator",                                                              # ✨ Контракт генератора слоганів
+    "IBannerPostGenerator",                                                          # 🪧 Контракт генератора банерних постів
     "ITextAI",                                                                       # 🧠 Комбо-протокол
 ]
 logger.debug("🔓 __all__ оголошено: %s", __all__)                                     # 🧾 Публічний API зафіксовано

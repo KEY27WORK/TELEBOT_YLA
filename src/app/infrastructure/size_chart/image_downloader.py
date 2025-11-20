@@ -203,13 +203,14 @@ class ImageDownloader:
         if isinstance(outcome, DownloadError):
             logger.error("❌ download_info failed: %s (%s)", img_url, outcome.value)
             return outcome												# 🚫 Помилка завантаження
+        result = cast(DownloadResult, outcome)							# 💾 Уточнюємо тип для подальшого використання
         logger.info(
             "💾 download_info ok: %s -> %s (bytes=%d)",
             img_url,
-            outcome.path,
-            outcome.bytes_written,
+            result.path,
+            result.bytes_written,
         )
-        return cast(DownloadResult, outcome)							# 💾 Успішно збережений файл
+        return result													# 💾 Успішно збережений файл
 
     # ================================
     # 🔁 МЕХАНІКА РЕТРАЇВ
