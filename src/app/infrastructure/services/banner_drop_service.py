@@ -14,6 +14,7 @@ from __future__ import annotations
 
 # 🌐 Зовнішні бібліотеки
 from bs4 import BeautifulSoup                                                     # 🥣 HTML-парсинг
+from bs4.element import Tag                                                       # 🏷️ Тип для елементів HTML
 from PIL import Image                                                             # 🖼️ Робота з банером
 from telegram import InputFile, Update                                            # 🤖 Telegram об'єкти
 from telegram.helpers import escape_markdown                                      # 🔐 Екранування markdown
@@ -25,7 +26,7 @@ import logging                                                                  
 from collections import deque                                                     # ♻️ Простий LRU для банерів
 from dataclasses import dataclass                                                 # 🧱 DTO для знайдених банерів
 from io import BytesIO                                                            # 💾 Робота з байтами зображення
-from typing import Deque, List, Optional, Sequence, Set                           # 🧰 Типи
+from typing import Any, Deque, Dict, List, Optional, Sequence, Set, Union         # 🧰 Типи
 from urllib.parse import urljoin                                                  # 🌐 Побудова абсолютних URL
 
 # 🧩 Внутрішні модулі проєкту
@@ -270,30 +271,37 @@ class BannerDropService:
             seen_images.add(image_url)
         return candidates
 
-    def _extract_image_url(self, node: object, base_url: str) -> Optional[str]:
-        tag = node.find("img") if hasattr(node, "find") else None  # type: ignore[attr-defined]
+    def _extract_image_url(self, node: Tag, base_url: str) -> Optional[str]:
+        tag_candidate = node.find("img") if isinstance(node, Tag) else None
+        tag = tag_candidate if isinstance(tag_candidate, Tag) else None
         attrs = ("data-src", "data-original", "src", "data-zoom-image")
         raw_url: Optional[str] = None
         if tag is not None:
             for attr in attrs:
-                raw_url = tag.get(attr)  # type: ignore[attr-defined]
+                raw_raw = tag.get(attr)
+                raw_url = str(raw_raw) if raw_raw is not None else None
                 if raw_url:
                     break
-        if not raw_url and hasattr(node, "find"):
-            source = node.find("source")  # type: ignore[attr-defined]
+        if not raw_url and isinstance(node, Tag):
+            source_candidate = node.find("source")
+            source = source_candidate if isinstance(source_candidate, Tag) else None
             if source is not None:
-                raw_url = source.get("srcset")  # type: ignore[attr-defined]
+                srcset_raw = source.get("srcset")
+                raw_url = str(srcset_raw) if srcset_raw is not None else None
                 if raw_url and " " in raw_url:
                     raw_url = raw_url.split()[0]
         return self._normalize_link(base_url, raw_url)
 
-    def _extract_collection_links(self, node: object, base_url: str) -> List[str]:
-        if not hasattr(node, "select"):
+    def _extract_collection_links(self, node: Tag, base_url: str) -> List[str]:
+        if not isinstance(node, Tag):
             return []
         links: List[str] = []
         seen: Set[str] = set()
         for anchor in node.select("a[href]"):
-            href = anchor.get("href")  # type: ignore[attr-defined]
+            if not isinstance(anchor, Tag):
+                continue
+            href_raw = anchor.get("href")
+            href = str(href_raw) if href_raw is not None else None
             normalized = self._normalize_link(base_url, href)
             if not normalized or normalized in seen:
                 continue
@@ -304,14 +312,15 @@ class BannerDropService:
         return links
 
     @staticmethod
-    def _extract_label(node: object) -> str:
-        if hasattr(node, "select_one"):
-            content = node.select_one(".slideshow__slide-content") or node.select_one(".content-over-media__content")
-            if content is not None:
-                text = content.get_text(" ", strip=True)  # type: ignore[attr-defined]
-                return text[:200]
+    def _extract_label(node: Tag) -> str:
+        if not isinstance(node, Tag):
+            return ""
+        content = node.select_one(".slideshow__slide-content") or node.select_one(".content-over-media__content")
+        if content is not None:
+            text = content.get_text(" ", strip=True)
+            return text[:200]
         if hasattr(node, "get_text"):
-            return node.get_text(" ", strip=True)[:200]  # type: ignore[attr-defined]
+            return node.get_text(" ", strip=True)[:200]
         return ""
 
     def _slice_banner(self, raw_bytes: bytes) -> List[InputFile]:
@@ -331,13 +340,19 @@ class BannerDropService:
                         crop = crop.convert("RGB")
                     buffer = BytesIO()
                     save_format = target_format
-                    params = {"format": save_format}
+                    params: Dict[str, Any] = {"format": save_format}
                     if save_format == "JPEG":
                         params["quality"] = 90
                     crop.save(buffer, **params)
                     buffer.seek(0)
                     ext = "png" if save_format == "PNG" else "jpg"
-                    media.append(InputFile(buffer, filename=f"banner_{idx + 1}.{ext}"))
+                    media.append(
+                        InputFile(
+                            buffer,
+                            filename=f"banner_{idx + 1}.{ext}",
+                            attach=True,  # 📎 Щоб Telegram дозволив відправляти альбом
+                        )
+                    )
                 return media
         except Exception as exc:  # noqa: BLE001
             logger.warning("🪧 banner_drop.slice_fail", extra={"error": str(exc)})

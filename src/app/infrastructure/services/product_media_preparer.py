@@ -67,7 +67,13 @@ class ProductMediaPreparer:
 
             buffer = io.BytesIO(image_data.content)
             filename = self._build_filename(img_url, idx, image_data.content_type)
-            prepared_files.append(InputFile(buffer, filename=filename))
+            prepared_files.append(
+                InputFile(
+                    buffer,
+                    filename=filename,
+                    attach=True,  # 📎 Потрібно для media group (attach://)
+                )
+            )
 
         logger.debug("🖼️ Готово %d фото для: %s", len(prepared_files), (title or "N/A"))
         return PreparedMediaStack(files=prepared_files)

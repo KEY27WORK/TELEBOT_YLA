@@ -110,7 +110,13 @@ class SizeChartMessenger:
 
                 buffer = io.BytesIO(path.read_bytes())                       # 🧠 Зчитуємо байти у пам'ять
                 buffer.seek(0)                                               # 🔄 Переміщаємо курсор на початок
-                prepared_files.append(InputFile(buffer, filename=path.name or "size_chart.png"))  # 📨 Формуємо InputFile
+                prepared_files.append(
+                    InputFile(
+                        buffer,
+                        filename=path.name or "size_chart.png",
+                        attach=True,  # 📎 Для коректного надсилання через media group
+                    )
+                )  # 📨 Формуємо InputFile
 
             except Exception as error:  # noqa: BLE001
                 logger.warning("⚠️ Не вдалося підготувати файл таблиці: %s (%s)", raw_path, error)  # 🚨 Лог помилки
