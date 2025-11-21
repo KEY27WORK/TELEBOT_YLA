@@ -217,7 +217,19 @@ class ProductHandler:
             prepared_card = PreparedProductCard(processing_result, media_stack)
 
             if send_immediately:
-                await self.send_prepared_card(update, context, prepared_card, include_region_notice=True)
+                try:
+                    await self.send_prepared_card(update, context, prepared_card, include_region_notice=True)
+                except ProductMediaPreparationError as exc:
+                    failure = ProductProcessingResult.fail(
+                        ProcessingErrorCode.MediaPreparationFailed,
+                        str(exc) or "Не вдалося надіслати фото товару.",
+                        cause=exc,
+                        data=data,
+                    )
+                    if send_immediately:
+                        await update.message.reply_text(msg.PRODUCT_MEDIA_FAILED)
+                    logger.warning("product.media_send_failed | url=%s reason=%s", final_url, exc)
+                    return PreparedProductCard(failure)
 
             return prepared_card
 
@@ -255,7 +267,18 @@ class ProductHandler:
                     parse_mode=parse_mode,
                 )
 
-        await self.messenger.send(update, context, data, media_stack=media_stack)
+        try:
+            await self.messenger.send(update, context, data, media_stack=media_stack)
+        except ProductMediaPreparationError as exc:
+            failure = ProductProcessingResult.fail(
+                ProcessingErrorCode.MediaPreparationFailed,
+                str(exc) or "Не вдалося надіслати фото товару.",
+                cause=exc,
+                data=data,
+            )
+            prepared_card.result = failure
+            logger.warning("product.media_send_failed | url=%s reason=%s", data.url, exc)
+            raise
 
     def _validate_card_ready(self, data: ProcessedProductData) -> Optional[str]:
         """Перевіряє, що всі критичні блоки картки присутні."""

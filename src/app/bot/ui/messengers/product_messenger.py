@@ -29,6 +29,7 @@ from app.bot.ui import static_messages as msg                            # 📝 
 from app.config.setup.constants import AppConstants                      # ⚙️ Глобальні константи застосунку
 from app.errors.exception_handler_service import ExceptionHandlerService # 🛡️ Централізована обробка винятків
 from app.infrastructure.music.music_sender import MusicSender            # 🎵 Надсилання музичних рекомендацій
+from app.infrastructure.services.product_media_preparer import ProductMediaPreparationError  # 🧰 Помилки медіа
 from app.infrastructure.services.product_processing_service import (
     ProcessedProductData,                                                # 📦 Агрегований результат обробки товару
 )
@@ -154,6 +155,8 @@ class ProductMessenger:
 
         except asyncio.CancelledError:
             raise                                                         # 🔁 Проброс скасування (важливо для asyncio)
+        except ProductMediaPreparationError:
+            raise                                                         # 🔁 Пробросимо вище — хай обробник вирішує
         except Exception as error:  # noqa: BLE001
             await self.exception_handler.handle(error, update)            # 🛡️ Делегуємо обробку винятку
 

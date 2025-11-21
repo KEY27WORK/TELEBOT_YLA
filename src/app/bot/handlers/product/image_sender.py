@@ -12,7 +12,7 @@
 # 🌐 Зовнішні бібліотеки
 from telegram import Update, Message, InputMediaPhoto, InputFile                         # 📦 Telegram-типи
 from telegram.constants import ChatAction                                               # 🪄 Індикація "друкує / завантажує фото"
-from telegram.error import BadRequest, RetryAfter, NetworkError                         # 🚨 Типи помилок Telegram
+from telegram.error import BadRequest, RetryAfter, NetworkError, TimedOut              # 🚨 Типи помилок Telegram
 
 # 🔠 Системні імпорти
 from typing import Optional, Sequence, TypeAlias, Union, List, Dict, Any                # 🧰 Типізація
@@ -25,6 +25,7 @@ from app.bot.services.custom_context import CustomContext                       
 from app.bot.ui import static_messages as msg                                           # 💬 Статичні повідомлення UI
 from app.config.setup.constants import AppConstants                                     # ⚙️ Константи застосунку
 from app.errors.exception_handler_service import ExceptionHandlerService                # 🧯 Єдиний хендлер винятків
+from app.infrastructure.services.product_media_preparer import ProductMediaPreparationError  # 🧰 Кастомні помилки медіа
 from app.shared.utils.logger import LOG_NAME                                            # 🏷️ Ім'я логера
 
 # ==============================
@@ -130,6 +131,8 @@ class ImageSender:
                 sent.extend(batch_msgs)                                                     			# ➕ Акумулюємо повідомлення
                 await asyncio.sleep(batch_pause)                                            			# 🧘 Трохи відпочиваємо, аби не ввалитися в rate limit
 
+        except ProductMediaPreparationError:
+            raise
         except Exception as e:
             await self.exception_handler.handle(e, update)                                  			# 🧯 Централізований репорт та user-friendly фолбек
 
@@ -307,26 +310,63 @@ class ImageSender:
                 logger.debug("✅ Батч %s/%s відправлено: %s елементів", batch_index, total_batches, len(media))  # 🧾 Технічний лог
                 return list(sent)
             except RetryAfter as e:
-                logger.warning("⏳ Rate limit (group) #%s, спимо…", attempt + 1)             			# 🧱 Ліміт — чекаємо
+                logger.warning("⏳ Rate limit (group) #%s/%s, батч %s/%s — чекаю: %s", attempt + 1, _MAX_RETRIES, batch_index, total_batches, e)
                 await self._retry_sleep(getattr(e, "retry_after", None), attempt)
-            except (BadRequest, NetworkError) as e:
+                continue
+            except TimedOut as e:
                 logger.warning(
-                    "❌ Помилка групи (батч %s/%s): %s. Fallback на одиночні.",
-                    batch_index, total_batches, e,
-                )                                                                           			# 🚨 Помилка — пробуємо розіслати по одному
-                out: List[Message] = []
+                    "⏳ Timed out (group) #%s/%s, батч %s/%s: %s — пробую ще раз",
+                    attempt + 1,
+                    _MAX_RETRIES,
+                    batch_index,
+                    total_batches,
+                    e,
+                )
+                await self._retry_sleep(None, attempt)
+                continue
+            except (BadRequest, NetworkError) as e:
+                if attempt < _MAX_RETRIES - 1:
+                    logger.warning(
+                        "⚠️ Transport error (group) #%s/%s, батч %s/%s: %s — пробую повторити.",
+                        attempt + 1,
+                        _MAX_RETRIES,
+                        batch_index,
+                        total_batches,
+                        e,
+                    )
+                    await self._retry_sleep(None, attempt)
+                    continue
+
+                logger.warning(
+                    "❌ Помилка групи (батч %s/%s) після %s спроб: %s. Деградуємо до одиночних фото.",
+                    batch_index,
+                    total_batches,
+                    _MAX_RETRIES,
+                    e,
+                )
+                fallback: List[Message] = []
                 for idx, single in enumerate(media_items):
                     single_caption = first_caption if idx == 0 and first_caption else None
-                    s = await self._send_single_photo(
-                        update, context, single,
-                        caption=single_caption, parse_mode=parse_mode,
+                    single_sent = await self._send_single_photo(
+                        update,
+                        context,
+                        single,
+                        caption=single_caption,
+                        parse_mode=parse_mode,
                         reply_to_message_id=reply_to_message_id,
                         disable_notification=disable_notification,
                         protect_content=protect_content,
-                    )                                                                       			# 🖼️ Надсилаємо по одному
-                    if s:
-                        out.append(s)
-                return out
+                    )
+                    if not single_sent:
+                        raise ProductMediaPreparationError("Не вдалося надіслати медіа-групу")
+                    fallback.append(single_sent)
+                logger.warning(
+                    "⚠️ Альбом (батч %s/%s) деградував до %s одиночних повідомлень через помилку Telegram.",
+                    batch_index,
+                    total_batches,
+                    len(fallback),
+                )
+                return fallback
 
         await self._send_text_safe(update, context, msg.SEND_IMAGE_FAILED)                			# 💬 Фінальний фолбек
-        return []                                                                          			# 🏁 Нічого не відправили — пустий список
+        raise ProductMediaPreparationError("Не вдалося надіслати медіа-групу")
