@@ -26,6 +26,7 @@ from app.bot.commands.main_menu_feature import MainMenuFeature           # 📋 
 from app.bot.handlers.callback_handler import CallbackHandler            # 🔄 Централізований callback-хендлер
 from app.bot.handlers.link_handler import LinkHandler                    # 🔗 Обробка вхідних посилань
 from app.bot.handlers.price_calculator_handler import PriceCalculationHandler  # 🧮 Хендлер розрахунку ціни
+from app.bot.handlers.order_handler import OrderFileHandler                   # 📂 Обробка .txt-файлів замовлень
 from app.bot.handlers.product.collection_handler import CollectionHandler  # 🧺 Пакетна обробка колекцій
 from app.bot.handlers.product.image_sender import ImageSender            # 🖼️ Відправка медіа
 from app.bot.handlers.product.product_handler import ProductHandler      # 🛒 Бізнес-логіка товарів
@@ -94,6 +95,7 @@ from app.infrastructure.size_chart.youngla_finder import YoungLASizeChartFinder 
 # 🔗 Інфраструктура: мережа та кеші
 from app.infrastructure.url import YoungLAUrlStrategy                    # 🧭 Стратегія для брендових URL
 from app.infrastructure.web.webdriver_service import WebDriverService    # 🌐 Selenium/Chrome клієнт
+from app.infrastructure.web.youngla_order_service import YoungLAOrderService  # 🛒 Автоматизація кошика YoungLA
 from app.shared.cache.html_lru_cache import HtmlLruCache                 # 🧊 LRU-кеш HTML/ALT
 from app.shared.metrics.exporters import maybe_start_prometheus          # 📈 Bootstrap метрик
 from app.shared.utils.interfaces import IUrlParsingStrategy              # 🧠 Контракт стратегій URL
@@ -247,6 +249,7 @@ class Container:
         Ініціалізує клієнти інфраструктури, кеші та допоміжні сервіси.
         """
         self.webdriver_service = WebDriverService(config_service=self.config)             # 🌐 Selenium/Chrome клієнт
+        self.youngla_order_service = YoungLAOrderService(config_service=self.config)      # 🛒 Автоматизоване додавання до кошика
         self.currency_manager = CurrencyManager(config_service=self.config)               # 💱 Робота з курсами валют
         strategy_chain: list[IUrlParsingStrategy] = [
             YoungLAUrlStrategy(self.config),                                             # 🧭 Брендова стратегія YoungLA
@@ -568,6 +571,10 @@ class Container:
             constants=self.constants,
             exception_handler=self.exception_handler_service,
         )                                                                                # 🔗 Роутер вхідних посилань
+        self.order_file_handler = OrderFileHandler(
+            order_service=self.youngla_order_service,
+            exception_handler=self.exception_handler_service,
+        )                                                                                # 📂 Обробник .txt-замовлень
         self.main_menu_feature = MainMenuFeature(constants=self.constants)               # 📋 Фіча головного меню
         self.menu_handler = self.main_menu_feature                                      # ♻️ Зворотна сумісність сеансу
         logger.debug("📚 Фічі та роутери ініціалізовані (%d)", len(self.features))       # 🧾 Стан реєстрації

@@ -10,5 +10,13 @@ from __future__ import annotations
 
 # 🧭 Основний сервіс
 from .webdriver_service import WebDriverService
+# 🧾 Парсер та сервіс автоматизації кошика
+from .youngla_order_parser import YoungLAOrderProduct, parse_youngla_order_file
+from .youngla_order_service import YoungLAOrderService
 
-__all__ = ["WebDriverService"]
+__all__ = [
+    "WebDriverService",
+    "YoungLAOrderProduct",
+    "parse_youngla_order_file",
+    "YoungLAOrderService",
+]
