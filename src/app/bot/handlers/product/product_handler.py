@@ -196,7 +196,12 @@ class ProductHandler:
                     data=data,
                 )
                 if send_immediately:
-                    await update.message.reply_text(msg.PRODUCT_CARD_INCOMPLETE)
+                    reply_text = (
+                        self._build_admin_failure_message(failure)
+                        if self._should_show_admin_details(context)
+                        else msg.PRODUCT_CARD_INCOMPLETE
+                    )
+                    await update.message.reply_text(reply_text)
                 logger.warning("product.card_validation_failed | url=%s reason=%s", final_url, validation_error)
                 return PreparedProductCard(failure)
 
@@ -289,18 +294,12 @@ class ProductHandler:
             missing.append("title")
         if not (content.slogan or "").strip():
             missing.append("slogan")
-        if not (content.hashtags or "").strip():
-            missing.append("hashtags")
         if not (content.colors_text or "").strip():
             missing.append("availability")
         if not (content.price_message or "").strip():
             missing.append("price")
         if not content.images:
             missing.append("photos")
-        if not (data.music_text or "").strip():
-            missing.append("music")
-        if not getattr(data.diagnostics, "has_size_chart", False):
-            missing.append("size_chart")
 
         if missing:
             return "Відсутні критичні блоки: " + ", ".join(missing)
@@ -315,3 +314,54 @@ class ProductHandler:
         if not stack.files:
             raise ProductMediaPreparationError("Не вдалося підготувати жодного фото товару.")
         return tuple(stack.files)
+
+    def _should_show_admin_details(self, context: CustomContext) -> bool:
+        """Визначаємо, чи показувати розгорнуте пояснення адміну."""
+        try:
+            mode = context.mode
+        except AttributeError:
+            return True
+        if not mode:
+            return True
+        return mode == self.const.LOGIC.MODES.PRODUCT
+
+    def _build_admin_failure_message(self, failure: ProductProcessingResult) -> str:
+        """Формує розгорнуте пояснення, чому картка не готова."""
+        lines: list[str] = [msg.PRODUCT_CARD_INCOMPLETE, "", msg.PRODUCT_CARD_ADMIN_REASON_HEADER]
+        data = failure.data
+        diag = getattr(data, "diagnostics", None) if data else None
+        if not diag:
+            lines.append(msg.PRODUCT_CARD_ADMIN_NO_DIAGNOSTICS)
+            return "\n".join(lines)
+
+        images_total = getattr(diag, "images_total", getattr(diag, "images_count", 0))
+        images_ready = getattr(diag, "images_ready", getattr(diag, "images_count", 0))
+        images_error = getattr(diag, "images_error", None)
+        if images_total == 0:
+            lines.append("• Фото: не вдалося знайти жодного зображення на сайті.")
+        elif images_ready == 0:
+            reason = images_error or "жодне зображення не пройшло підготовку."
+            lines.append(f"• Фото: знайдено {images_total}, але нічого не підготовлено ({reason})")
+        elif images_ready < images_total or images_error:
+            reason = images_error or "частина зображень відфільтрована."
+            lines.append(f"• Фото: підготовлено {images_ready} з {images_total}. {reason}")
+
+        if not getattr(diag, "hashtags_ok", True):
+            reason = getattr(diag, "hashtags_error", None) or "невідома помилка генерації."
+            if getattr(diag, "ai_quota_problem", False):
+                reason = "OpenAI rate limit / квота. Схоже, закінчився баланс."
+            lines.append(f"• Хештеги: {reason}")
+
+        if not getattr(diag, "music_ok", True):
+            reason = getattr(diag, "music_error", None) or "музика не згенерована."
+            lines.append(f"• Музика: {reason}")
+
+        if not getattr(diag, "has_size_chart", False):
+            reason = getattr(diag, "size_chart_error", None) or "таблицю не знайдено або вона не пройшла OCR."
+            lines.append(f"• Таблиця розмірів: {reason}")
+
+        if getattr(diag, "ai_quota_problem", False):
+            ai_note = getattr(diag, "ai_error_raw", None) or "OpenAI повернув помилку квоти/RateLimit."
+            lines.append(f"• OpenAI: {ai_note}")
+
+        return "\n".join(lines)

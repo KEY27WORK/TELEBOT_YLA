@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio                                                      # 🔄 Паралельні виклики
 import logging                                                      # 🧾 Журналювання стану
 from dataclasses import dataclass                                   # 📦 DTO
-from typing import Dict, List, Optional, TYPE_CHECKING             # 📐 Типи
+from typing import Dict, List, Optional, TYPE_CHECKING, cast       # 📐 Типи
 
 # 🧩 Доменні контракти
 from app.domain.ai.task_contracts import ITextAI                    # 🤖 Генератор текстів
@@ -36,7 +36,7 @@ logger = logging.getLogger(LOG_NAME)                                # 🧾 Мо�
 
 
 # ================================
-# 📦 DTO ДЛЯ КОНТЕНТУ
+# 📦 DTO ДЛЯ КОНТЕНТУ ТА ДІАГНОСТИК
 # ================================
 @dataclass(frozen=True, slots=True)
 class ProductContentDTO:
@@ -51,7 +51,20 @@ class ProductContentDTO:
     alt_fallback_used: bool                                          # 🛠️ Чи був застосований ALT-фолбек
 
 
-__all__ = ["ProductContentDTO", "ProductContentService"]
+@dataclass(frozen=True, slots=True)
+class ContentBuildDiagnostics:
+    """📋 Додаткова інформація про підготовку контенту (неблокуючі збої)."""
+
+    images_found: int = 0                                            # 🖼️ Скільки зображень отримали від фасадів
+    images_ready: int = 0                                            # 🧰 Скільки пройшло нормалізацію
+    images_error: Optional[str] = None                               # ⚠️ Опис проблем з фото
+    hashtags_ok: bool = True                                         # ✅ Чи є хештеги
+    hashtags_error: Optional[str] = None                             # ⚠️ Опис збою генерації хештегів
+    ai_quota_problem: bool = False                                   # 🚦 Ознака закінчення квоти/RateLimit
+    ai_error_raw: Optional[str] = None                               # 🧾 Текст помилки AI
+
+
+__all__ = ["ProductContentDTO", "ProductContentService", "ContentBuildDiagnostics"]
 
 
 # ================================
@@ -82,8 +95,8 @@ class ProductContentService:
         *,
         url: str,
         colors_text: str,
-    ) -> ProductContentDTO:
-        """📦 Агрегує всі поля DTO та повертає `ProductContentDTO`."""
+    ) -> tuple[ProductContentDTO, ContentBuildDiagnostics]:
+        """📦 Агрегує всі поля DTO та повертає `ProductContentDTO` з діагностикою."""
         logger.info("🧠 Початок побудови контенту для: %s", product.title)
 
         slogan_task = self._translator.generate_slogan(               # 💬 Слоган
@@ -96,25 +109,35 @@ class ProductContentService:
         hashtags_task = self._hashtags.generate(product)              # 🏷️ Хештеги рядком
         price_task = self._price.calculate_and_format(url)            # 💸 Повідомлення ціни
 
-        try:
-            slogan, sections, hashtags, price_tuple = await asyncio.gather(
-                slogan_task,
-                translate_task,
-                hashtags_task,
-                price_task,
-            )                                                         # ⏳ Паралельне очікування
-            logger.debug(
-                "📦 gather done: slogan=%s, sections=%s, hashtags_len=%d",
-                bool(slogan),
-                len(sections) if isinstance(sections, dict) else -1,
-                len(hashtags) if isinstance(hashtags, str) else -1,
-            )
-        except asyncio.CancelledError:
-            logger.info("🛑 Побудову контенту скасовано для: %s", product.title)  # 🛑 propagate cancel
-            raise
-        except Exception as exc:
-            logger.exception("❌ Збій під час побудови контенту для '%s'", product.title)  # 🧯 лог для оркестратора
-            raise
+        gather_results = await asyncio.gather(
+            slogan_task,
+            translate_task,
+            hashtags_task,
+            price_task,
+            return_exceptions=True,
+        )
+        slogan = cast(str, self._unwrap_required_result("slogan", gather_results[0]))
+        sections = cast(dict, self._unwrap_required_result("sections", gather_results[1]))
+        hashtags_result = gather_results[2]
+        price_tuple = cast(tuple, self._unwrap_required_result("price", gather_results[3]))
+
+        hashtags_error: Optional[str] = None
+        ai_quota_problem = False
+        ai_error_raw: Optional[str] = None
+        if isinstance(hashtags_result, Exception):
+            hashtags_error = str(hashtags_result)
+            ai_quota_problem = self._looks_like_ai_quota_issue(hashtags_result)
+            ai_error_raw = hashtags_error
+            logger.warning("⚠️ Хештеги не згенеровано: %s", hashtags_error)
+            hashtags = ""
+        else:
+            hashtags = hashtags_result
+        logger.debug(
+            "📦 gather done: slogan=%s, sections=%s, hashtags_len=%d",
+            bool(slogan),
+            len(sections) if isinstance(sections, dict) else -1,
+            len(hashtags) if isinstance(hashtags, str) else -1,
+        )
 
         if not isinstance(price_tuple, tuple) or len(price_tuple) < 3:  # 📏 гарантований контракт price-фасаду
             logger.error("💥 Price facade повернув: %r", price_tuple)
@@ -129,6 +152,7 @@ class ProductContentService:
         if not isinstance(images, list):
             images = list(product.images or [])                       # 🛟 Фолбек на зображення з продукту
 
+        images_found = len(images or [])
         alt_texts: Dict[str, str] = {}                                # 🔎 ALT-тексти за замовчуванням порожні
         image_candidates = [img for img in images if isinstance(img, str) and img]  # 🖼️ нормалізуємо URL
         if not image_candidates:
@@ -176,4 +200,42 @@ class ProductContentService:
             alt_fallback_used=alt_fallback_used,
         )
         logger.info("✅ Контент збудовано: %s", product.title)
-        return dto
+
+        diag = ContentBuildDiagnostics(
+            images_found=images_found,
+            images_ready=len(image_candidates),
+            images_error=self._describe_image_issue(images_found, len(image_candidates)),
+            hashtags_ok=hashtags_error is None,
+            hashtags_error=hashtags_error,
+            ai_quota_problem=ai_quota_problem,
+            ai_error_raw=ai_error_raw,
+        )
+        return dto, diag
+
+    @staticmethod
+    def _looks_like_ai_quota_issue(exc: BaseException) -> bool:
+        text = f"{exc.__class__.__name__} {exc}".lower()
+        return "ratelimit" in text or "quota" in text or "insufficient_quota" in text
+
+    def _unwrap_required_result(self, name: str, value: object) -> object:
+        if isinstance(value, Exception):
+            if isinstance(value, asyncio.CancelledError):
+                raise value
+            logger.error(
+                "❌ Під час генерації %s виникла помилка: %s",
+                name,
+                value,
+                exc_info=(value.__class__, value, value.__traceback__),
+            )
+            raise value
+        return value
+
+    @staticmethod
+    def _describe_image_issue(found: int, ready: int) -> Optional[str]:
+        if found == 0:
+            return "Не вдалося отримати жодного зображення."
+        if ready == 0:
+            return "Жодне зображення не пройшло нормалізацію."
+        if ready < found:
+            return "Частина зображень відфільтрована (дублікати/невалідні URL)."
+        return None
